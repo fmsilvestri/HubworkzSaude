@@ -1,0 +1,109 @@
+═══ PROMPT PARTE 5 — MASTER DESKTOP HubWorkz Saúde ═══
+
+Crie o sistema HubWorkz Saúde — gestão de intermediação farmacêutica oncológica.
+É um monorepo pnpm com as seguintes pastas a criar AGORA: apps/web, server, packages/shared.
+
+STACK OBRIGATÓRIO:
+• Frontend: React 18 + TypeScript + Vite + Tailwind CSS
+• Backend:  Node.js 20 + Express + TypeScript
+• Banco:    Supabase (tabelas já criadas — ver instruções abaixo)
+• IA:       Anthropic SDK @anthropic-ai/sdk — model: claude-sonnet-4-20250514
+• WA:       Evolution API via axios (variável EVOLUTION_API_URL)
+
+IDENTIDADE VISUAL OBRIGATÓRIA:
+• Topbar:   background #151419, logo 'HubWorkz Saúde' com ícone activity-heartbeat
+            laranja (#F56E0F), botão 'Di IA' pill (fundo roxo #3C3489, texto #A5FFD6)
+• Sidebar:  background #1B1B1E, itens rgba(255,255,255,0.55), ativo #F56E0F
+• Cards:    background #1B1B1E, border rgba(255,255,255,0.1), border-radius 14px
+• Botão primário: background #F56E0F, texto branco
+• Tipografia: Exo 2 (Google Fonts) — importar no index.html
+• Di IA: accent #A5FFD6 (verde menta), fundo rgba(63,52,137,0.4)
+
+AUTENTICAÇÃO (Supabase Auth):
+const { data: { user } } = await supabase.auth.signInWithPassword({ email, password })
+const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+Após login: redirecionar conforme profile.role:
+• gestor / farmaceutico / faturamento → Master Desktop (todos os módulos)
+• importador / convenio / fornecedor  → Dashboard restrito ao seu módulo
+• paciente → redirecionar para App Paciente
+
+HOOK useAuth() — criar em src/hooks/useAuth.ts:
+export function useAuth() {
+  const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      if (session?.user) fetchProfile(session.user.id)
+    })
+  }, [])
+  return { user, profile, role: profile?.role, loading }
+}
+
+19 MÓDULOS — CONSTRUIR NESTA ORDEM:
+01. Login — dark, logo centralizado, input e-mail/senha, indicador loading
+02. Dashboard Gestor — métricas 4-up, Di IA card com atalhos, alertas, D30, remessas, processos
+03. Processos — tabela + detalhe: stepper fases, paciente, medicamento, distribuidora, remessa, histórico
+04. Pacientes — tabela + form 4 seções: dados pessoais, convênio, clínico, mandato + upload PDF
+05. Medicamentos — catálogo: nome, PA, apresentação, modo de uso, conservação, registro
+06. Distribuidoras — cards com 4 KPIs, ficha 4 abas (dados/contato/NF/rastreio), modal NF
+07. Importadoras — checklist documental de qualificação com upload por documento
+08. Mandatos — tabela por paciente, status badge, upload PDF Supabase Storage
+09. Declarações de ciência — tabela por modalidade (registro ANVISA / uso compassivo)
+10. Monitoramento D30 — agenda mensal, chat WA simulado, registro adesão/eventos adversos
+11. Remessas WA — em trânsito / entregues, prévia de mensagem (3 eventos), histórico chat
+12. Cotação — formulário simultâneo: distribuidora nacional vs importadora, recomendação
+13. Recebimento — checklist conferência, status fotos do paciente, validação farmacêutica
+14. Faturamento — NF produto + NF serviço, status, convênio, valor
+15. Glosas — alertas por prazo vencimento, recurso com formulário
+16. Pedidos / NF — consolidado todas as NFs (distribuidoras + importadora)
+17. Rastreio — código + timeline eventos + botão notificar paciente WA
+18. Di IA — chat completo, histórico Supabase, cards de dados em tempo real, sugestões
+19. Configurações — dados clínica, integrações (status de cada serviço), API keys
+
+PADRÃO DE COMPONENTE (copiar para cada página):
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../hooks/useAuth'
+import type { Paciente } from '@hubworkz/shared'
+
+export function Pacientes() {
+  const { profile } = useAuth()
+  const [items, setItems] = useState<Paciente[]>([])
+
+  useEffect(() => {
+    supabase
+      .from('pacientes')
+      .select('*, medicamento:medicamentos(*)')
+      .eq('clinica_id', profile?.clinica_id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setItems(data || []))
+  }, [profile])
+  // ...
+}
+
+PADRÃO DE ROTA BACKEND (server/routes/):
+router.get('/', authMiddleware, roleGuard(['gestor','farmaceutico']),
+  async (req, res) => {
+    const { data } = await supabase
+      .from('pacientes')
+      .select('*')
+      .eq('clinica_id', req.user.clinica_id)
+    res.json(data)
+  }
+)
+
+TABELAS SUPABASE EXISTENTES (já criadas — NÃO recriar):
+profiles | pacientes | medicamentos | distribuidoras | notas_fiscais |
+processos | monitoramentos | faturas | glosas | di_messages | di_memory
+
+VARIÁVEIS DE AMBIENTE (ler de process.env / import.meta.env):
+VITE_SUPABASE_URL              VITE_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY      ANTHROPIC_API_KEY
+EVOLUTION_API_URL              EVOLUTION_API_KEY
+EVOLUTION_INSTANCE             VITE_API_URL
+
+  ⚠  Nunca hardcodar API keys no código. Usar sempre process.env ou import.meta.env.
+
+═══ FIM DO PROMPT — PARTE 5 ═══
