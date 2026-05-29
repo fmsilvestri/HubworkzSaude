@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link, useLocation } from "wouter"
 import { useAuth } from "@/hooks/useAuth"
+import { useTheme } from "@/hooks/useTheme"
 import { supabase } from "@/lib/supabase"
 import { 
   LayoutDashboard, 
@@ -20,7 +21,9 @@ import {
   LogOut,
   Menu,
   Activity,
-  Sparkles
+  Sparkles,
+  Sun,
+  Moon
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -48,6 +51,7 @@ const NAV_ITEMS = [
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation()
   const { profile } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   const handleLogout = async () => {
@@ -56,9 +60,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-[#1B1B1E] text-white w-64 border-r border-white/5">
+    <div className="flex flex-col h-full bg-sidebar text-foreground w-64 border-r border-border">
       <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <div className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4 px-3">
+        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-3">
           Menu Principal
         </div>
         {NAV_ITEMS.map((item) => {
@@ -69,27 +73,27 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer text-sm font-medium",
                 isActive 
                   ? "bg-primary/10 text-primary" 
-                  : "text-white/55 hover:bg-white/5 hover:text-white"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}>
-                <item.icon className={cn("h-4 w-4", isActive ? "text-primary" : "text-white/55")} />
+                <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
                 {item.label}
               </div>
             </Link>
           )
         })}
       </div>
-      <div className="p-4 border-t border-white/5">
+      <div className="p-4 border-t border-border">
         <div className="flex items-center gap-3 px-3 py-2">
-          <Avatar className="h-9 w-9 border border-white/10">
+          <Avatar className="h-9 w-9 border border-border">
             <AvatarFallback className="bg-primary/20 text-primary">
               {profile?.nome?.charAt(0) || 'U'}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-medium truncate">{profile?.nome || 'Usuário'}</p>
-            <p className="text-xs text-white/50 truncate capitalize">{profile?.role || 'Cargo'}</p>
+            <p className="text-sm font-medium truncate text-foreground">{profile?.nome || 'Usuário'}</p>
+            <p className="text-xs text-muted-foreground truncate capitalize">{profile?.role || 'Cargo'}</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleLogout} className="text-white/50 hover:text-white">
+          <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
@@ -98,28 +102,38 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   )
 
   return (
-    <div className="min-h-screen bg-[#0F0F12] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Topbar */}
-      <header className="h-16 bg-[#151419] border-b border-white/5 flex items-center justify-between px-4 lg:px-6 shrink-0 sticky top-0 z-50">
+      <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 shrink-0 sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden text-white/70">
+              <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground hover:text-foreground">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-64 border-r-white/10 bg-[#1B1B1E]">
+            <SheetContent side="left" className="p-0 w-64 border-r-border bg-sidebar">
               <SidebarContent />
             </SheetContent>
           </Sheet>
           
           <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
-            <Activity className="h-6 w-6 text-[#F56E0F]" />
-            <span className="text-lg font-bold text-white tracking-tight hidden sm:block">HubWorkz Saúde</span>
+            <Activity className="h-6 w-6 text-primary" />
+            <span className="text-lg font-bold text-foreground tracking-tight hidden sm:block">HubWorkz Saúde</span>
           </Link>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="text-muted-foreground hover:text-foreground"
+            title={theme === "dark" ? "Mudar para tema claro" : "Mudar para tema escuro"}
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+
           <Button 
             onClick={() => setLocation('/di-ia')}
             className="bg-[#3C3489] hover:bg-[#3C3489]/80 text-[#A5FFD6] rounded-full px-4 h-9 font-semibold text-sm border-none shadow-lg shadow-[#3C3489]/20 transition-all hover:scale-105"

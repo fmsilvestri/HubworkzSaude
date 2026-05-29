@@ -55,11 +55,12 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ── Dark theme (default) ─────────────────────────────────────────────────── */
 :root {
-  --background: 240 9% 6%; /* #0F0F12 */
+  --background: 240 9% 6%;
   --foreground: 0 0% 100%;
   
-  --card: 240 5% 11%; /* #1B1B1E */
+  --card: 240 5% 11%;
   --card-foreground: 0 0% 100%;
   --card-border: 0 0% 100% / 0.1;
   
@@ -67,7 +68,7 @@
   --popover-foreground: 0 0% 100%;
   --popover-border: 0 0% 100% / 0.1;
   
-  --primary: 25 93% 51%; /* #F56E0F */
+  --primary: 25 93% 51%;
   --primary-foreground: 0 0% 100%;
   
   --secondary: 240 5% 16%;
@@ -86,7 +87,7 @@
   --input: 0 0% 100% / 0.1;
   --ring: 25 93% 51%;
   
-  --sidebar: 240 5% 11%; /* #1B1B1E */
+  --sidebar: 240 5% 11%;
   --sidebar-foreground: 0 0% 100% / 0.55;
   --sidebar-border: 0 0% 100% / 0.1;
   --sidebar-primary: 25 93% 51%;
@@ -95,14 +96,16 @@
   --sidebar-accent-foreground: 0 0% 100%;
   --sidebar-ring: 25 93% 51%;
 
-  --radius: 0.875rem; /* 14px */
+  --topbar: 240 7% 8%;
+
+  --radius: 0.875rem;
 }
 
 .dark {
-  --background: 240 9% 6%; /* #0F0F12 */
+  --background: 240 9% 6%;
   --foreground: 0 0% 100%;
   
-  --card: 240 5% 11%; /* #1B1B1E */
+  --card: 240 5% 11%;
   --card-foreground: 0 0% 100%;
   --card-border: 0 0% 100% / 0.1;
   
@@ -110,7 +113,7 @@
   --popover-foreground: 0 0% 100%;
   --popover-border: 0 0% 100% / 0.1;
   
-  --primary: 25 93% 51%; /* #F56E0F */
+  --primary: 25 93% 51%;
   --primary-foreground: 0 0% 100%;
   
   --secondary: 240 5% 16%;
@@ -129,7 +132,7 @@
   --input: 0 0% 100% / 0.1;
   --ring: 25 93% 51%;
   
-  --sidebar: 240 5% 11%; /* #1B1B1E */
+  --sidebar: 240 5% 11%;
   --sidebar-foreground: 0 0% 100% / 0.55;
   --sidebar-border: 0 0% 100% / 0.1;
   --sidebar-primary: 25 93% 51%;
@@ -137,8 +140,151 @@
   --sidebar-accent: 240 5% 16%;
   --sidebar-accent-foreground: 0 0% 100%;
   --sidebar-ring: 25 93% 51%;
+
+  --topbar: 240 7% 8%;
 }
 
+/* ── Light theme ──────────────────────────────────────────────────────────── */
+.light {
+  --background: 240 20% 97%;
+  --foreground: 240 10% 8%;
+  
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 8%;
+  --card-border: 240 10% 10% / 0.1;
+  
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 8%;
+  --popover-border: 240 10% 10% / 0.12;
+  
+  --primary: 25 93% 51%;
+  --primary-foreground: 0 0% 100%;
+  
+  --secondary: 240 10% 92%;
+  --secondary-foreground: 240 10% 8%;
+  
+  --muted: 240 10% 92%;
+  --muted-foreground: 240 5% 46%;
+  
+  --accent: 25 93% 51%;
+  --accent-foreground: 0 0% 100%;
+  
+  --destructive: 0 84% 55%;
+  --destructive-foreground: 0 0% 100%;
+  
+  --border: 240 10% 10% / 0.1;
+  --input: 240 10% 10% / 0.08;
+  --ring: 25 93% 51%;
+  
+  --sidebar: 240 15% 94%;
+  --sidebar-foreground: 240 10% 8% / 0.65;
+  --sidebar-border: 240 10% 10% / 0.08;
+  --sidebar-primary: 25 93% 51%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 10% 88%;
+  --sidebar-accent-foreground: 240 10% 8%;
+  --sidebar-ring: 25 93% 51%;
+
+  --topbar: 0 0% 100%;
+}
+
+/* ── Light mode overrides for hardcoded dark hex classes ─────────────────── */
+/* These cover pages that use hardcoded dark colors directly */
+
+.light .bg-\[\#0F0F12\] {
+  background-color: hsl(240 20% 97%) !important;
+}
+.light .bg-\[\#1B1B1E\] {
+  background-color: hsl(0 0% 100%) !important;
+}
+.light .bg-\[\#151419\] {
+  background-color: hsl(0 0% 100%) !important;
+}
+.light .bg-\[\#12121A\] {
+  background-color: hsl(240 20% 97%) !important;
+}
+
+.light .text-white {
+  color: hsl(240 10% 8%) !important;
+}
+.light .text-white\/80 {
+  color: hsl(240 10% 8% / 0.8) !important;
+}
+.light .text-white\/70 {
+  color: hsl(240 10% 8% / 0.7) !important;
+}
+.light .text-white\/60 {
+  color: hsl(240 10% 8% / 0.6) !important;
+}
+.light .text-white\/55 {
+  color: hsl(240 10% 8% / 0.55) !important;
+}
+.light .text-white\/50 {
+  color: hsl(240 10% 8% / 0.5) !important;
+}
+.light .text-white\/40 {
+  color: hsl(240 10% 8% / 0.4) !important;
+}
+.light .text-white\/35 {
+  color: hsl(240 10% 8% / 0.35) !important;
+}
+.light .text-white\/30 {
+  color: hsl(240 10% 8% / 0.3) !important;
+}
+.light .text-white\/25 {
+  color: hsl(240 10% 8% / 0.25) !important;
+}
+.light .text-white\/20 {
+  color: hsl(240 10% 8% / 0.2) !important;
+}
+.light .text-white\/15 {
+  color: hsl(240 10% 8% / 0.15) !important;
+}
+.light .text-white\/10 {
+  color: hsl(240 10% 8% / 0.1) !important;
+}
+
+.light .border-white\/5 {
+  border-color: hsl(240 10% 10% / 0.08) !important;
+}
+.light .border-white\/10 {
+  border-color: hsl(240 10% 10% / 0.12) !important;
+}
+.light .border-white\/20 {
+  border-color: hsl(240 10% 10% / 0.18) !important;
+}
+
+.light .bg-white\/5 {
+  background-color: hsl(240 10% 10% / 0.05) !important;
+}
+.light .bg-white\/10 {
+  background-color: hsl(240 10% 10% / 0.08) !important;
+}
+
+.light .hover\:bg-white\/5:hover {
+  background-color: hsl(240 10% 10% / 0.05) !important;
+}
+.light .hover\:bg-white\/10:hover {
+  background-color: hsl(240 10% 10% / 0.08) !important;
+}
+.light .hover\:text-white:hover {
+  color: hsl(240 10% 8%) !important;
+}
+
+/* Input fields with dark hardcoded backgrounds */
+.light .bg-\[\#0F0F12\].border-white\/10 {
+  background-color: hsl(240 20% 97%) !important;
+  border-color: hsl(240 10% 10% / 0.12) !important;
+  color: hsl(240 10% 8%) !important;
+}
+
+/* Placeholder text in light mode */
+.light input::placeholder,
+.light textarea::placeholder {
+  color: hsl(240 5% 46%) !important;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
 @layer base {
   * {
     @apply border-border;

@@ -1,11 +1,12 @@
 import { useState } from "react"
-import { Link, useLocation } from "wouter"
+import { useLocation } from "wouter"
 import { useAuth } from "@/hooks/useAuth"
+import { useTheme } from "@/hooks/useTheme"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, Loader2 } from "lucide-react"
+import { Activity, Loader2, Sun, Moon } from "lucide-react"
 
 export default function Login() {
   const [email, setEmail] = useState("")
@@ -14,6 +15,7 @@ export default function Login() {
   const [error, setError] = useState("")
   const [, setLocation] = useLocation()
   const { profile, loading: authLoading } = useAuth()
+  const { theme, toggleTheme } = useTheme()
 
   if (authLoading) {
     return (
@@ -40,26 +42,33 @@ export default function Login() {
     setError("")
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-    } catch (err: any) {
-      setError(err.message || "Erro ao fazer login")
+    } catch (err: unknown) {
+      setError((err as Error).message || "Erro ao fazer login")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+        title={theme === "dark" ? "Mudar para tema claro" : "Mudar para tema escuro"}
+      >
+        {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      </Button>
+
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center justify-center space-y-2 text-center">
-          <div className="h-16 w-16 bg-card rounded-2xl flex items-center justify-center border border-white/5 shadow-xl mb-4">
+          <div className="h-16 w-16 bg-card rounded-2xl flex items-center justify-center border border-border shadow-xl mb-4">
             <Activity className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
             HubWorkz Saúde
           </h1>
           <p className="text-muted-foreground text-sm">
@@ -67,7 +76,7 @@ export default function Login() {
           </p>
         </div>
 
-        <Card className="border-white/10 shadow-2xl bg-card/50 backdrop-blur-sm">
+        <Card className="border-border shadow-2xl">
           <CardHeader>
             <CardTitle className="text-xl">Acesso ao sistema</CardTitle>
             <CardDescription>Insira suas credenciais para continuar</CardDescription>
@@ -86,7 +95,6 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="bg-background/50 border-white/10 focus-visible:ring-primary"
                 />
               </div>
               <div className="space-y-2">
@@ -96,7 +104,6 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-background/50 border-white/10 focus-visible:ring-primary"
                 />
               </div>
               <Button 
