@@ -1,0 +1,2 @@
+- [HubWorkz Saúde env vars](hubworkz-env.md) — backend uses VITE_SUPABASE_URL (not SUPABASE_URL); cotacoes table may not exist in Supabase
+- [HubWorkz Saúde DB tables](hubworkz-db.md) — Supabase table for faturas is notas_fiscais; di_messages for AI history

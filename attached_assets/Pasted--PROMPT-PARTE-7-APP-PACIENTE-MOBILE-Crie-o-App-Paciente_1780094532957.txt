@@ -1,0 +1,78 @@
+═══ PROMPT PARTE 7 — APP PACIENTE MOBILE ═══
+
+Crie o App Paciente Mobile do HubWorkz Saúde dentro de apps/paciente-app.
+Stack: React 18 + TypeScript + Vite + Tailwind CSS + Capacitor 6
+appId Capacitor: br.com.hubworkz.saude.paciente
+Tema: fundo BRANCO (#ffffff) com acento laranja #F56E0F (modo claro)
+Linguagem: simples, acolhedora, sem jargões técnicos ou farmacêuticos
+
+VITE CONFIG:
+export default defineConfig({ base: './', build: { outDir: 'dist' } })
+
+AUTENTICAÇÃO — verificar role = 'paciente':
+const { data: paciente } = await supabase
+  .from('pacientes')
+  .select(`*, medicamento:medicamentos(*),
+           processo:processos(*), remessas:notas_fiscais(*),
+           monitoramentos:monitoramentos(*)`)
+  .eq('user_id', user.id)
+  .single()
+Todos os dados do app vêm deste único registro.
+RLS garante que o paciente NÃO vê dados de outros pacientes.
+
+6 TELAS VIA BOTTOM NAVIGATION:
+
+TELA 1 — INÍCIO
+• Saudação: 'Olá, [nome]! Como está se sentindo hoje?'
+• Card: Meu medicamento — nome, lote, início, conservação simplificada
+• Card: Próximo D30 — data destacada, instrução amigável sobre o contato
+• Card Di IA: 'Tem dúvidas sobre seu tratamento?' + botão 'Perguntar à Di'
+• Card: Última mensagem da clínica (preview WA, últimas 2 mensagens)
+
+TELA 2 — MEU PROCESSO
+• Barra de progresso com rótulos em linguagem simples:
+  'Solicitação' | 'Cotação' | 'Preparando entrega' | 'Acompanhamento' | 'Concluído'
+• Fase atual destacada com descrição amigável do que está acontecendo
+• Dados básicos: medicamento, convênio, início, médico
+• Modo de uso com linguagem acessível (sem abreviações)
+• Próximos passos com datas previstas
+
+TELA 3 — MINHAS REMESSAS
+• Lista de remessas com ícone de status (caixa = entregue, caminhão = trânsito)
+• Rastreio: código + previsão + botão 'Rastrear externamente'
+• Guia de recebimento em 5 passos numerados (ícone por passo):
+  1 Verifique a embalagem | 2 Confirme o medicamento | 3 Temperatura
+  4 Tire as fotos         | 5 Envie para a clínica via WhatsApp
+• Histórico de mensagens da clínica sobre esta remessa (bolhas de chat)
+• Botão flutuante: WhatsApp da clínica para dúvidas
+
+TELA 4 — CONSULTAS
+• Título: 'Meus contatos com a farmacêutica'
+• Lista de D30 realizados: data + canal + resumo amigável
+• Próximo contato: destaque verde com data e instrução
+• Botão: 'Falar com a farmacêutica agora' → abre WhatsApp da clínica
+
+TELA 5 — DOCUMENTOS
+• Lista: Laudo | Prescrição | Mandato assinado | Declaração de ciência | NFs
+• Status: Disponível (verde) / Pendente (amarelo)
+• Tap em disponível → download do PDF via Supabase Storage URL assinada
+
+TELA 6 — DI IA (simplificada)
+• Mensagem inicial da Di: 'Olá [nome]! Sou a Di, sua assistente. Posso
+  responder dúvidas sobre seu medicamento e tratamento.'
+• 4 sugestões pré-definidas em botões grandes:
+  'O que é meu medicamento?'
+  'Como devo guardar em casa?'
+  'Quando recebo o próximo?'
+  'O que fazer se sentir algo diferente?'
+• Chat simples — Di usa system prompt restrito (ver Parte 8)
+• Di NÃO menciona: outros pacientes, valores financeiros, dados internos
+
+REGRAS DE SEGURANÇA DO APP PACIENTE:
+1. Nunca exibir dados de outros pacientes
+2. Nunca exibir valores de fatura ou honorários
+3. Nunca exibir dados de distribuidoras ou importadoras
+4. Em caso de dúvida médica, sempre orientar a buscar atendimento presencial
+5. Di usa system prompt específico para paciente (ver Parte 8, seção 8.3)
+
+═══ FIM DO PROMPT — PARTE 7 ═══

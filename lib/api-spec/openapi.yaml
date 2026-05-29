@@ -1,22 +1,41 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: HubWorkz Saúde API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Dashboard and metrics
+  - name: processos
+    description: Process management
+  - name: pacientes
+    description: Patient management
+  - name: medicamentos
+    description: Medication catalog
+  - name: distribuidoras
+    description: Distributor management
+  - name: faturas
+    description: Invoice management
+  - name: glosas
+    description: Glosa management
+  - name: monitoramentos
+    description: D30 monitoring
+  - name: cotacoes
+    description: Quotation management
+  - name: ai
+    description: Di IA assistant
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +43,1138 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get aggregated dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/activity:
+    get:
+      operationId: getDashboardActivity
+      tags: [dashboard]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: Activity list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /processos:
+    get:
+      operationId: listProcessos
+      tags: [processos]
+      summary: List all processos
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: fase
+          schema:
+            type: string
+        - in: query
+          name: clinica_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Processo list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Processo"
+    post:
+      operationId: createProcesso
+      tags: [processos]
+      summary: Create a new processo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcessoInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Processo"
+
+  /processos/{id}:
+    get:
+      operationId: getProcesso
+      tags: [processos]
+      summary: Get a processo by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Processo detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Processo"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateProcesso
+      tags: [processos]
+      summary: Update a processo
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcessoUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Processo"
+
+  /processos/stats/fases:
+    get:
+      operationId: getProcessoFaseStats
+      tags: [processos]
+      summary: Get processo counts grouped by fase
+      responses:
+        "200":
+          description: Fase stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FaseStat"
+
+  /pacientes:
+    get:
+      operationId: listPacientes
+      tags: [pacientes]
+      summary: List all patients
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: clinica_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Patient list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Paciente"
+    post:
+      operationId: createPaciente
+      tags: [pacientes]
+      summary: Create a patient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacienteInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paciente"
+
+  /pacientes/{id}:
+    get:
+      operationId: getPaciente
+      tags: [pacientes]
+      summary: Get a patient by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Patient detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paciente"
+        "404":
+          description: Not found
+    patch:
+      operationId: updatePaciente
+      tags: [pacientes]
+      summary: Update a patient
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacienteUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paciente"
+
+  /medicamentos:
+    get:
+      operationId: listMedicamentos
+      tags: [medicamentos]
+      summary: List medication catalog
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Medication list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Medicamento"
+    post:
+      operationId: createMedicamento
+      tags: [medicamentos]
+      summary: Create a medication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicamentoInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Medicamento"
+
+  /medicamentos/{id}:
+    get:
+      operationId: getMedicamento
+      tags: [medicamentos]
+      summary: Get a medication by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Medication detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Medicamento"
+
+  /distribuidoras:
+    get:
+      operationId: listDistribuidoras
+      tags: [distribuidoras]
+      summary: List distributors
+      responses:
+        "200":
+          description: Distributor list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Distribuidora"
+    post:
+      operationId: createDistribuidora
+      tags: [distribuidoras]
+      summary: Create a distributor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DistribuidoraInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Distribuidora"
+
+  /distribuidoras/{id}:
+    get:
+      operationId: getDistribuidora
+      tags: [distribuidoras]
+      summary: Get a distributor by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Distributor detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Distribuidora"
+
+  /faturas:
+    get:
+      operationId: listFaturas
+      tags: [faturas]
+      summary: List invoices
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: convenio_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invoice list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Fatura"
+    post:
+      operationId: createFatura
+      tags: [faturas]
+      summary: Create an invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaturaInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fatura"
+
+  /faturas/{id}:
+    get:
+      operationId: getFatura
+      tags: [faturas]
+      summary: Get an invoice by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invoice detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fatura"
+    patch:
+      operationId: updateFatura
+      tags: [faturas]
+      summary: Update an invoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaturaUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fatura"
+
+  /glosas:
+    get:
+      operationId: listGlosas
+      tags: [glosas]
+      summary: List glosas
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Glosa list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Glosa"
+    post:
+      operationId: createGlosa
+      tags: [glosas]
+      summary: Create a glosa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GlosaInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Glosa"
+
+  /glosas/{id}:
+    patch:
+      operationId: updateGlosa
+      tags: [glosas]
+      summary: Update a glosa (e.g. submit recurso)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GlosaUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Glosa"
+
+  /monitoramentos:
+    get:
+      operationId: listMonitoramentos
+      tags: [monitoramentos]
+      summary: List D30 monitoring records
+      parameters:
+        - in: query
+          name: mes
+          schema:
+            type: string
+        - in: query
+          name: paciente_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Monitoring list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Monitoramento"
+    post:
+      operationId: createMonitoramento
+      tags: [monitoramentos]
+      summary: Create a monitoring record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MonitoramentoInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Monitoramento"
+
+  /monitoramentos/{id}:
+    patch:
+      operationId: updateMonitoramento
+      tags: [monitoramentos]
+      summary: Update a monitoring record
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MonitoramentoUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Monitoramento"
+
+  /cotacoes:
+    get:
+      operationId: listCotacoes
+      tags: [cotacoes]
+      summary: List quotations
+      parameters:
+        - in: query
+          name: processo_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Quotation list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cotacao"
+    post:
+      operationId: createCotacao
+      tags: [cotacoes]
+      summary: Create a quotation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CotacaoInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cotacao"
+
+  /ai/chat:
+    post:
+      operationId: sendAiMessage
+      tags: [ai]
+      summary: Send a message to Di IA (Anthropic)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiMessageInput"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiMessageResponse"
+
+  /ai/history:
+    get:
+      operationId: getAiHistory
+      tags: [ai]
+      summary: Get Di IA chat history
+      parameters:
+        - in: query
+          name: clinica_id
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Chat history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AiMessage"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    DashboardStats:
+      type: object
+      required:
+        - total_processos
+        - processos_por_fase
+        - total_pacientes
+        - faturamento_total
+        - glosas_pendentes
+        - d30_hoje
+        - alertas
+      properties:
+        total_processos:
+          type: integer
+        processos_por_fase:
+          type: object
+          additionalProperties:
+            type: integer
+        total_pacientes:
+          type: integer
+        faturamento_total:
+          type: number
+        glosas_pendentes:
+          type: integer
+        d30_hoje:
+          type: integer
+        alertas:
+          type: integer
+
+    ActivityItem:
+      type: object
+      required: [id, tipo, descricao, created_at]
+      properties:
+        id:
+          type: string
+        tipo:
+          type: string
+        descricao:
+          type: string
+        usuario:
+          type: ["string", "null"]
+        created_at:
+          type: string
+
+    FaseStat:
+      type: object
+      required: [fase, count]
+      properties:
+        fase:
+          type: string
+        count:
+          type: integer
+
+    Processo:
+      type: object
+      required: [id, clinica_id, status, fase_atual, created_at]
+      properties:
+        id:
+          type: string
+        clinica_id:
+          type: string
+        paciente_id:
+          type: ["string", "null"]
+        medicamento_id:
+          type: ["string", "null"]
+        distribuidora_id:
+          type: ["string", "null"]
+        status:
+          type: string
+        fase_atual:
+          type: integer
+        numero_protocolo:
+          type: ["string", "null"]
+        observacoes:
+          type: ["string", "null"]
+        created_at:
+          type: string
+        updated_at:
+          type: ["string", "null"]
+
+    ProcessoInput:
+      type: object
+      required: [clinica_id, fase_atual, status]
+      properties:
+        clinica_id:
+          type: string
+        paciente_id:
+          type: string
+        medicamento_id:
+          type: string
+        distribuidora_id:
+          type: string
+        status:
+          type: string
+        fase_atual:
+          type: integer
+        numero_protocolo:
+          type: string
+        observacoes:
+          type: string
+
+    ProcessoUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+        fase_atual:
+          type: integer
+        distribuidora_id:
+          type: string
+        observacoes:
+          type: string
+
+    Paciente:
+      type: object
+      required: [id, nome, clinica_id, created_at]
+      properties:
+        id:
+          type: string
+        clinica_id:
+          type: string
+        nome:
+          type: string
+        cpf:
+          type: ["string", "null"]
+        data_nascimento:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        telefone:
+          type: ["string", "null"]
+        convenio:
+          type: ["string", "null"]
+        numero_carteirinha:
+          type: ["string", "null"]
+        diagnostico:
+          type: ["string", "null"]
+        cid:
+          type: ["string", "null"]
+        mandato_ativo:
+          type: boolean
+        created_at:
+          type: string
+
+    PacienteInput:
+      type: object
+      required: [nome, clinica_id]
+      properties:
+        clinica_id:
+          type: string
+        nome:
+          type: string
+        cpf:
+          type: string
+        data_nascimento:
+          type: string
+        email:
+          type: string
+        telefone:
+          type: string
+        convenio:
+          type: string
+        numero_carteirinha:
+          type: string
+        diagnostico:
+          type: string
+        cid:
+          type: string
+
+    PacienteUpdate:
+      type: object
+      properties:
+        nome:
+          type: string
+        email:
+          type: string
+        telefone:
+          type: string
+        convenio:
+          type: string
+        numero_carteirinha:
+          type: string
+        diagnostico:
+          type: string
+        mandato_ativo:
+          type: boolean
+
+    Medicamento:
+      type: object
+      required: [id, nome, created_at]
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+        principio_ativo:
+          type: ["string", "null"]
+        apresentacao:
+          type: ["string", "null"]
+        modo_uso:
+          type: ["string", "null"]
+        conservacao:
+          type: ["string", "null"]
+        registro_anvisa:
+          type: ["string", "null"]
+        categoria:
+          type: ["string", "null"]
+        created_at:
+          type: string
+
+    MedicamentoInput:
+      type: object
+      required: [nome]
+      properties:
+        nome:
+          type: string
+        principio_ativo:
+          type: string
+        apresentacao:
+          type: string
+        modo_uso:
+          type: string
+        conservacao:
+          type: string
+        registro_anvisa:
+          type: string
+        categoria:
+          type: string
+
+    Distribuidora:
+      type: object
+      required: [id, nome, created_at]
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+        cnpj:
+          type: ["string", "null"]
+        responsavel:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        telefone:
+          type: ["string", "null"]
+        tipo:
+          type: ["string", "null"]
+        status:
+          type: ["string", "null"]
+        created_at:
+          type: string
+
+    DistribuidoraInput:
+      type: object
+      required: [nome]
+      properties:
+        nome:
+          type: string
+        cnpj:
+          type: string
+        responsavel:
+          type: string
+        email:
+          type: string
+        telefone:
+          type: string
+        tipo:
+          type: string
+
+    Fatura:
+      type: object
+      required: [id, tipo, status, created_at]
+      properties:
+        id:
+          type: string
+        processo_id:
+          type: ["string", "null"]
+        paciente_id:
+          type: ["string", "null"]
+        convenio_id:
+          type: ["string", "null"]
+        tipo:
+          type: string
+        numero_nf:
+          type: ["string", "null"]
+        valor:
+          type: ["number", "null"]
+        status:
+          type: string
+        data_emissao:
+          type: ["string", "null"]
+        data_vencimento:
+          type: ["string", "null"]
+        created_at:
+          type: string
+
+    FaturaInput:
+      type: object
+      required: [tipo, status]
+      properties:
+        processo_id:
+          type: string
+        paciente_id:
+          type: string
+        convenio_id:
+          type: string
+        tipo:
+          type: string
+        numero_nf:
+          type: string
+        valor:
+          type: number
+        status:
+          type: string
+        data_emissao:
+          type: string
+        data_vencimento:
+          type: string
+
+    FaturaUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+        numero_nf:
+          type: string
+        valor:
+          type: number
+
+    Glosa:
+      type: object
+      required: [id, status, created_at]
+      properties:
+        id:
+          type: string
+        fatura_id:
+          type: ["string", "null"]
+        processo_id:
+          type: ["string", "null"]
+        motivo:
+          type: ["string", "null"]
+        valor:
+          type: ["number", "null"]
+        status:
+          type: string
+        prazo_recurso:
+          type: ["string", "null"]
+        recurso_texto:
+          type: ["string", "null"]
+        created_at:
+          type: string
+
+    GlosaInput:
+      type: object
+      required: [status]
+      properties:
+        fatura_id:
+          type: string
+        processo_id:
+          type: string
+        motivo:
+          type: string
+        valor:
+          type: number
+        status:
+          type: string
+        prazo_recurso:
+          type: string
+
+    GlosaUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+        recurso_texto:
+          type: string
+
+    Monitoramento:
+      type: object
+      required: [id, created_at]
+      properties:
+        id:
+          type: string
+        paciente_id:
+          type: ["string", "null"]
+        processo_id:
+          type: ["string", "null"]
+        data_contato:
+          type: ["string", "null"]
+        adesao:
+          type: ["string", "null"]
+        eventos_adversos:
+          type: ["string", "null"]
+        observacoes:
+          type: ["string", "null"]
+        status:
+          type: ["string", "null"]
+        created_at:
+          type: string
+
+    MonitoramentoInput:
+      type: object
+      properties:
+        paciente_id:
+          type: string
+        processo_id:
+          type: string
+        data_contato:
+          type: string
+        adesao:
+          type: string
+        eventos_adversos:
+          type: string
+        observacoes:
+          type: string
+        status:
+          type: string
+
+    MonitoramentoUpdate:
+      type: object
+      properties:
+        adesao:
+          type: string
+        eventos_adversos:
+          type: string
+        observacoes:
+          type: string
+        status:
+          type: string
+
+    Cotacao:
+      type: object
+      required: [id, created_at]
+      properties:
+        id:
+          type: string
+        processo_id:
+          type: ["string", "null"]
+        medicamento_id:
+          type: ["string", "null"]
+        fornecedor_tipo:
+          type: ["string", "null"]
+        fornecedor_id:
+          type: ["string", "null"]
+        valor:
+          type: ["number", "null"]
+        prazo_entrega:
+          type: ["string", "null"]
+        status:
+          type: ["string", "null"]
+        recomendada:
+          type: boolean
+        created_at:
+          type: string
+
+    CotacaoInput:
+      type: object
+      properties:
+        processo_id:
+          type: string
+        medicamento_id:
+          type: string
+        fornecedor_tipo:
+          type: string
+        fornecedor_id:
+          type: string
+        valor:
+          type: number
+        prazo_entrega:
+          type: string
+        status:
+          type: string
+        recomendada:
+          type: boolean
+
+    AiMessageInput:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        clinica_id:
+          type: string
+        context:
+          type: ["string", "null"]
+
+    AiMessage:
+      type: object
+      required: [id, role, content, created_at]
+      properties:
+        id:
+          type: string
+        clinica_id:
+          type: ["string", "null"]
+        role:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: string
+
+    AiMessageResponse:
+      type: object
+      required: [message, response]
+      properties:
+        message:
+          type: string
+        response:
+          type: string
+        tokens_used:
+          type: ["integer", "null"]

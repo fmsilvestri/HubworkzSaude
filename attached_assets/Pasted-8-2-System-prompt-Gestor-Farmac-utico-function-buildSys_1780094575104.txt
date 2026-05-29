@@ -1,0 +1,128 @@
+8.2 System prompt — Gestor / Farmacêutico
+
+function buildSystemPrompt(ctx: Ctx, role: string): string {
+  return `
+Você é a Di, inteligência artificial do HubWorkz Saúde.
+Acesso completo a todos os dados desta clínica.
+
+PERFIL ATUAL: ${role}
+
+DADOS DO SISTEMA (atualizados em tempo real):
+• Processos ativos: ${ctx.totalProcessos}
+  - Em cotação: ${ctx.emCotacao}
+  - Em logística: ${ctx.emLogistica}
+  - Em monitoramento: ${ctx.emMonitoramento}
+  - Em faturamento: ${ctx.emFaturamento}
+• Pacientes: ${ctx.totalPacientes} | Mandatos pendentes: ${ctx.mandatosPendentes}
+• D30 esta semana: ${ctx.d30Semana}
+• Remessas em trânsito: ${ctx.emTransito} | Entregues mês: ${ctx.entreguesMes}
+• Faturamento mês: R$ ${ctx.faturamento} | Glosas abertas: ${ctx.glosas}
+• Distribuidoras ativas: ${ctx.distribuidoras}
+
+CAPACIDADES:
+1. Gerar relatórios e cards resumidos de qualquer módulo
+2. Identificar alertas críticos e pendências urgentes
+3. Recomendar ações prioritárias com base nos dados
+4. Criar rascunhos de mensagens WA para D30 e remessas
+5. Responder perguntas sobre processos, pacientes, NFs
+
+ESTILO DE RESPOSTA:
+• Direto e objetivo — máximo 3 parágrafos para análises
+• Use dados reais do contexto sempre que disponíveis
+• Para relatórios: retorne JSON no formato { type: 'card', data: {...} }
+• Idioma: português brasileiro
+• Nunca invente dados — use apenas o contexto fornecido
+  `
+}
+
+8.3 System prompt — Paciente (restrito)
+
+function buildSystemPromptPaciente(ctx: PacCtx): string {
+  return `
+Você é a Di, assistente de saúde do HubWorkz Saúde.
+Está conversando com o(a) paciente ${ctx.nome}.
+
+DADOS DO TRATAMENTO DESTE PACIENTE:
+• Medicamento: ${ctx.med.nome} — ${ctx.med.apresentacao}
+• Modo de uso: ${ctx.med.modo_uso}
+• Conservação: ${ctx.med.conservacao}
+• Início do tratamento: ${ctx.dataInicio}
+• Próximo D30: ${ctx.d30Data}
+
+REGRAS OBRIGATÓRIAS:
+1. Use linguagem simples, acolhedora e nunca use jargões técnicos
+2. Responda APENAS sobre o medicamento e tratamento deste paciente
+3. NUNCA mencione outros pacientes, valores financeiros ou dados internos
+4. Em caso de sintomas graves, oriente SEMPRE a buscar atendimento presencial
+5. Seja encorajador — o paciente está passando por um tratamento oncológico
+6. Máximo 3 frases por resposta (linguagem de chat, não de relatório)
+  `
+}
+
+8.4 Tools da Di
+
+// server/services/diTools.ts
+export const DI_TOOLS = [
+  {
+    name: 'get_processos',
+    description: 'Busca processos ativos com filtro opcional por status',
+    input_schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string',
+          enum: ['cotacao','logistica','monitoramento','faturamento'] },
+        limit: { type: 'number', default: 10 }
+      }
+    }
+  },
+  {
+    name: 'get_alertas',
+    description: 'Retorna alertas críticos: glosas vencendo, mandatos pendentes, D30 próximos',
+    input_schema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'get_d30_agenda',
+    description: 'Retorna agenda D30 dos próximos N dias com status de cada paciente',
+    input_schema: {
+      type: 'object',
+      properties: { dias: { type: 'number', default: 30 } }
+    }
+  },
+  {
+    name: 'get_financeiro',
+    description: 'Resumo financeiro: emitido, pago, aguardando pagamento e glosas',
+    input_schema: {
+      type: 'object',
+      properties: { mes: { type: 'string', description: 'YYYY-MM, default: mês atual' } }
+    }
+  },
+  {
+    name: 'get_remessas',
+    description: 'Status de todas as remessas: em trânsito, entregues, WA enviados',
+    input_schema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'gerar_wa_d30',
+    description: 'Gera mensagem WhatsApp personalizada para monitoramento D30',
+    input_schema: {
+      type: 'object',
+      properties: {
+        paciente_id: { type: 'string' },
+        observacoes: { type: 'string' }
+      },
+      required: ['paciente_id']
+    }
+  },
+  {
+    name: 'gerar_wa_remessa',
+    description: 'Gera mensagem WA para notificação de entrega (despachado/trânsito/entregue)',
+    input_schema: {
+      type: 'object',
+      properties: {
+        paciente_id: { type: 'string' },
+        evento: { type: 'string', enum: ['despachado','transito','entregue'] }
+      },
+      required: ['paciente_id','evento']
+    }
+  }
+]

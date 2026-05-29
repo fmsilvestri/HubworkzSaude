@@ -1,0 +1,93 @@
+═══ PROMPT PARTE 6 — APP GESTOR MOBILE ═══
+
+Crie o App Gestor Mobile do HubWorkz Saúde dentro de apps/gestor-app.
+Stack: React 18 + TypeScript + Vite + Tailwind CSS + Capacitor 6
+appId Capacitor: br.com.hubworkz.saude.gestor
+Interface 100% mobile-first, max-width 390px, fundo escuro #151419
+
+VITE CONFIG OBRIGATÓRIO (Capacitor WebView não aceita '/' como base):
+// vite.config.ts
+export default defineConfig({
+  base: './',  // CRÍTICO — não alterar
+  build: { outDir: 'dist' },
+})
+
+AUTENTICAÇÃO — verificar role = 'gestor':
+const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+if (profile.role !== 'gestor') { await supabase.auth.signOut(); return }
+
+5 TELAS VIA BOTTOM NAVIGATION:
+
+TELA 1 — INÍCIO (Home.tsx)
+• Topbar: logo HubWorkz Saúde + pill Di IA (abre Tela 5) + avatar gestor
+• Grid 2x2 de métricas: Processos ativos | Pacientes | D30 semana | Faturamento
+• Card Di IA: 4 pills de atalho (Alertas/Resumo/D30/Financeiro) → chama API Di
+  Resultado da Di aparece inline no card em formato escuro
+• Card Alertas críticos: por cor (vermelho=crítico / amarelo=atenção / verde=info)
+  Cada alerta tem botão de ação direta
+• Card D30 próximos: avatar + nome + tag data + botão WA verde por paciente
+• Card Remessas em trânsito: nome + med + botão Notif. WA
+• Card Processos recentes: 3 últimos com status badge
+• Grid 2x2: Distribuidoras | Faturamento | Configurações | Di IA (botões)
+
+TELA 2 — PROCESSOS (Processos.tsx)
+• Cards por processo: ID + paciente + status badge + valor
+• Barra de progresso de fases (5 passos coloridos) em cada card
+• Tap no card → detalhe:
+  - Dados do paciente (nome, diagnóstico, convênio, D30)
+  - Dados do medicamento (nome, apresentação, modo de uso)
+  - Distribuidora vinculada (nome, prazos, WA)
+  - Remessa vinculada (NF, rastreio, previsão, botão WA notif.)
+  - Histórico de eventos com datas
+
+TELA 3 — PACIENTES (Pacientes.tsx)
+• Cards com: avatar initials, nome, diagnóstico, badges D30/Mandato/Remessa
+• Tap → ficha completa:
+  - Header com avatar grande + nome + processo
+  - Dados pessoais, clínicos, convênio, mandato
+  - Remessas: histórico WA das últimas 2 mensagens
+  - Botões: D30 WA | Notif. Remessa | Editar | Di análise
+  - Botão 'Di análise': gera texto contextualizado com recomendação de ação
+
+TELA 4 — WA / D30 (WA.tsx)
+• Seção 1 — Agenda D30:
+  Lista de todos os pacientes com data + tag status + botão WA verde
+  Ao tocar WA → tela de chat D30:
+    - Header paciente + telefone + data D30
+    - Chat com mensagens pré-definidas (bolhas verde para enviadas)
+    - Campo de texto + botão enviar
+    - Pills de frases rápidas: 'Adesão confirmada?' / 'Algum sintoma?' / etc.
+    - Seção Registro D30: selects adesão/eventos + textarea observações
+    - Botão 'Salvar no prontuário' → POST /monitoramentos
+• Seção 2 — Notificações de remessa:
+  Lista pacientes com status remessa + botão Notif. para em trânsito
+  Ao tocar → tela de notificação WA:
+    - 3 botões de evento: Despachado / Em trânsito / Entregue
+    - Prévia da mensagem editável (preenchida automaticamente)
+    - Botão enviar → POST /whatsapp/send via Evolution API
+    - Histórico WA da remessa abaixo
+
+TELA 5 — DI IA (Di.tsx)
+• Header: avatar Di (gradient roxo-verde) + 'Di — HubWorkz Saúde IA' + dot pulsante
+• Histórico de mensagens do Supabase (di_messages) por user_id
+• Sugestões em pills: Resumo | D30 | Remessas | Faturamento | Alertas | Processos
+• Campo de texto + botão enviar
+• Di responde com texto + cards de dados (background #1B1B1E)
+• Persistir conversa no Supabase: INSERT di_messages após cada par user/assistant
+
+HOOK useDi() — src/hooks/useDi.ts:
+export function useDi() {
+  const [msgs, setMsgs] = useState<DiMsg[]>([])
+  const [loading, setLoading] = useState(false)
+  async function send(text: string) {
+    setLoading(true)
+    await supabase.from('di_messages').insert({ role:'user', content:text, ... })
+    const res = await api.post('/di/chat', { message: text, context: 'gestor' })
+    await supabase.from('di_messages').insert({ role:'assistant', content:res.data.response, ... })
+    setMsgs(prev => [...prev, userMsg, assistantMsg])
+    setLoading(false)
+  }
+  return { msgs, send, loading }
+}
+
+═══ FIM DO PROMPT — PARTE 6 ═══
