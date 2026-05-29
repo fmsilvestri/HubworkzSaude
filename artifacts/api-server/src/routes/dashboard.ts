@@ -6,10 +6,12 @@ const router: IRouter = Router();
 router.get("/dashboard/stats", async (req, res): Promise<void> => {
   try {
     const [processosRes, pacientesRes, faturasRes, glosasRes, monitoramentosRes] = await Promise.all([
-      supabase.from("processos").select("id, fase_atual, status", { count: "exact" }),
+      // Select both 'fase' (existing) and 'fase_atual' (post-migration alias)
+      supabase.from("processos").select("*", { count: "exact" }),
       supabase.from("pacientes").select("id", { count: "exact" }),
-      supabase.from("notas_fiscais").select("valor").eq("status", "emitida"),
-      supabase.from("glosas").select("id", { count: "exact" }).eq("status", "pendente"),
+      // Use nf_status (existing) — after migration, status alias also exists
+      supabase.from("notas_fiscais").select("valor,nf_status").eq("nf_status", "emitida"),
+      supabase.from("glosas").select("id", { count: "exact" }).in("status", ["aberta","pendente","em_analise"]),
       supabase.from("monitoramentos").select("id", { count: "exact" }).gte(
         "data_contato",
         new Date().toISOString().split("T")[0]
@@ -19,12 +21,17 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
     const processos = processosRes.data ?? [];
     const faseMap: Record<string, number> = {};
     for (const p of processos) {
-      const fase = `fase_${p.fase_atual ?? 0}`;
+      const row = p as Record<string, unknown>;
+      const faseNum = row.fase_atual ?? row.fase ?? 0;
+      const fase = `fase_${faseNum}`;
       faseMap[fase] = (faseMap[fase] ?? 0) + 1;
     }
 
     const faturamento_total = (faturasRes.data ?? []).reduce(
-      (sum, nf) => sum + (Number(nf.valor) || 0),
+      (sum, nf) => {
+        const row = nf as Record<string, unknown>;
+        return sum + (Number(row.valor_total ?? row.valor) || 0);
+      },
       0
     );
 
@@ -48,12 +55,12 @@ router.get("/dashboard/activity", async (req, res): Promise<void> => {
     const [processosRes, monitoramentosRes, glosasRes] = await Promise.all([
       supabase
         .from("processos")
-        .select("id, status, fase_atual, created_at")
+        .select("id, status, fase, created_at")
         .order("created_at", { ascending: false })
         .limit(5),
       supabase
         .from("monitoramentos")
-        .select("id, status, created_at")
+        .select("id, created_at")
         .order("created_at", { ascending: false })
         .limit(5),
       supabase
@@ -64,31 +71,41 @@ router.get("/dashboard/activity", async (req, res): Promise<void> => {
     ]);
 
     const activity = [
-      ...(processosRes.data ?? []).map((p) => ({
-        id: p.id,
-        tipo: "processo",
-        descricao: `Processo atualizado para Fase ${p.fase_atual} — ${p.status}`,
-        usuario: null,
-        created_at: p.created_at,
-      })),
-      ...(monitoramentosRes.data ?? []).map((m) => ({
-        id: m.id,
-        tipo: "monitoramento",
-        descricao: `Monitoramento D30 registrado — ${m.status ?? "pendente"}`,
-        usuario: null,
-        created_at: m.created_at,
-      })),
-      ...(glosasRes.data ?? []).map((g) => ({
-        id: g.id,
-        tipo: "glosa",
-        descricao: `Glosa: ${g.motivo ?? "sem motivo"} — ${g.status}`,
-        usuario: null,
-        created_at: g.created_at,
-      })),
+      ...(processosRes.data ?? []).map((p) => {
+        const row = p as Record<string, unknown>;
+        const faseNum = row.fase_atual ?? row.fase ?? 1;
+        return {
+          id: row.id,
+          tipo: "processo",
+          descricao: `Processo atualizado para Fase ${faseNum} — ${row.status}`,
+          usuario: null,
+          created_at: row.created_at,
+        };
+      }),
+      ...(monitoramentosRes.data ?? []).map((m) => {
+        const row = m as Record<string, unknown>;
+        return {
+          id: row.id,
+          tipo: "monitoramento",
+          descricao: `Monitoramento D30 registrado`,
+          usuario: null,
+          created_at: row.created_at,
+        };
+      }),
+      ...(glosasRes.data ?? []).map((g) => {
+        const row = g as Record<string, unknown>;
+        return {
+          id: row.id,
+          tipo: "glosa",
+          descricao: `Glosa: ${row.motivo ?? "sem motivo"} — ${row.status}`,
+          usuario: null,
+          created_at: row.created_at,
+        };
+      }),
     ]
       .sort(
         (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          new Date(String(b.created_at)).getTime() - new Date(String(a.created_at)).getTime()
       )
       .slice(0, 10);
 

@@ -11,7 +11,11 @@ router.get("/processos", async (req, res): Promise<void> => {
       .order("created_at", { ascending: false });
 
     if (req.query["status"]) query = query.eq("status", String(req.query["status"]));
-    if (req.query["fase"]) query = query.eq("fase_atual", Number(req.query["fase"]));
+    if (req.query["fase"]) {
+      const fase = Number(req.query["fase"]);
+      // Support both column names (pre and post migration)
+      query = query.or(`fase_atual.eq.${fase},fase.eq.${fase}`);
+    }
     if (req.query["clinica_id"]) query = query.eq("clinica_id", String(req.query["clinica_id"]));
 
     const { data, error } = await query;
@@ -42,12 +46,13 @@ router.get("/processos/stats/fases", async (_req, res): Promise<void> => {
   try {
     const { data, error } = await supabase
       .from("processos")
-      .select("fase_atual");
+      .select("fase");
     if (error) throw error;
 
     const counts: Record<string, number> = {};
     for (const p of data ?? []) {
-      const fase = `Fase ${p.fase_atual}`;
+      const faseNum = (p as Record<string, unknown>).fase_atual ?? (p as Record<string, unknown>).fase ?? 0;
+      const fase = `Fase ${faseNum}`;
       counts[fase] = (counts[fase] ?? 0) + 1;
     }
 

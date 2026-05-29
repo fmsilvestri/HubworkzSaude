@@ -63,20 +63,21 @@ export async function buildGestorCtx(clinica_id: string): Promise<GestorCtx> {
       .select("data_contato")
       .gte("data_contato", now.toISOString())
       .lte("data_contato", semanaFim),
+    // Use nf_status (existing column) — after migration 'status' alias also exists
     supabase
       .from("notas_fiscais")
       .select("id", { count: "exact" })
-      .eq("status", "transito"),
+      .eq("nf_status", "transito"),
     supabase
       .from("notas_fiscais")
       .select("id", { count: "exact" })
-      .eq("status", "entregue")
+      .eq("nf_status", "entregue")
       .gte("data_emissao", `${mesAtual}-01`),
     supabase
       .from("notas_fiscais")
-      .select("valor_total")
+      .select("valor")
       .gte("data_emissao", `${mesAtual}-01`)
-      .eq("status", "emitida"),
+      .eq("nf_status", "emitida"),
     supabase
       .from("glosas")
       .select("id", { count: "exact" })
@@ -85,10 +86,10 @@ export async function buildGestorCtx(clinica_id: string): Promise<GestorCtx> {
   ]);
 
   const processosData = processos.data ?? [];
-  const faturamentoTotal = (faturas.data ?? []).reduce(
-    (sum, nf) => sum + Number((nf as { valor_total?: unknown }).valor_total ?? 0),
-    0
-  );
+  const faturamentoTotal = (faturas.data ?? []).reduce((sum, nf) => {
+    const row = nf as Record<string, unknown>;
+    return sum + Number(row.valor ?? 0);
+  }, 0);
 
   const mandatosPendentes = (pacientes.data ?? []).filter(
     (p) => (p as { mandato_status?: string }).mandato_status === "pendente"
@@ -115,27 +116,47 @@ export async function buildGestorCtx(clinica_id: string): Promise<GestorCtx> {
 }
 
 export async function buildPacienteCtx(user_id: string): Promise<PacienteCtx | null> {
+  // Fetch patient base data with medicamento join (forward FK via medicamento_id)
   const { data: paciente } = await supabase
     .from("pacientes")
     .select(`
       nome,
-      medicamento:medicamentos(nome, concentracao, via_administracao, conservacao),
-      processo:processos(created_at),
-      monitoramentos(data_contato, status)
+      medicamento:medicamentos(nome, concentracao, apresentacao, via_administracao, modo_uso, conservacao)
     `)
     .eq("user_id", user_id)
     .single();
 
   if (!paciente) return null;
 
-  const med = (paciente as Record<string, unknown>).medicamento as Record<string, string> | null;
-  const processo = (paciente as Record<string, unknown>).processo as Record<string, string> | null;
-  const monitoramentos = (paciente as Record<string, unknown>).monitoramentos as Array<{ data_contato?: string; status: string }> | null;
+  const row = paciente as Record<string, unknown>;
+  const pacienteId = row.id as string | undefined;
+
+  // Fetch process data separately (reverse FK: processos.paciente_id → pacientes.id)
+  const { data: processosArr } = pacienteId
+    ? await supabase
+        .from("processos")
+        .select("created_at")
+        .eq("paciente_id", pacienteId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+    : { data: null };
+
+  // Fetch upcoming D30 monitoramentos
+  const { data: monitoramentosArr } = pacienteId
+    ? await supabase
+        .from("monitoramentos")
+        .select("data_contato, status")
+        .eq("paciente_id", pacienteId)
+        .order("data_contato", { ascending: true })
+    : { data: null };
+
+  const med = row.medicamento as Record<string, string> | null;
+  const processo = (processosArr ?? [])[0] as Record<string, string> | undefined;
 
   const agora = new Date();
-  const proximoD30 = (monitoramentos ?? [])
-    .filter((m) => m.status === "agendado" && m.data_contato)
-    .map((m) => new Date(m.data_contato!))
+  const proximoD30 = ((monitoramentosArr ?? []) as Array<Record<string, string>>)
+    .filter((m) => (m.status === "agendado" || !m.status) && m.data_contato)
+    .map((m) => new Date(m.data_contato))
     .filter((d) => d > agora)
     .sort((a, b) => a.getTime() - b.getTime())[0];
 
@@ -148,11 +169,11 @@ export async function buildPacienteCtx(user_id: string): Promise<PacienteCtx | n
     : "a informar";
 
   return {
-    nome: (paciente as Record<string, unknown>).nome as string,
+    nome: row.nome as string,
     med: {
       nome: med?.nome ?? "não informado",
-      apresentacao: med?.concentracao ?? "não informada",
-      modo_uso: med?.via_administracao ?? "consulte o médico",
+      apresentacao: (med?.concentracao ?? med?.apresentacao) ?? "não informada",
+      modo_uso: (med?.via_administracao ?? med?.modo_uso) ?? "consulte o médico",
       conservacao: med?.conservacao ?? "consulte a farmácia",
     },
     dataInicio,
@@ -229,20 +250,21 @@ export async function executeTool(
       case "get_processos": {
         let query = supabase
           .from("processos")
-          .select("id, status, numero_protocolo, created_at, pacientes(nome)")
+          .select("id, status, fase, created_at, pacientes(nome)")
           .order("created_at", { ascending: false })
           .limit(Number(input.limit ?? 10));
         if (input.status) query = query.eq("status", input.status as string);
         const { data } = await query;
+        const normalized = (data ?? []).map((p) => {
+          const row = p as Record<string, unknown>;
+          return { ...row, fase_atual: row.fase_atual ?? row.fase ?? 1 };
+        });
         const card: ToolCard = {
           type: "card",
           title: `Processos${input.status ? ` — ${input.status}` : ""}`,
-          data: { processos: data ?? [], total: (data ?? []).length },
+          data: { processos: normalized, total: normalized.length },
         };
-        return {
-          text: JSON.stringify(card),
-          card,
-        };
+        return { text: JSON.stringify(card), card };
       }
 
       case "get_alertas": {
@@ -262,8 +284,7 @@ export async function executeTool(
             .from("monitoramentos")
             .select("id, data_contato, pacientes(nome)")
             .gte("data_contato", agora.toISOString())
-            .lte("data_contato", em7Dias)
-            .eq("status", "agendado"),
+            .lte("data_contato", em7Dias),
         ]);
         const card: ToolCard = {
           type: "card",
@@ -300,20 +321,20 @@ export async function executeTool(
         const [nfs, glosas] = await Promise.all([
           supabase
             .from("notas_fiscais")
-            .select("valor_total, status")
+            .select("valor, nf_status")
             .gte("data_emissao", `${mes}-01`),
           supabase
             .from("glosas")
             .select("valor, status")
             .gte("created_at", `${mes}-01`),
         ]);
-        const nfsData = nfs.data ?? [];
-        const emitido = nfsData.reduce((s, n) => s + Number((n as Record<string, unknown>).valor_total ?? 0), 0);
+        const nfsData = (nfs.data ?? []) as Array<Record<string, unknown>>;
+        const emitido = nfsData.reduce((s, n) => s + Number(n.valor ?? 0), 0);
         const pago = nfsData
-          .filter((n) => (n as Record<string, unknown>).status === "paga")
-          .reduce((s, n) => s + Number((n as Record<string, unknown>).valor_total ?? 0), 0);
-        const totalGlosas = (glosas.data ?? []).reduce(
-          (s, g) => s + Number((g as Record<string, unknown>).valor ?? 0),
+          .filter((n) => n.nf_status === "paga")
+          .reduce((s, n) => s + Number(n.valor ?? 0), 0);
+        const totalGlosas = ((glosas.data ?? []) as Array<Record<string, unknown>>).reduce(
+          (s, g) => s + Number(g.valor ?? 0),
           0
         );
         const card: ToolCard = {
@@ -332,16 +353,23 @@ export async function executeTool(
       case "get_remessas": {
         const { data } = await supabase
           .from("notas_fiscais")
-          .select("id, numero, status, codigo_rastreio, previsao_entrega, pacientes(nome)")
+          .select("id, numero_nf, nf_status, codigo_rastreio, previsao_entrega, pacientes(nome)")
           .order("created_at", { ascending: false })
           .limit(20);
-        const remessas = data ?? [];
+        const remessas = (data ?? []).map((r) => {
+          const row = r as Record<string, unknown>;
+          return {
+            ...row,
+            numero: row.numero ?? row.numero_nf,
+            status: row.nf_status,
+          };
+        });
         const card: ToolCard = {
           type: "card",
           title: "Status das Remessas",
           data: {
-            em_transito: remessas.filter((r) => (r as Record<string, unknown>).status === "transito"),
-            entregues: remessas.filter((r) => (r as Record<string, unknown>).status === "entregue"),
+            em_transito: remessas.filter((r) => r.status === "transito"),
+            entregues: remessas.filter((r) => r.status === "entregue"),
             total: remessas.length,
           },
         };
@@ -356,9 +384,11 @@ export async function executeTool(
           .single();
         if (!p) return { text: "Paciente não encontrado." };
         const nome = (p as Record<string, unknown>).nome as string;
-        const med = ((p as Record<string, unknown>).medicamentos as Record<string, string> | null)?.nome ?? "seu medicamento";
+        const med =
+          ((p as Record<string, unknown>).medicamentos as Record<string, string> | null)?.nome ??
+          "seu medicamento";
         const obs = input.observacoes ? `\n\n${input.observacoes}` : "";
-        const mensagem = `Olá, ${nome}! 👋 Aqui é a equipe da clínica HubWorkz Saúde.\n\nEstamos entrando em contato para o acompanhamento do seu tratamento com ${med}. Como você está se sentindo?${obs}\n\nCaso tenha alguma dúvida ou desconforto, não hesite em nos avisar. Estamos aqui para te apoiar! 💙`;
+        const mensagem = `Olá, ${nome}! Aqui é a equipe da clínica HubWorkz Saúde.\n\nEstamos entrando em contato para o acompanhamento do seu tratamento com ${med}. Como você está se sentindo?${obs}\n\nCaso tenha alguma dúvida ou desconforto, não hesite em nos avisar. Estamos aqui para te apoiar!`;
         return { text: mensagem };
       }
 
@@ -370,11 +400,13 @@ export async function executeTool(
           .single();
         if (!p) return { text: "Paciente não encontrado." };
         const nome = (p as Record<string, unknown>).nome as string;
-        const med = ((p as Record<string, unknown>).medicamentos as Record<string, string> | null)?.nome ?? "seu medicamento";
+        const med =
+          ((p as Record<string, unknown>).medicamentos as Record<string, string> | null)?.nome ??
+          "seu medicamento";
         const msgs: Record<string, string> = {
-          despachado: `Olá, ${nome}! 📦 Seu ${med} foi despachado e está a caminho. Assim que chegar, fotografe a embalagem e nos envie. Qualquer dúvida, estamos aqui!`,
-          transito: `Olá, ${nome}! 🚚 Seu ${med} está em trânsito e chegará em breve. Fique atento às atualizações do rastreio. Qualquer dúvida, é só chamar!`,
-          entregue: `Olá, ${nome}! ✅ Confirmamos que seu ${med} foi entregue. Lembre-se de armazená-lo corretamente. Qualquer dúvida sobre como usar ou conservar, estamos à disposição!`,
+          despachado: `Olá, ${nome}! Seu ${med} foi despachado e está a caminho. Assim que chegar, fotografe a embalagem e nos envie. Qualquer dúvida, estamos aqui!`,
+          transito: `Olá, ${nome}! Seu ${med} está em trânsito e chegará em breve. Fique atento às atualizações do rastreio. Qualquer dúvida, é só chamar!`,
+          entregue: `Olá, ${nome}! Confirmamos que seu ${med} foi entregue. Lembre-se de armazená-lo corretamente. Qualquer dúvida sobre como usar ou conservar, estamos à disposição!`,
         };
         return { text: msgs[input.evento as string] ?? "Evento não reconhecido." };
       }
