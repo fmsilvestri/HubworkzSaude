@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/gestor-app/"
+title = "HubWorkz Gestor App"
+version = "1.0.0"
+id = "artifacts/gestor-app"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/gestor-app/" ]
+localPort = 22327
+
+[services.development]
+run = "pnpm --filter @workspace/gestor-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gestor-app", "run", "build" ]
+publicDir = "artifacts/gestor-app/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22327"
+BASE_PATH = "/gestor-app/"
