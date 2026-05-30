@@ -14,4 +14,8 @@ export interface MedicamentoInput {
   conservacao?: string;
   registro?: string;
   classe?: string;
+  codigo_barras?: string;
+  data_ultima_compra?: string;
+  valor?: number;
+  quantidade_estoque?: number;
 }

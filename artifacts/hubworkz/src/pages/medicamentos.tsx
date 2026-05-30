@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Pill, Plus, Thermometer, BookOpen, Pencil, Trash2, FlaskConical } from "lucide-react";
+import { Search, Pill, Plus, Thermometer, BookOpen, Pencil, Trash2, FlaskConical, Barcode, Calendar, DollarSign, Package } from "lucide-react";
 
 const schema = z.object({
   nome: z.string().min(2, "Nome obrigatório"),
@@ -37,6 +37,10 @@ const schema = z.object({
   conservacao: z.string().optional(),
   registro: z.string().optional(),
   classe: z.string().optional(),
+  codigo_barras: z.string().optional(),
+  data_ultima_compra: z.string().optional(),
+  valor: z.coerce.number().optional(),
+  quantidade_estoque: z.coerce.number().int().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -51,6 +55,10 @@ type Medicamento = {
   registro?: string | null;
   classe?: string | null;
   ativo?: boolean | null;
+  codigo_barras?: string | null;
+  data_ultima_compra?: string | null;
+  valor?: number | null;
+  quantidade_estoque?: number | null;
   created_at: string;
 };
 
@@ -119,6 +127,36 @@ function MedicamentoForm({
           </FormItem>
         )} />
       </div>
+      <FormField control={form.control} name="codigo_barras" render={({ field }) => (
+        <FormItem>
+          <FormLabel className="text-white/70">Código de Barras</FormLabel>
+          <FormControl><Input {...field} placeholder="Ex: 7891234567890" className={FIELD_STYLES} /></FormControl>
+          <FormMessage />
+        </FormItem>
+      )} />
+      <div className="grid grid-cols-2 gap-3">
+        <FormField control={form.control} name="data_ultima_compra" render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-white/70">Última Compra</FormLabel>
+            <FormControl><Input {...field} type="date" className={FIELD_STYLES + " [color-scheme:dark]"} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="valor" render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-white/70">Valor (R$)</FormLabel>
+            <FormControl><Input {...field} type="number" min="0" step="0.01" placeholder="0,00" className={FIELD_STYLES} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+      </div>
+      <FormField control={form.control} name="quantidade_estoque" render={({ field }) => (
+        <FormItem>
+          <FormLabel className="text-white/70">Quantidade em Estoque</FormLabel>
+          <FormControl><Input {...field} type="number" min="0" step="1" placeholder="0" className={FIELD_STYLES} /></FormControl>
+          <FormMessage />
+        </FormItem>
+      )} />
       <Button type="submit" className="w-full bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white" disabled={isPending}>
         {isPending ? "Salvando..." : submitLabel}
       </Button>
@@ -144,14 +182,20 @@ export default function Medicamentos() {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListMedicamentosQueryKey() });
 
+  const EMPTY_FORM: FormValues = {
+    nome: "", principio_ativo: "", apresentacao: "", modo_uso: "", conservacao: "",
+    registro: "", classe: "", codigo_barras: "", data_ultima_compra: "",
+    valor: undefined, quantidade_estoque: undefined,
+  };
+
   const newForm = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", principio_ativo: "", apresentacao: "", modo_uso: "", conservacao: "", registro: "", classe: "" },
+    defaultValues: EMPTY_FORM,
   });
 
   const editForm = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", principio_ativo: "", apresentacao: "", modo_uso: "", conservacao: "", registro: "", classe: "" },
+    defaultValues: EMPTY_FORM,
   });
 
   function openEdit(m: Medicamento) {
@@ -164,6 +208,10 @@ export default function Medicamentos() {
       conservacao: m.conservacao ?? "",
       registro: m.registro ?? "",
       classe: m.classe ?? "",
+      codigo_barras: m.codigo_barras ?? "",
+      data_ultima_compra: m.data_ultima_compra ?? "",
+      valor: m.valor ?? undefined,
+      quantidade_estoque: m.quantidade_estoque ?? undefined,
     });
   }
 
@@ -319,13 +367,37 @@ export default function Medicamentos() {
                     <span>{m.conservacao}</span>
                   </div>
                 )}
-                {m.registro && (
-                  <div className="mt-3">
+                {m.codigo_barras && (
+                  <div className="flex items-center gap-2 text-xs text-white/40">
+                    <Barcode className="h-3 w-3 shrink-0" />
+                    <span>{m.codigo_barras}</span>
+                  </div>
+                )}
+                {m.data_ultima_compra && (
+                  <div className="flex items-center gap-2 text-xs text-white/40">
+                    <Calendar className="h-3 w-3 shrink-0" />
+                    <span>Última compra: {new Date(m.data_ultima_compra + "T00:00:00").toLocaleDateString("pt-BR")}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-3 mt-3">
+                  {m.valor != null && (
+                    <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20 text-xs">
+                      <DollarSign className="h-3 w-3 mr-1" />
+                      {m.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </Badge>
+                  )}
+                  {m.quantidade_estoque != null && (
+                    <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/20 text-xs">
+                      <Package className="h-3 w-3 mr-1" />
+                      {m.quantidade_estoque} un.
+                    </Badge>
+                  )}
+                  {m.registro && (
                     <Badge className="bg-green-500/15 text-green-400 border-green-500/20 text-xs">
                       ANVISA: {m.registro}
                     </Badge>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           ))}

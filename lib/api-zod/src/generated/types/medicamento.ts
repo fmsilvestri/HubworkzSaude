@@ -23,5 +23,13 @@ export interface Medicamento {
   classe?: string | null;
   /** @nullable */
   ativo?: boolean | null;
+  /** @nullable */
+  codigo_barras?: string | null;
+  /** @nullable */
+  data_ultima_compra?: string | null;
+  /** @nullable */
+  valor?: number | null;
+  /** @nullable */
+  quantidade_estoque?: number | null;
   created_at: string;
 }

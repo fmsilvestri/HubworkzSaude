@@ -912,6 +912,14 @@ components:
           type: ["string", "null"]
         ativo:
           type: ["boolean", "null"]
+        codigo_barras:
+          type: ["string", "null"]
+        data_ultima_compra:
+          type: ["string", "null"]
+        valor:
+          type: ["number", "null"]
+        quantidade_estoque:
+          type: ["integer", "null"]
         created_at:
           type: string
 
@@ -933,6 +941,14 @@ components:
           type: string
         classe:
           type: string
+        codigo_barras:
+          type: string
+        data_ultima_compra:
+          type: string
+        valor:
+          type: number
+        quantidade_estoque:
+          type: integer
 
     Distribuidora:
       type: object

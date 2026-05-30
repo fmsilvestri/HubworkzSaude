@@ -25,7 +25,7 @@ router.get("/medicamentos", async (req, res): Promise<void> => {
 
 router.post("/medicamentos", async (req, res): Promise<void> => {
   try {
-    const { nome, principio_ativo, apresentacao, modo_uso, conservacao, registro, classe } = req.body as {
+    const { nome, principio_ativo, apresentacao, modo_uso, conservacao, registro, classe, codigo_barras, data_ultima_compra, valor, quantidade_estoque } = req.body as {
       nome: string;
       principio_ativo?: string;
       apresentacao?: string;
@@ -33,6 +33,10 @@ router.post("/medicamentos", async (req, res): Promise<void> => {
       conservacao?: string;
       registro?: string;
       classe?: string;
+      codigo_barras?: string;
+      data_ultima_compra?: string;
+      valor?: number;
+      quantidade_estoque?: number;
     };
 
     const CLINICA_ID = "00000000-0000-0000-0000-000000000001";
@@ -46,6 +50,10 @@ router.post("/medicamentos", async (req, res): Promise<void> => {
     if (conservacao !== undefined && conservacao !== "") payload["conservacao"] = conservacao;
     if (registro !== undefined && registro !== "") payload["registro"] = registro;
     if (classe !== undefined && classe !== "") payload["classe"] = classe;
+    if (codigo_barras !== undefined && codigo_barras !== "") payload["codigo_barras"] = codigo_barras;
+    if (data_ultima_compra !== undefined && data_ultima_compra !== "") payload["data_ultima_compra"] = data_ultima_compra;
+    if (valor !== undefined && valor !== null) payload["valor"] = valor;
+    if (quantidade_estoque !== undefined && quantidade_estoque !== null) payload["quantidade_estoque"] = quantidade_estoque;
 
     const { data, error } = await supabase
       .from("medicamentos")
@@ -79,7 +87,7 @@ router.get("/medicamentos/:id", async (req, res): Promise<void> => {
 router.put("/medicamentos/:id", async (req, res): Promise<void> => {
   try {
     const id = String(req.params["id"]);
-    const { nome, principio_ativo, apresentacao, modo_uso, conservacao, registro, classe } = req.body as {
+    const { nome, principio_ativo, apresentacao, modo_uso, conservacao, registro, classe, codigo_barras, data_ultima_compra, valor, quantidade_estoque } = req.body as {
       nome?: string;
       principio_ativo?: string;
       apresentacao?: string;
@@ -87,6 +95,10 @@ router.put("/medicamentos/:id", async (req, res): Promise<void> => {
       conservacao?: string;
       registro?: string;
       classe?: string;
+      codigo_barras?: string;
+      data_ultima_compra?: string;
+      valor?: number;
+      quantidade_estoque?: number;
     };
 
     const payload: Record<string, unknown> = {};
@@ -97,6 +109,10 @@ router.put("/medicamentos/:id", async (req, res): Promise<void> => {
     if (conservacao !== undefined && conservacao !== "") payload["conservacao"] = conservacao;
     if (registro !== undefined && registro !== "") payload["registro"] = registro;
     if (classe !== undefined && classe !== "") payload["classe"] = classe;
+    if (codigo_barras !== undefined && codigo_barras !== "") payload["codigo_barras"] = codigo_barras;
+    if (data_ultima_compra !== undefined && data_ultima_compra !== "") payload["data_ultima_compra"] = data_ultima_compra;
+    if (valor !== undefined && valor !== null) payload["valor"] = valor;
+    if (quantidade_estoque !== undefined && quantidade_estoque !== null) payload["quantidade_estoque"] = quantidade_estoque;
 
     const { data, error } = await supabase
       .from("medicamentos")

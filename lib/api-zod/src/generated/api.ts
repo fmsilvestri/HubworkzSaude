@@ -262,6 +262,10 @@ export const ListMedicamentosResponseItem = zod.object({
   "registro": zod.string().nullish(),
   "classe": zod.string().nullish(),
   "ativo": zod.boolean().nullish(),
+  "codigo_barras": zod.string().nullish(),
+  "data_ultima_compra": zod.string().nullish(),
+  "valor": zod.number().nullish(),
+  "quantidade_estoque": zod.number().nullish(),
   "created_at": zod.string()
 })
 export const ListMedicamentosResponse = zod.array(ListMedicamentosResponseItem)
@@ -277,7 +281,11 @@ export const CreateMedicamentoBody = zod.object({
   "modo_uso": zod.string().optional(),
   "conservacao": zod.string().optional(),
   "registro": zod.string().optional(),
-  "classe": zod.string().optional()
+  "classe": zod.string().optional(),
+  "codigo_barras": zod.string().optional(),
+  "data_ultima_compra": zod.string().optional(),
+  "valor": zod.number().optional(),
+  "quantidade_estoque": zod.number().optional()
 })
 
 
@@ -298,6 +306,10 @@ export const GetMedicamentoResponse = zod.object({
   "registro": zod.string().nullish(),
   "classe": zod.string().nullish(),
   "ativo": zod.boolean().nullish(),
+  "codigo_barras": zod.string().nullish(),
+  "data_ultima_compra": zod.string().nullish(),
+  "valor": zod.number().nullish(),
+  "quantidade_estoque": zod.number().nullish(),
   "created_at": zod.string()
 })
 
@@ -316,7 +328,11 @@ export const UpdateMedicamentoBody = zod.object({
   "modo_uso": zod.string().optional(),
   "conservacao": zod.string().optional(),
   "registro": zod.string().optional(),
-  "classe": zod.string().optional()
+  "classe": zod.string().optional(),
+  "codigo_barras": zod.string().optional(),
+  "data_ultima_compra": zod.string().optional(),
+  "valor": zod.number().optional(),
+  "quantidade_estoque": zod.number().optional()
 })
 
 export const UpdateMedicamentoResponse = zod.object({
@@ -329,6 +345,10 @@ export const UpdateMedicamentoResponse = zod.object({
   "registro": zod.string().nullish(),
   "classe": zod.string().nullish(),
   "ativo": zod.boolean().nullish(),
+  "codigo_barras": zod.string().nullish(),
+  "data_ultima_compra": zod.string().nullish(),
+  "valor": zod.number().nullish(),
+  "quantidade_estoque": zod.number().nullish(),
   "created_at": zod.string()
 })
 
