@@ -31,6 +31,8 @@ import type {
   DeclaracaoInput,
   Distribuidora,
   DistribuidoraInput,
+  EloSaudeInput,
+  EloSaudeItem,
   FaseStat,
   Fatura,
   FaturaEdit,
@@ -44,6 +46,7 @@ import type {
   HealthStatus,
   ListCotacoesParams,
   ListDeclaracoesParams,
+  ListEloSaudeParams,
   ListFaturasParams,
   ListGlosasParams,
   ListMedicamentosParams,
@@ -3209,6 +3212,303 @@ export const useDeleteCotacao = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteCotacaoMutationOptions(options));
+    }
+
+export const getListEloSaudeUrl = (params?: ListEloSaudeParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/elo-saude?${stringifiedParams}` : `/api/elo-saude`
+}
+
+/**
+ * @summary List Elo Saude imported items
+ */
+export const listEloSaude = async (params?: ListEloSaudeParams, options?: RequestInit): Promise<EloSaudeItem[]> => {
+
+  return customFetch<EloSaudeItem[]>(getListEloSaudeUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListEloSaudeQueryKey = (params?: ListEloSaudeParams,) => {
+    return [
+    `/api/elo-saude`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListEloSaudeQueryOptions = <TData = Awaited<ReturnType<typeof listEloSaude>>, TError = ErrorType<unknown>>(params?: ListEloSaudeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEloSaude>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListEloSaudeQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEloSaude>>> = ({ signal }) => listEloSaude(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEloSaude>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListEloSaudeQueryResult = NonNullable<Awaited<ReturnType<typeof listEloSaude>>>
+export type ListEloSaudeQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List Elo Saude imported items
+ */
+
+export function useListEloSaude<TData = Awaited<ReturnType<typeof listEloSaude>>, TError = ErrorType<unknown>>(
+ params?: ListEloSaudeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEloSaude>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListEloSaudeQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateEloSaudeUrl = () => {
+
+
+
+
+  return `/api/elo-saude`
+}
+
+/**
+ * @summary Create an Elo Saude item
+ */
+export const createEloSaude = async (eloSaudeInput: EloSaudeInput, options?: RequestInit): Promise<EloSaudeItem> => {
+
+  return customFetch<EloSaudeItem>(getCreateEloSaudeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      eloSaudeInput,)
+  }
+);}
+
+
+
+
+export const getCreateEloSaudeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEloSaude>>, TError,{data: BodyType<EloSaudeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createEloSaude>>, TError,{data: BodyType<EloSaudeInput>}, TContext> => {
+
+const mutationKey = ['createEloSaude'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEloSaude>>, {data: BodyType<EloSaudeInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createEloSaude(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEloSaudeMutationResult = NonNullable<Awaited<ReturnType<typeof createEloSaude>>>
+    export type CreateEloSaudeMutationBody = BodyType<EloSaudeInput>
+    export type CreateEloSaudeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create an Elo Saude item
+ */
+export const useCreateEloSaude = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEloSaude>>, TError,{data: BodyType<EloSaudeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createEloSaude>>,
+        TError,
+        {data: BodyType<EloSaudeInput>},
+        TContext
+      > => {
+      return useMutation(getCreateEloSaudeMutationOptions(options));
+    }
+
+export const getUpdateEloSaudeUrl = (id: string,) => {
+
+
+
+
+  return `/api/elo-saude/${id}`
+}
+
+/**
+ * @summary Update an Elo Saude item
+ */
+export const updateEloSaude = async (id: string,
+    eloSaudeInput: EloSaudeInput, options?: RequestInit): Promise<EloSaudeItem> => {
+
+  return customFetch<EloSaudeItem>(getUpdateEloSaudeUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      eloSaudeInput,)
+  }
+);}
+
+
+
+
+export const getUpdateEloSaudeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEloSaude>>, TError,{id: string;data: BodyType<EloSaudeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateEloSaude>>, TError,{id: string;data: BodyType<EloSaudeInput>}, TContext> => {
+
+const mutationKey = ['updateEloSaude'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEloSaude>>, {id: string;data: BodyType<EloSaudeInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateEloSaude(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateEloSaudeMutationResult = NonNullable<Awaited<ReturnType<typeof updateEloSaude>>>
+    export type UpdateEloSaudeMutationBody = BodyType<EloSaudeInput>
+    export type UpdateEloSaudeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update an Elo Saude item
+ */
+export const useUpdateEloSaude = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEloSaude>>, TError,{id: string;data: BodyType<EloSaudeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateEloSaude>>,
+        TError,
+        {id: string;data: BodyType<EloSaudeInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateEloSaudeMutationOptions(options));
+    }
+
+export const getDeleteEloSaudeUrl = (id: string,) => {
+
+
+
+
+  return `/api/elo-saude/${id}`
+}
+
+/**
+ * @summary Delete an Elo Saude item
+ */
+export const deleteEloSaude = async (id: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteEloSaudeUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteEloSaudeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEloSaude>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteEloSaude>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteEloSaude'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteEloSaude>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteEloSaude(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteEloSaudeMutationResult = NonNullable<Awaited<ReturnType<typeof deleteEloSaude>>>
+
+    export type DeleteEloSaudeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an Elo Saude item
+ */
+export const useDeleteEloSaude = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEloSaude>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteEloSaude>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteEloSaudeMutationOptions(options));
     }
 
 export const getListDeclaracoesUrl = (params?: ListDeclaracoesParams,) => {

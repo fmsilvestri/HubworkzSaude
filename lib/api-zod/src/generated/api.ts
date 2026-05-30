@@ -938,6 +938,89 @@ export const DeleteCotacaoParams = zod.object({
 
 
 /**
+ * @summary List Elo Saude imported items
+ */
+export const ListEloSaudeQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "conservacao": zod.coerce.string().optional(),
+  "laboratorio": zod.coerce.string().optional()
+})
+
+export const ListEloSaudeResponseItem = zod.object({
+  "id": zod.string(),
+  "descricao": zod.string(),
+  "principio_ativo": zod.string().optional(),
+  "conservacao": zod.string().optional(),
+  "laboratorio": zod.string().optional(),
+  "codigo_tuss": zod.string().optional(),
+  "ean": zod.string().optional(),
+  "valor_contrato": zod.string().optional(),
+  "marca_lab": zod.string().optional(),
+  "valor": zod.string().optional(),
+  "created_at": zod.string()
+})
+export const ListEloSaudeResponse = zod.array(ListEloSaudeResponseItem)
+
+
+/**
+ * @summary Create an Elo Saude item
+ */
+export const CreateEloSaudeBody = zod.object({
+  "descricao": zod.string(),
+  "principio_ativo": zod.string().optional(),
+  "conservacao": zod.string().optional(),
+  "laboratorio": zod.string().optional(),
+  "codigo_tuss": zod.string().optional(),
+  "ean": zod.string().optional(),
+  "valor_contrato": zod.string().optional(),
+  "marca_lab": zod.string().optional(),
+  "valor": zod.string().optional()
+})
+
+
+/**
+ * @summary Update an Elo Saude item
+ */
+export const UpdateEloSaudeParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateEloSaudeBody = zod.object({
+  "descricao": zod.string(),
+  "principio_ativo": zod.string().optional(),
+  "conservacao": zod.string().optional(),
+  "laboratorio": zod.string().optional(),
+  "codigo_tuss": zod.string().optional(),
+  "ean": zod.string().optional(),
+  "valor_contrato": zod.string().optional(),
+  "marca_lab": zod.string().optional(),
+  "valor": zod.string().optional()
+})
+
+export const UpdateEloSaudeResponse = zod.object({
+  "id": zod.string(),
+  "descricao": zod.string(),
+  "principio_ativo": zod.string().optional(),
+  "conservacao": zod.string().optional(),
+  "laboratorio": zod.string().optional(),
+  "codigo_tuss": zod.string().optional(),
+  "ean": zod.string().optional(),
+  "valor_contrato": zod.string().optional(),
+  "marca_lab": zod.string().optional(),
+  "valor": zod.string().optional(),
+  "created_at": zod.string()
+})
+
+
+/**
+ * @summary Delete an Elo Saude item
+ */
+export const DeleteEloSaudeParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
  * @summary List declarations
  */
 export const ListDeclaracoesQueryParams = zod.object({

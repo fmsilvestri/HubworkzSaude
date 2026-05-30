@@ -14,6 +14,7 @@ import declaracoesRouter from "./declaracoes";
 import aiRouter from "./ai";
 import pacientePortalRouter from "./paciente-portal";
 import clinicasRouter from "./clinicas";
+import eloSaudeRouter from "./elo-saude";
 
 const router: IRouter = Router();
 
@@ -31,6 +32,7 @@ router.use(glosasRouter);
 router.use(monitoramentosRouter);
 router.use(cotacoesRouter);
 router.use(declaracoesRouter);
+router.use(eloSaudeRouter);
 router.use(aiRouter);
 
 export default router;

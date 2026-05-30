@@ -832,6 +832,89 @@ paths:
         "204":
           description: Deleted
 
+  /elo-saude:
+    get:
+      operationId: listEloSaude
+      tags: [elo-saude]
+      summary: List Elo Saude imported items
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: conservacao
+          schema:
+            type: string
+        - in: query
+          name: laboratorio
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Item list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EloSaudeItem"
+    post:
+      operationId: createEloSaude
+      tags: [elo-saude]
+      summary: Create an Elo Saude item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EloSaudeInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EloSaudeItem"
+
+  /elo-saude/{id}:
+    put:
+      operationId: updateEloSaude
+      tags: [elo-saude]
+      summary: Update an Elo Saude item
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EloSaudeInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EloSaudeItem"
+    delete:
+      operationId: deleteEloSaude
+      tags: [elo-saude]
+      summary: Delete an Elo Saude item
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
   /declaracoes:
     get:
       operationId: listDeclaracoes
@@ -1630,6 +1713,56 @@ components:
         data:
           type: string
         pdf_url:
+          type: string
+
+    EloSaudeItem:
+      type: object
+      required: [id, descricao, created_at]
+      properties:
+        id:
+          type: string
+        descricao:
+          type: string
+        principio_ativo:
+          type: string
+        conservacao:
+          type: string
+        laboratorio:
+          type: string
+        codigo_tuss:
+          type: string
+        ean:
+          type: string
+        valor_contrato:
+          type: string
+        marca_lab:
+          type: string
+        valor:
+          type: string
+        created_at:
+          type: string
+
+    EloSaudeInput:
+      type: object
+      required: [descricao]
+      properties:
+        descricao:
+          type: string
+        principio_ativo:
+          type: string
+        conservacao:
+          type: string
+        laboratorio:
+          type: string
+        codigo_tuss:
+          type: string
+        ean:
+          type: string
+        valor_contrato:
+          type: string
+        marca_lab:
+          type: string
+        valor:
           type: string
 
     AiMessageInput:

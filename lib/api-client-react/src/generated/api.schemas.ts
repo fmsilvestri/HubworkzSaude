@@ -451,6 +451,32 @@ export interface DeclaracaoInput {
   pdf_url?: string;
 }
 
+export interface EloSaudeItem {
+  id: string;
+  descricao: string;
+  principio_ativo?: string;
+  conservacao?: string;
+  laboratorio?: string;
+  codigo_tuss?: string;
+  ean?: string;
+  valor_contrato?: string;
+  marca_lab?: string;
+  valor?: string;
+  created_at: string;
+}
+
+export interface EloSaudeInput {
+  descricao: string;
+  principio_ativo?: string;
+  conservacao?: string;
+  laboratorio?: string;
+  codigo_tuss?: string;
+  ean?: string;
+  valor_contrato?: string;
+  marca_lab?: string;
+  valor?: string;
+}
+
 export interface AiMessageInput {
   message: string;
   clinica_id?: string;
@@ -507,6 +533,12 @@ export type ListCotacoesParams = {
 processo_id?: string;
 status?: string;
 convenio?: string;
+};
+
+export type ListEloSaudeParams = {
+search?: string;
+conservacao?: string;
+laboratorio?: string;
 };
 
 export type ListDeclaracoesParams = {
