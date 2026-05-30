@@ -403,6 +403,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Distribuidora"
+    put:
+      operationId: updateDistribuidora
+      tags: [distribuidoras]
+      summary: Update a distributor
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DistribuidoraInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Distribuidora"
+    delete:
+      operationId: deleteDistribuidora
+      tags: [distribuidoras]
+      summary: Delete a distributor
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
 
   /faturas:
     get:

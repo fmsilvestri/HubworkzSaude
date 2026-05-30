@@ -418,6 +418,43 @@ export const GetDistribuidoraResponse = zod.object({
 
 
 /**
+ * @summary Update a distributor
+ */
+export const UpdateDistribuidoraParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateDistribuidoraBody = zod.object({
+  "nome": zod.string(),
+  "cnpj": zod.string().optional(),
+  "responsavel": zod.string().optional(),
+  "email": zod.string().optional(),
+  "telefone": zod.string().optional(),
+  "tipo": zod.string().optional()
+})
+
+export const UpdateDistribuidoraResponse = zod.object({
+  "id": zod.string(),
+  "nome": zod.string(),
+  "cnpj": zod.string().nullish(),
+  "responsavel": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "telefone": zod.string().nullish(),
+  "tipo": zod.string().nullish(),
+  "status": zod.string().nullish(),
+  "created_at": zod.string()
+})
+
+
+/**
+ * @summary Delete a distributor
+ */
+export const DeleteDistribuidoraParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
  * @summary List invoices
  */
 export const ListFaturasQueryParams = zod.object({

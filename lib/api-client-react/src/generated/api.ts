@@ -1585,6 +1585,148 @@ export function useGetDistribuidora<TData = Awaited<ReturnType<typeof getDistrib
 
 
 
+export const getUpdateDistribuidoraUrl = (id: string,) => {
+
+
+
+
+  return `/api/distribuidoras/${id}`
+}
+
+/**
+ * @summary Update a distributor
+ */
+export const updateDistribuidora = async (id: string,
+    distribuidoraInput: DistribuidoraInput, options?: RequestInit): Promise<Distribuidora> => {
+
+  return customFetch<Distribuidora>(getUpdateDistribuidoraUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      distribuidoraInput,)
+  }
+);}
+
+
+
+
+export const getUpdateDistribuidoraMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDistribuidora>>, TError,{id: string;data: BodyType<DistribuidoraInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateDistribuidora>>, TError,{id: string;data: BodyType<DistribuidoraInput>}, TContext> => {
+
+const mutationKey = ['updateDistribuidora'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDistribuidora>>, {id: string;data: BodyType<DistribuidoraInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateDistribuidora(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateDistribuidoraMutationResult = NonNullable<Awaited<ReturnType<typeof updateDistribuidora>>>
+    export type UpdateDistribuidoraMutationBody = BodyType<DistribuidoraInput>
+    export type UpdateDistribuidoraMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a distributor
+ */
+export const useUpdateDistribuidora = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDistribuidora>>, TError,{id: string;data: BodyType<DistribuidoraInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateDistribuidora>>,
+        TError,
+        {id: string;data: BodyType<DistribuidoraInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateDistribuidoraMutationOptions(options));
+    }
+
+export const getDeleteDistribuidoraUrl = (id: string,) => {
+
+
+
+
+  return `/api/distribuidoras/${id}`
+}
+
+/**
+ * @summary Delete a distributor
+ */
+export const deleteDistribuidora = async (id: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteDistribuidoraUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteDistribuidoraMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDistribuidora>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteDistribuidora>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteDistribuidora'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteDistribuidora>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteDistribuidora(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteDistribuidoraMutationResult = NonNullable<Awaited<ReturnType<typeof deleteDistribuidora>>>
+
+    export type DeleteDistribuidoraMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a distributor
+ */
+export const useDeleteDistribuidora = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDistribuidora>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteDistribuidora>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteDistribuidoraMutationOptions(options));
+    }
+
 export const getListFaturasUrl = (params?: ListFaturasParams,) => {
   const normalizedParams = new URLSearchParams();
 
