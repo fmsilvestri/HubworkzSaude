@@ -71,16 +71,25 @@ router.post("/processos", async (req, res): Promise<void> => {
 router.get("/processos/stats/fases", async (_req, res): Promise<void> => {
   try {
     const { data, error } = await supabase.from("processos").select("fase_atual");
-    if (error) throw error;
+    // fallback: if fase_atual column missing, try legacy "fase"
+    let rows = data;
+    if (error || !data) {
+      const fallback = await supabase.from("processos").select("fase");
+      if (fallback.error) { res.json([]); return; }
+      rows = (fallback.data ?? []).map((r: Record<string, unknown>) => ({ fase_atual: r["fase"] ?? 1 }));
+    }
 
     const counts: Record<string, number> = {};
-    for (const p of data ?? []) {
-      const faseNum = (p as Record<string, unknown>)["fase_atual"] ?? 0;
+    for (const p of rows ?? []) {
+      const row = p as Record<string, unknown>;
+      const faseNum = row["fase_atual"] ?? 1;
       const fase = `Fase ${faseNum}`;
       counts[fase] = (counts[fase] ?? 0) + 1;
     }
 
-    const result = Object.entries(counts).map(([fase, count]) => ({ fase, count }));
+    const result = Object.entries(counts)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([fase, count]) => ({ fase, count }));
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: "Failed to get fase stats" });
