@@ -23,6 +23,7 @@ import {
   Activity,
   Sun,
   Moon,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -138,6 +139,13 @@ const NAV_ITEMS: NavItem[] = [
     icon: MapPin,
     gradient: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)",
     glow: "rgba(6,182,212,0.45)",
+  },
+  {
+    href: "/comunicacao",
+    label: "Comunicacao",
+    icon: MessageSquare,
+    gradient: "linear-gradient(135deg, #25D366 0%, #1a9e4b 100%)",
+    glow: "rgba(37,211,102,0.45)",
   },
   {
     href: "/configuracoes",
