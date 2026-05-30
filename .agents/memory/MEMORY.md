@@ -2,3 +2,4 @@
 - [HubWorkz Saúde DB tables](hubworkz-db.md) — Supabase table for faturas is notas_fiscais; di_messages for AI history
 - [Supabase schema real vs esperado](supabase-schema.md) — colunas existentes divergem dos nomes esperados; mapa completo e migration SQL em supabase-migration.sql
 - [Seed data constraints Supabase](supabase-seed-constraints.md) — NOT NULL e CHECK em pacientes/processos; ordem correta de FK para seed
+- [Paciente portal RLS workaround](paciente-rls-fix.md) — profiles table tem RLS com recursão infinita; paciente-app usa /api/paciente/me (service role) em vez de Supabase direto.

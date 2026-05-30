@@ -10,10 +10,12 @@ import glosasRouter from "./glosas";
 import monitoramentosRouter from "./monitoramentos";
 import cotacoesRouter from "./cotacoes";
 import aiRouter from "./ai";
+import pacientePortalRouter from "./paciente-portal";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(pacientePortalRouter);
 router.use(dashboardRouter);
 router.use(processosRouter);
 router.use(pacientesRouter);
