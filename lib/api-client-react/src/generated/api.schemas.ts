@@ -329,6 +329,42 @@ export interface MonitoramentoUpdate {
 export interface Cotacao {
   id: string;
   /** @nullable */
+  data_cotacao?: string | null;
+  /** @nullable */
+  nome_paciente?: string | null;
+  /** @nullable */
+  origem_paciente?: string | null;
+  /** @nullable */
+  convenio?: string | null;
+  /** @nullable */
+  medicamento_nome?: string | null;
+  /** @nullable */
+  tipo?: string | null;
+  /** @nullable */
+  marca_laboratorio?: string | null;
+  /** @nullable */
+  valor_importado?: string | null;
+  /** @nullable */
+  frete_imposto?: string | null;
+  /** @nullable */
+  total?: number | null;
+  /** @nullable */
+  valor_noova?: number | null;
+  /** @nullable */
+  valor_brasindice?: number | null;
+  /** @nullable */
+  valor_enviado_convenio?: number | null;
+  /** @nullable */
+  data_envio?: string | null;
+  /** @nullable */
+  status?: string | null;
+  /** @nullable */
+  valor_aprovado?: number | null;
+  /** @nullable */
+  imposto?: number | null;
+  /** @nullable */
+  resultado?: number | null;
+  /** @nullable */
   processo_id?: string | null;
   /** @nullable */
   medicamento_id?: string | null;
@@ -340,20 +376,35 @@ export interface Cotacao {
   valor?: number | null;
   /** @nullable */
   prazo_entrega?: string | null;
-  /** @nullable */
-  status?: string | null;
   recomendada?: boolean;
   created_at: string;
 }
 
 export interface CotacaoInput {
+  data_cotacao?: string;
+  nome_paciente?: string;
+  origem_paciente?: string;
+  convenio?: string;
+  medicamento_nome?: string;
+  tipo?: string;
+  marca_laboratorio?: string;
+  valor_importado?: string;
+  frete_imposto?: string;
+  total?: number;
+  valor_noova?: number;
+  valor_brasindice?: number;
+  valor_enviado_convenio?: number;
+  data_envio?: string;
+  status?: string;
+  valor_aprovado?: number;
+  imposto?: number;
+  resultado?: number;
   processo_id?: string;
   medicamento_id?: string;
   fornecedor_tipo?: string;
   fornecedor_id?: string;
   valor?: number;
   prazo_entrega?: string;
-  status?: string;
   recomendada?: boolean;
 }
 
@@ -439,6 +490,8 @@ paciente_id?: string;
 
 export type ListCotacoesParams = {
 processo_id?: string;
+status?: string;
+convenio?: string;
 };
 
 export type ListDeclaracoesParams = {

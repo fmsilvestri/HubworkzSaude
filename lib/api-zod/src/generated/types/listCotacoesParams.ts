@@ -8,4 +8,6 @@
 
 export type ListCotacoesParams = {
 processo_id?: string;
+status?: string;
+convenio?: string;
 };

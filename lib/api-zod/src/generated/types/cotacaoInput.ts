@@ -7,12 +7,29 @@
  */
 
 export interface CotacaoInput {
+  data_cotacao?: string;
+  nome_paciente?: string;
+  origem_paciente?: string;
+  convenio?: string;
+  medicamento_nome?: string;
+  tipo?: string;
+  marca_laboratorio?: string;
+  valor_importado?: string;
+  frete_imposto?: string;
+  total?: number;
+  valor_noova?: number;
+  valor_brasindice?: number;
+  valor_enviado_convenio?: number;
+  data_envio?: string;
+  status?: string;
+  valor_aprovado?: number;
+  imposto?: number;
+  resultado?: number;
   processo_id?: string;
   medicamento_id?: string;
   fornecedor_tipo?: string;
   fornecedor_id?: string;
   valor?: number;
   prazo_entrega?: string;
-  status?: string;
   recomendada?: boolean;
 }

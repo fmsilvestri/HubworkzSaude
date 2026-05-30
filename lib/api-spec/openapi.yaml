@@ -759,6 +759,14 @@ paths:
           name: processo_id
           schema:
             type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: convenio
+          schema:
+            type: string
       responses:
         "200":
           description: Quotation list
@@ -1420,6 +1428,42 @@ components:
       properties:
         id:
           type: string
+        data_cotacao:
+          type: ["string", "null"]
+        nome_paciente:
+          type: ["string", "null"]
+        origem_paciente:
+          type: ["string", "null"]
+        convenio:
+          type: ["string", "null"]
+        medicamento_nome:
+          type: ["string", "null"]
+        tipo:
+          type: ["string", "null"]
+        marca_laboratorio:
+          type: ["string", "null"]
+        valor_importado:
+          type: ["string", "null"]
+        frete_imposto:
+          type: ["string", "null"]
+        total:
+          type: ["number", "null"]
+        valor_noova:
+          type: ["number", "null"]
+        valor_brasindice:
+          type: ["number", "null"]
+        valor_enviado_convenio:
+          type: ["number", "null"]
+        data_envio:
+          type: ["string", "null"]
+        status:
+          type: ["string", "null"]
+        valor_aprovado:
+          type: ["number", "null"]
+        imposto:
+          type: ["number", "null"]
+        resultado:
+          type: ["number", "null"]
         processo_id:
           type: ["string", "null"]
         medicamento_id:
@@ -1432,8 +1476,6 @@ components:
           type: ["number", "null"]
         prazo_entrega:
           type: ["string", "null"]
-        status:
-          type: ["string", "null"]
         recomendada:
           type: boolean
         created_at:
@@ -1442,6 +1484,42 @@ components:
     CotacaoInput:
       type: object
       properties:
+        data_cotacao:
+          type: string
+        nome_paciente:
+          type: string
+        origem_paciente:
+          type: string
+        convenio:
+          type: string
+        medicamento_nome:
+          type: string
+        tipo:
+          type: string
+        marca_laboratorio:
+          type: string
+        valor_importado:
+          type: string
+        frete_imposto:
+          type: string
+        total:
+          type: number
+        valor_noova:
+          type: number
+        valor_brasindice:
+          type: number
+        valor_enviado_convenio:
+          type: number
+        data_envio:
+          type: string
+        status:
+          type: string
+        valor_aprovado:
+          type: number
+        imposto:
+          type: number
+        resultado:
+          type: number
         processo_id:
           type: string
         medicamento_id:
@@ -1453,8 +1531,6 @@ components:
         valor:
           type: number
         prazo_entrega:
-          type: string
-        status:
           type: string
         recomendada:
           type: boolean

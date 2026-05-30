@@ -771,18 +771,37 @@ export const UpdateMonitoramentoResponse = zod.object({
  * @summary List quotations
  */
 export const ListCotacoesQueryParams = zod.object({
-  "processo_id": zod.coerce.string().optional()
+  "processo_id": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional(),
+  "convenio": zod.coerce.string().optional()
 })
 
 export const ListCotacoesResponseItem = zod.object({
   "id": zod.string(),
+  "data_cotacao": zod.string().nullish(),
+  "nome_paciente": zod.string().nullish(),
+  "origem_paciente": zod.string().nullish(),
+  "convenio": zod.string().nullish(),
+  "medicamento_nome": zod.string().nullish(),
+  "tipo": zod.string().nullish(),
+  "marca_laboratorio": zod.string().nullish(),
+  "valor_importado": zod.string().nullish(),
+  "frete_imposto": zod.string().nullish(),
+  "total": zod.number().nullish(),
+  "valor_noova": zod.number().nullish(),
+  "valor_brasindice": zod.number().nullish(),
+  "valor_enviado_convenio": zod.number().nullish(),
+  "data_envio": zod.string().nullish(),
+  "status": zod.string().nullish(),
+  "valor_aprovado": zod.number().nullish(),
+  "imposto": zod.number().nullish(),
+  "resultado": zod.number().nullish(),
   "processo_id": zod.string().nullish(),
   "medicamento_id": zod.string().nullish(),
   "fornecedor_tipo": zod.string().nullish(),
   "fornecedor_id": zod.string().nullish(),
   "valor": zod.number().nullish(),
   "prazo_entrega": zod.string().nullish(),
-  "status": zod.string().nullish(),
   "recomendada": zod.boolean().optional(),
   "created_at": zod.string()
 })
@@ -793,13 +812,30 @@ export const ListCotacoesResponse = zod.array(ListCotacoesResponseItem)
  * @summary Create a quotation
  */
 export const CreateCotacaoBody = zod.object({
+  "data_cotacao": zod.string().optional(),
+  "nome_paciente": zod.string().optional(),
+  "origem_paciente": zod.string().optional(),
+  "convenio": zod.string().optional(),
+  "medicamento_nome": zod.string().optional(),
+  "tipo": zod.string().optional(),
+  "marca_laboratorio": zod.string().optional(),
+  "valor_importado": zod.string().optional(),
+  "frete_imposto": zod.string().optional(),
+  "total": zod.number().optional(),
+  "valor_noova": zod.number().optional(),
+  "valor_brasindice": zod.number().optional(),
+  "valor_enviado_convenio": zod.number().optional(),
+  "data_envio": zod.string().optional(),
+  "status": zod.string().optional(),
+  "valor_aprovado": zod.number().optional(),
+  "imposto": zod.number().optional(),
+  "resultado": zod.number().optional(),
   "processo_id": zod.string().optional(),
   "medicamento_id": zod.string().optional(),
   "fornecedor_tipo": zod.string().optional(),
   "fornecedor_id": zod.string().optional(),
   "valor": zod.number().optional(),
   "prazo_entrega": zod.string().optional(),
-  "status": zod.string().optional(),
   "recomendada": zod.boolean().optional()
 })
 
