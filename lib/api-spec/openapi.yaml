@@ -1071,6 +1071,8 @@ components:
           type: ["string", "null"]
         cid:
           type: ["string", "null"]
+        endereco:
+          type: ["string", "null"]
         mandato_ativo:
           type: boolean
         created_at:
@@ -1098,6 +1100,8 @@ components:
           type: string
         cid:
           type: string
+        endereco:
+          type: string
 
     PacienteUpdate:
       type: object
@@ -1113,6 +1117,8 @@ components:
         numero_carteirinha:
           type: string
         diagnostico:
+          type: string
+        endereco:
           type: string
         mandato_ativo:
           type: boolean

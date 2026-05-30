@@ -26,6 +26,8 @@ export interface Paciente {
   diagnostico?: string | null;
   /** @nullable */
   cid?: string | null;
+  /** @nullable */
+  endereco?: string | null;
   mandato_ativo?: boolean;
   created_at: string;
 }

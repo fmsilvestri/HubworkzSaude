@@ -16,4 +16,5 @@ export interface PacienteInput {
   numero_carteirinha?: string;
   diagnostico?: string;
   cid?: string;
+  endereco?: string;
 }

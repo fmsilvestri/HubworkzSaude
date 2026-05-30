@@ -37,6 +37,7 @@ const schema = z.object({
   data_nascimento: z.string().optional(),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   telefone: z.string().optional(),
+  endereco: z.string().optional(),
   convenio: z.string().optional(),
   numero_carteirinha: z.string().optional(),
   diagnostico: z.string().optional(),
@@ -52,6 +53,7 @@ type Paciente = {
   data_nascimento?: string | null;
   email?: string | null;
   telefone?: string | null;
+  endereco?: string | null;
   convenio?: string | null;
   numero_carteirinha?: string | null;
   diagnostico?: string | null;
@@ -62,7 +64,7 @@ type Paciente = {
 
 const DEFAULT: FormValues = {
   nome: "", cpf: "", data_nascimento: "", email: "", telefone: "",
-  convenio: "", numero_carteirinha: "", diagnostico: "", cid: "",
+  endereco: "", convenio: "", numero_carteirinha: "", diagnostico: "", cid: "",
 };
 
 function PacienteForm({
@@ -112,6 +114,11 @@ function PacienteForm({
             </FormControl><FormMessage /></FormItem>
           )} />
         </div>
+        <FormField control={control} name="endereco" render={({ field }) => (
+          <FormItem><FormLabel className="text-white/70">Endereço</FormLabel><FormControl>
+            <Input data-testid="input-endereco-paciente" {...field} placeholder="Rua, número, bairro, cidade — UF" className={FIELD} />
+          </FormControl><FormMessage /></FormItem>
+        )} />
       </div>
 
       <div className="space-y-4">
@@ -184,6 +191,7 @@ export default function Pacientes() {
       data_nascimento: p.data_nascimento ?? "",
       email: p.email ?? "",
       telefone: p.telefone ?? "",
+      endereco: p.endereco ?? "",
       convenio: p.convenio ?? "",
       numero_carteirinha: p.numero_carteirinha ?? "",
       diagnostico: p.diagnostico ?? "",

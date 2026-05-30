@@ -98,6 +98,8 @@ export interface Paciente {
   diagnostico?: string | null;
   /** @nullable */
   cid?: string | null;
+  /** @nullable */
+  endereco?: string | null;
   mandato_ativo?: boolean;
   created_at: string;
 }
@@ -112,6 +114,7 @@ export interface PacienteInput {
   numero_carteirinha?: string;
   diagnostico?: string;
   cid?: string;
+  endereco?: string;
 }
 
 export interface PacienteUpdate {
@@ -121,6 +124,7 @@ export interface PacienteUpdate {
   convenio?: string;
   numero_carteirinha?: string;
   diagnostico?: string;
+  endereco?: string;
   mandato_ativo?: boolean;
 }
 

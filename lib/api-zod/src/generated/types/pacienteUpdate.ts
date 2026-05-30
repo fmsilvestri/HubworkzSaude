@@ -13,5 +13,6 @@ export interface PacienteUpdate {
   convenio?: string;
   numero_carteirinha?: string;
   diagnostico?: string;
+  endereco?: string;
   mandato_ativo?: boolean;
 }

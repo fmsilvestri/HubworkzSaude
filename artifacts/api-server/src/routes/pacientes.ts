@@ -7,7 +7,7 @@ const DEFAULT_CLINICA = "00000000-0000-0000-0000-000000000001";
 
 const ALLOWED = [
   "nome", "cpf", "data_nascimento", "email", "telefone",
-  "convenio", "numero_carteirinha", "diagnostico", "cid", "mandato_ativo",
+  "convenio", "numero_carteirinha", "diagnostico", "cid", "endereco", "mandato_ativo",
 ];
 
 function pick(body: Record<string, unknown>) {
