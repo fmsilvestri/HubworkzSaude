@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListMonitoramentos, useCreateMonitoramento, getListMonitoramentosQueryKey } from "@workspace/api-client-react";
+import { useListMonitoramentos, useCreateMonitoramento, useListPacientes, getListMonitoramentosQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,9 +30,15 @@ export default function Monitoramento() {
   const [open, setOpen] = useState(false);
   const [mes, setMes] = useState(new Date().toISOString().slice(0, 7));
   const { data: monitoramentos, isLoading } = useListMonitoramentos({ mes });
+  const { data: pacientes } = useListPacientes();
   const createMonitoramento = useCreateMonitoramento();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const pacienteNome = (id: string | null | undefined) => {
+    if (!id) return null;
+    return (pacientes ?? []).find((p) => p.id === id)?.nome ?? id;
+  };
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -80,7 +86,21 @@ export default function Monitoramento() {
                     <FormItem><FormLabel className="text-white/70">Data do Contato *</FormLabel><FormControl><Input data-testid="input-data-contato" {...field} type="date" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="paciente_id" render={({ field }) => (
-                    <FormItem><FormLabel className="text-white/70">ID do Paciente</FormLabel><FormControl><Input {...field} placeholder="UUID do paciente" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel className="text-white/70">Paciente</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-[#0F0F12] border-white/10 text-white">
+                            <SelectValue placeholder="Selecione o paciente..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-[#1B1B1E] border-white/10">
+                          {(pacientes ?? []).map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
                   )} />
                   <FormField control={form.control} name="adesao" render={({ field }) => (
                     <FormItem><FormLabel className="text-white/70">Adesão ao Tratamento *</FormLabel>
@@ -134,9 +154,12 @@ export default function Monitoramento() {
                   </div>
                   <div>
                     <p className="text-white font-medium">
+                      {pacienteNome(m.paciente_id) ?? "Paciente não identificado"}
+                    </p>
+                    <p className="text-white/40 text-xs mt-0.5">
                       {m.data_contato ? new Date(m.data_contato).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" }) : "Data não definida"}
                     </p>
-                    {m.eventos_adversos && <p className="text-white/50 text-sm mt-0.5">{m.eventos_adversos}</p>}
+                    {m.eventos_adversos && <p className="text-white/50 text-sm mt-1">{m.eventos_adversos}</p>}
                     {m.observacoes && <p className="text-white/40 text-xs mt-0.5">{m.observacoes}</p>}
                   </div>
                 </div>
