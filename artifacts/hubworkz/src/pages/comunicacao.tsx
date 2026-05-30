@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import { useListPacientes, useListMedicamentos, useListProcessos } from "@workspace/api-client-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, Copy, ExternalLink, RefreshCw, Phone } from "lucide-react";
+import { MessageSquare, Copy, ExternalLink, RefreshCw, Phone, Search, X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Template = {
@@ -173,20 +173,62 @@ function formatarTelefone(tel: string | null | undefined): string {
   return tel.replace(/\D/g, "");
 }
 
+const PALETTE = [
+  { bg: "linear-gradient(135deg,#1a4d6b,#0d2b3d)", ring: "#2a8cc4", text: "#6ec6f0", badge: "bg-sky-500/20 text-sky-300" },
+  { bg: "linear-gradient(135deg,#1a4d2e,#0d2b18)", ring: "#22c55e", text: "#86efac", badge: "bg-green-500/20 text-green-300" },
+  { bg: "linear-gradient(135deg,#4d1a1a,#2b0d0d)", ring: "#ef4444", text: "#fca5a5", badge: "bg-red-500/20 text-red-300" },
+  { bg: "linear-gradient(135deg,#3d2b00,#251a00)", ring: "#f59e0b", text: "#fcd34d", badge: "bg-amber-500/20 text-amber-300" },
+  { bg: "linear-gradient(135deg,#2b1a4d,#180d2b)", ring: "#a855f7", text: "#d8b4fe", badge: "bg-purple-500/20 text-purple-300" },
+  { bg: "linear-gradient(135deg,#4d1a3a,#2b0d20)", ring: "#ec4899", text: "#f9a8d4", badge: "bg-pink-500/20 text-pink-300" },
+  { bg: "linear-gradient(135deg,#1a3a4d,#0d1f2b)", ring: "#06b6d4", text: "#67e8f9", badge: "bg-cyan-500/20 text-cyan-300" },
+  { bg: "linear-gradient(135deg,#2d2b00,#1a1900)", ring: "#84cc16", text: "#bef264", badge: "bg-lime-500/20 text-lime-300" },
+  { bg: "linear-gradient(135deg,#2b1a00,#1a0f00)", ring: "#F56E0F", text: "#fdba74", badge: "bg-orange-500/20 text-orange-300" },
+  { bg: "linear-gradient(135deg,#001a2b,#000d1a)", ring: "#3b82f6", text: "#93c5fd", badge: "bg-blue-500/20 text-blue-300" },
+];
+
+function paletteFor(nome: string) {
+  let h = 0;
+  for (let i = 0; i < nome.length; i++) h = (h * 31 + nome.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+
+function iniciais(nome: string) {
+  const parts = nome.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function Comunicacao() {
   const [pacienteId, setPacienteId] = useState<string>("");
   const [templateId, setTemplateId] = useState<string>("");
   const [customText, setCustomText] = useState("");
   const [mensagem, setMensagem] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [busca, setBusca] = useState("");
   const { toast } = useToast();
 
   const { data: pacientes } = useListPacientes();
   const { data: medicamentos } = useListMedicamentos();
   const { data: processos } = useListProcessos();
 
+  const listaPacientes = useMemo(
+    () => (pacientes as Paciente[] ?? []),
+    [pacientes],
+  );
+
+  const pacientesFiltrados = useMemo(() => {
+    const q = busca.toLowerCase().trim();
+    if (!q) return listaPacientes;
+    return listaPacientes.filter((p) =>
+      p.nome.toLowerCase().includes(q) ||
+      (p.convenio ?? "").toLowerCase().includes(q) ||
+      (p.diagnostico ?? "").toLowerCase().includes(q),
+    );
+  }, [listaPacientes, busca]);
+
   const paciente = useMemo(
-    () => (pacientes as Paciente[] ?? []).find((p) => p.id === pacienteId),
-    [pacientes, pacienteId],
+    () => listaPacientes.find((p) => p.id === pacienteId),
+    [listaPacientes, pacienteId],
   );
 
   const medicamentoPaciente = useMemo(
@@ -233,33 +275,114 @@ export default function Comunicacao() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Coluna esquerda — seleção */}
         <div className="space-y-5">
-          {/* Selecionar paciente */}
-          <div className="bg-[#1B1B1E] border border-white/10 rounded-[14px] p-5 space-y-4">
+          {/* Selecionar paciente — picker colorido */}
+          <div className="bg-[#1B1B1E] border border-white/10 rounded-[14px] p-5 space-y-3">
             <p className="text-white/50 text-xs uppercase tracking-wider font-medium">1. Selecione o Paciente</p>
-            <Select value={pacienteId} onValueChange={(v) => { setPacienteId(v); setMensagem(""); }}>
-              <SelectTrigger className="bg-[#0F0F12] border-white/10 text-white">
-                <SelectValue placeholder="Escolha um paciente..." />
-              </SelectTrigger>
-              <SelectContent className="bg-[#1B1B1E] border-white/10">
-                {(pacientes as Paciente[] ?? []).map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
 
-            {paciente && (
-              <div className="bg-[#0F0F12] rounded-xl border border-white/5 p-4 space-y-1.5 text-sm">
-                <p className="text-white font-medium">{paciente.nome}</p>
-                {paciente.telefone ? (
-                  <p className="text-white/50 flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5" /> {paciente.telefone}
-                  </p>
-                ) : (
-                  <p className="text-red-400/70 text-xs">Sem telefone cadastrado</p>
-                )}
-                {paciente.diagnostico && <p className="text-white/40 text-xs">{paciente.diagnostico}{paciente.cid ? ` — CID ${paciente.cid}` : ""}</p>}
-                {paciente.convenio && <p className="text-white/40 text-xs">Convenio: {paciente.convenio}</p>}
+            {/* Trigger / selecionado */}
+            {paciente ? (
+              (() => {
+                const pal = paletteFor(paciente.nome);
+                return (
+                  <div
+                    style={{ background: pal.bg, boxShadow: `0 0 0 1.5px ${pal.ring}, 0 4px 16px ${pal.ring}33` }}
+                    className="rounded-xl p-3 flex items-center gap-3"
+                  >
+                    <div
+                      className="h-11 w-11 rounded-xl flex items-center justify-center font-bold text-sm shrink-0"
+                      style={{ background: `${pal.ring}25`, color: pal.text, boxShadow: `0 0 0 1px ${pal.ring}50` }}
+                    >
+                      {iniciais(paciente.nome)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-semibold text-sm truncate">{paciente.nome}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        {paciente.telefone
+                          ? <span className="text-white/50 text-xs flex items-center gap-1"><Phone className="h-3 w-3" />{paciente.telefone}</span>
+                          : <span className="text-red-400/60 text-xs">Sem telefone</span>
+                        }
+                        {paciente.convenio && <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full", pal.badge)}>{paciente.convenio}</span>}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { setPacienteId(""); setMensagem(""); setPickerOpen(false); setBusca(""); }}
+                      className="text-white/30 hover:text-white/70 transition-colors shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })()
+            ) : (
+              <button
+                onClick={() => setPickerOpen((o) => !o)}
+                className="w-full flex items-center gap-3 bg-[#0F0F12] border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 transition-colors"
+              >
+                <Search className="h-4 w-4 text-white/30 shrink-0" />
+                <span className="text-white/30 text-sm flex-1 text-left">Escolha um paciente...</span>
+                <ChevronDown className="h-4 w-4 text-white/20 shrink-0" />
+              </button>
+            )}
+
+            {/* Dropdown expandido */}
+            {pickerOpen && !paciente && (
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30 pointer-events-none" />
+                  <Input
+                    autoFocus
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    placeholder="Buscar por nome, convênio ou diagnóstico..."
+                    className="pl-8 h-9 bg-[#0F0F12] border-white/10 text-white text-sm placeholder:text-white/25"
+                  />
+                </div>
+
+                <div className="max-h-64 overflow-y-auto space-y-1.5 pr-0.5">
+                  {pacientesFiltrados.length === 0 ? (
+                    <p className="text-white/25 text-sm text-center py-6">Nenhum paciente encontrado</p>
+                  ) : (
+                    pacientesFiltrados.map((p) => {
+                      const pal = paletteFor(p.nome);
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => { setPacienteId(p.id); setMensagem(""); setPickerOpen(false); setBusca(""); }}
+                          style={{ background: pal.bg, borderColor: `${pal.ring}40` }}
+                          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 border hover:brightness-110 transition-all text-left"
+                        >
+                          <div
+                            className="h-9 w-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
+                            style={{ background: `${pal.ring}22`, color: pal.text }}
+                          >
+                            {iniciais(p.nome)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-white text-sm font-medium truncate">{p.nome}</p>
+                            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                              {p.telefone
+                                ? <span className="text-white/40 text-[10px] flex items-center gap-0.5"><Phone className="h-2.5 w-2.5" />{p.telefone}</span>
+                                : <span className="text-red-400/50 text-[10px]">Sem telefone</span>
+                              }
+                              {p.convenio && <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full", pal.badge)}>{p.convenio}</span>}
+                            </div>
+                          </div>
+                          {p.diagnostico && (
+                            <span className="text-white/20 text-[10px] shrink-0 max-w-[80px] truncate text-right">{p.diagnostico}</span>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
               </div>
+            )}
+
+            {/* Detalhes extra do selecionado */}
+            {paciente?.diagnostico && (
+              <p className="text-white/30 text-xs px-1">
+                {paciente.diagnostico}{paciente.cid ? ` — CID ${paciente.cid}` : ""}
+              </p>
             )}
           </div>
 
