@@ -13,14 +13,39 @@ function NavItem({ path, label, Icon }: { path: string; label: string; Icon: Rea
   const [isActive] = useRoute(path === "/" ? "/" : `${path}*`);
 
   return (
-    <Link href={path}>
-      <button
-        className="flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors"
-        style={{ color: isActive ? "#F56E0F" : "#6B6B7A" }}
-      >
-        <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+    <Link href={path} className="flex-1">
+      <button className="relative flex flex-col items-center justify-center gap-[3px] w-full h-full">
+        {/* Indicador ativo */}
+        {isActive && (
+          <span
+            className="absolute top-0 left-1/2 -translate-x-1/2 rounded-b-full"
+            style={{
+              width: 28,
+              height: 3,
+              background: "#F56E0F",
+            }}
+          />
+        )}
+
+        {/* Ícone com fundo pill quando ativo */}
         <span
-          className="text-[10px] font-semibold tracking-wide"
+          className="flex items-center justify-center rounded-xl transition-all"
+          style={{
+            width: 36,
+            height: 28,
+            background: isActive ? "rgba(245,110,15,0.15)" : "transparent",
+          }}
+        >
+          <Icon
+            size={18}
+            strokeWidth={isActive ? 2.5 : 1.8}
+            style={{ color: isActive ? "#F56E0F" : "#6B6B7A" }}
+          />
+        </span>
+
+        {/* Label */}
+        <span
+          className="text-[9px] font-semibold tracking-wide leading-none"
           style={{ color: isActive ? "#F56E0F" : "#6B6B7A" }}
         >
           {label}
@@ -33,7 +58,7 @@ function NavItem({ path, label, Icon }: { path: string; label: string; Icon: Rea
 export default function BottomNav() {
   return (
     <nav className="nav-bar">
-      <div className="flex items-center h-full px-1">
+      <div className="flex items-stretch h-full">
         {tabs.map((tab) => (
           <NavItem key={tab.path} path={tab.path} label={tab.label} Icon={tab.icon} />
         ))}
