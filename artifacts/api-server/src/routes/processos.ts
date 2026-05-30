@@ -5,6 +5,7 @@ const router: IRouter = Router();
 
 const DEFAULT_CLINICA = "00000000-0000-0000-0000-000000000001";
 
+// DB column is "fase" — map fase_atual ↔ fase at the boundary
 const ALLOWED_CREATE = [
   "paciente_id", "medicamento_id", "distribuidora_id", "convenio",
   "status", "fase_atual", "numero_protocolo", "observacoes",
@@ -15,14 +16,31 @@ const ALLOWED_UPDATE = [
   "status", "fase_atual", "numero_protocolo", "observacoes",
 ];
 
+/** Pick allowed fields from request body, mapping fase_atual → fase for DB */
 function pick(body: Record<string, unknown>, allowed: string[]) {
   const out: Record<string, unknown> = {};
   for (const k of allowed) {
-    if (Object.prototype.hasOwnProperty.call(body, k) && body[k] !== "" && body[k] != null) {
-      out[k] = body[k];
-    }
+    if (!Object.prototype.hasOwnProperty.call(body, k)) continue;
+    const v = body[k];
+    if (v === "" || v == null) continue;
+    // Map app field name → DB column name
+    const dbKey = k === "fase_atual" ? "fase" : k;
+    out[dbKey] = v;
   }
   return out;
+}
+
+/** Map DB row (has "fase") → API response (has "fase_atual") */
+function toResponse(row: Record<string, unknown>) {
+  if ("fase" in row) {
+    const { fase, ...rest } = row;
+    return { ...rest, fase_atual: fase ?? 1 };
+  }
+  return row;
+}
+
+function toResponseList(rows: Record<string, unknown>[] | null) {
+  return (rows ?? []).map(toResponse);
 }
 
 router.get("/processos", async (req, res): Promise<void> => {
@@ -35,13 +53,13 @@ router.get("/processos", async (req, res): Promise<void> => {
     if (req.query["status"]) query = query.eq("status", String(req.query["status"]));
     if (req.query["fase"]) {
       const fase = Number(req.query["fase"]);
-      query = query.or(`fase_atual.eq.${fase},fase.eq.${fase}`);
+      query = query.eq("fase", fase);
     }
     if (req.query["clinica_id"]) query = query.eq("clinica_id", String(req.query["clinica_id"]));
 
     const { data, error } = await query;
     if (error) throw error;
-    res.json(data ?? []);
+    res.json(toResponseList(data as Record<string, unknown>[]));
   } catch (err) {
     req.log.error({ err }, "Failed to list processos");
     res.status(500).json({ error: "Failed to fetch processos" });
@@ -52,7 +70,7 @@ router.post("/processos", async (req, res): Promise<void> => {
   try {
     const payload = pick(req.body as Record<string, unknown>, ALLOWED_CREATE);
     payload["clinica_id"] = DEFAULT_CLINICA;
-    if (!payload["fase_atual"]) payload["fase_atual"] = 1;
+    if (!payload["fase"]) payload["fase"] = 1;
     if (!payload["status"]) payload["status"] = "pendente";
 
     const { data, error } = await supabase
@@ -61,7 +79,7 @@ router.post("/processos", async (req, res): Promise<void> => {
       .select()
       .single();
     if (error) throw error;
-    res.status(201).json(data);
+    res.status(201).json(toResponse(data as Record<string, unknown>));
   } catch (err) {
     req.log.error({ err }, "Failed to create processo");
     res.status(500).json({ error: "Failed to create processo" });
@@ -70,19 +88,13 @@ router.post("/processos", async (req, res): Promise<void> => {
 
 router.get("/processos/stats/fases", async (_req, res): Promise<void> => {
   try {
-    const { data, error } = await supabase.from("processos").select("fase_atual");
-    // fallback: if fase_atual column missing, try legacy "fase"
-    let rows = data;
-    if (error || !data) {
-      const fallback = await supabase.from("processos").select("fase");
-      if (fallback.error) { res.json([]); return; }
-      rows = (fallback.data ?? []).map((r: Record<string, unknown>) => ({ fase_atual: r["fase"] ?? 1 }));
-    }
+    const { data, error } = await supabase.from("processos").select("fase");
+    if (error) throw error;
 
     const counts: Record<string, number> = {};
-    for (const p of rows ?? []) {
+    for (const p of data ?? []) {
       const row = p as Record<string, unknown>;
-      const faseNum = row["fase_atual"] ?? 1;
+      const faseNum = row["fase"] ?? 1;
       const fase = `Fase ${faseNum}`;
       counts[fase] = (counts[fase] ?? 0) + 1;
     }
@@ -101,7 +113,7 @@ router.get("/processos/:id", async (req, res): Promise<void> => {
     const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
     const { data, error } = await supabase.from("processos").select("*").eq("id", id).single();
     if (error || !data) { res.status(404).json({ error: "Processo not found" }); return; }
-    res.json(data);
+    res.json(toResponse(data as Record<string, unknown>));
   } catch (err) {
     req.log.error({ err }, "Failed to get processo");
     res.status(500).json({ error: "Failed to fetch processo" });
@@ -121,7 +133,7 @@ router.patch("/processos/:id", async (req, res): Promise<void> => {
       .select()
       .single();
     if (error || !data) { res.status(404).json({ error: "Processo not found" }); return; }
-    res.json(data);
+    res.json(toResponse(data as Record<string, unknown>));
   } catch (err) {
     req.log.error({ err }, "Failed to update processo");
     res.status(500).json({ error: "Failed to update processo" });
