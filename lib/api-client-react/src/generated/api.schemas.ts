@@ -132,9 +132,11 @@ export interface Medicamento {
   /** @nullable */
   conservacao?: string | null;
   /** @nullable */
-  registro_anvisa?: string | null;
+  registro?: string | null;
   /** @nullable */
-  categoria?: string | null;
+  classe?: string | null;
+  /** @nullable */
+  ativo?: boolean | null;
   created_at: string;
 }
 
@@ -144,8 +146,8 @@ export interface MedicamentoInput {
   apresentacao?: string;
   modo_uso?: string;
   conservacao?: string;
-  registro_anvisa?: string;
-  categoria?: string;
+  registro?: string;
+  classe?: string;
 }
 
 export interface Distribuidora {

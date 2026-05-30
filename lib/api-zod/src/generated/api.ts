@@ -259,8 +259,9 @@ export const ListMedicamentosResponseItem = zod.object({
   "apresentacao": zod.string().nullish(),
   "modo_uso": zod.string().nullish(),
   "conservacao": zod.string().nullish(),
-  "registro_anvisa": zod.string().nullish(),
-  "categoria": zod.string().nullish(),
+  "registro": zod.string().nullish(),
+  "classe": zod.string().nullish(),
+  "ativo": zod.boolean().nullish(),
   "created_at": zod.string()
 })
 export const ListMedicamentosResponse = zod.array(ListMedicamentosResponseItem)
@@ -275,8 +276,8 @@ export const CreateMedicamentoBody = zod.object({
   "apresentacao": zod.string().optional(),
   "modo_uso": zod.string().optional(),
   "conservacao": zod.string().optional(),
-  "registro_anvisa": zod.string().optional(),
-  "categoria": zod.string().optional()
+  "registro": zod.string().optional(),
+  "classe": zod.string().optional()
 })
 
 
@@ -294,9 +295,49 @@ export const GetMedicamentoResponse = zod.object({
   "apresentacao": zod.string().nullish(),
   "modo_uso": zod.string().nullish(),
   "conservacao": zod.string().nullish(),
-  "registro_anvisa": zod.string().nullish(),
-  "categoria": zod.string().nullish(),
+  "registro": zod.string().nullish(),
+  "classe": zod.string().nullish(),
+  "ativo": zod.boolean().nullish(),
   "created_at": zod.string()
+})
+
+
+/**
+ * @summary Update a medication
+ */
+export const UpdateMedicamentoParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateMedicamentoBody = zod.object({
+  "nome": zod.string(),
+  "principio_ativo": zod.string().optional(),
+  "apresentacao": zod.string().optional(),
+  "modo_uso": zod.string().optional(),
+  "conservacao": zod.string().optional(),
+  "registro": zod.string().optional(),
+  "classe": zod.string().optional()
+})
+
+export const UpdateMedicamentoResponse = zod.object({
+  "id": zod.string(),
+  "nome": zod.string(),
+  "principio_ativo": zod.string().nullish(),
+  "apresentacao": zod.string().nullish(),
+  "modo_uso": zod.string().nullish(),
+  "conservacao": zod.string().nullish(),
+  "registro": zod.string().nullish(),
+  "classe": zod.string().nullish(),
+  "ativo": zod.boolean().nullish(),
+  "created_at": zod.string()
+})
+
+
+/**
+ * @summary Delete a medication
+ */
+export const DeleteMedicamentoParams = zod.object({
+  "id": zod.coerce.string()
 })
 
 

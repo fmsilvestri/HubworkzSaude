@@ -12,6 +12,6 @@ export interface MedicamentoInput {
   apresentacao?: string;
   modo_uso?: string;
   conservacao?: string;
-  registro_anvisa?: string;
-  categoria?: string;
+  registro?: string;
+  classe?: string;
 }

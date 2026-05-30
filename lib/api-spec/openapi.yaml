@@ -316,6 +316,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Medicamento"
+    put:
+      operationId: updateMedicamento
+      tags: [medicamentos]
+      summary: Update a medication
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicamentoInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Medicamento"
+    delete:
+      operationId: deleteMedicamento
+      tags: [medicamentos]
+      summary: Delete a medication
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
 
   /distribuidoras:
     get:
@@ -870,10 +906,12 @@ components:
           type: ["string", "null"]
         conservacao:
           type: ["string", "null"]
-        registro_anvisa:
+        registro:
           type: ["string", "null"]
-        categoria:
+        classe:
           type: ["string", "null"]
+        ativo:
+          type: ["boolean", "null"]
         created_at:
           type: string
 
@@ -891,9 +929,9 @@ components:
           type: string
         conservacao:
           type: string
-        registro_anvisa:
+        registro:
           type: string
-        categoria:
+        classe:
           type: string
 
     Distribuidora:

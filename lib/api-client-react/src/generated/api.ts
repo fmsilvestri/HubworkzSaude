@@ -1218,6 +1218,148 @@ export function useGetMedicamento<TData = Awaited<ReturnType<typeof getMedicamen
 
 
 
+export const getUpdateMedicamentoUrl = (id: string,) => {
+
+
+
+
+  return `/api/medicamentos/${id}`
+}
+
+/**
+ * @summary Update a medication
+ */
+export const updateMedicamento = async (id: string,
+    medicamentoInput: MedicamentoInput, options?: RequestInit): Promise<Medicamento> => {
+
+  return customFetch<Medicamento>(getUpdateMedicamentoUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      medicamentoInput,)
+  }
+);}
+
+
+
+
+export const getUpdateMedicamentoMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMedicamento>>, TError,{id: string;data: BodyType<MedicamentoInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMedicamento>>, TError,{id: string;data: BodyType<MedicamentoInput>}, TContext> => {
+
+const mutationKey = ['updateMedicamento'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMedicamento>>, {id: string;data: BodyType<MedicamentoInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateMedicamento(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMedicamentoMutationResult = NonNullable<Awaited<ReturnType<typeof updateMedicamento>>>
+    export type UpdateMedicamentoMutationBody = BodyType<MedicamentoInput>
+    export type UpdateMedicamentoMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a medication
+ */
+export const useUpdateMedicamento = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMedicamento>>, TError,{id: string;data: BodyType<MedicamentoInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMedicamento>>,
+        TError,
+        {id: string;data: BodyType<MedicamentoInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateMedicamentoMutationOptions(options));
+    }
+
+export const getDeleteMedicamentoUrl = (id: string,) => {
+
+
+
+
+  return `/api/medicamentos/${id}`
+}
+
+/**
+ * @summary Delete a medication
+ */
+export const deleteMedicamento = async (id: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteMedicamentoUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteMedicamentoMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMedicamento>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMedicamento>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteMedicamento'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMedicamento>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteMedicamento(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMedicamentoMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMedicamento>>>
+
+    export type DeleteMedicamentoMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a medication
+ */
+export const useDeleteMedicamento = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMedicamento>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMedicamento>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteMedicamentoMutationOptions(options));
+    }
+
 export const getListDistribuidorasUrl = () => {
 
 

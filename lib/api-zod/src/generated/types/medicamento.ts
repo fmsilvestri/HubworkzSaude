@@ -18,8 +18,10 @@ export interface Medicamento {
   /** @nullable */
   conservacao?: string | null;
   /** @nullable */
-  registro_anvisa?: string | null;
+  registro?: string | null;
   /** @nullable */
-  categoria?: string | null;
+  classe?: string | null;
+  /** @nullable */
+  ativo?: boolean | null;
   created_at: string;
 }
