@@ -117,8 +117,8 @@ export default function Cotacao() {
       <div>
         <label className="text-white/60 text-sm block mb-1.5">Filtrar por processo</label>
         <Select
-          value={filtroProcessoId}
-          onValueChange={setFiltroProcessoId}
+          value={filtroProcessoId || "__all__"}
+          onValueChange={(v) => setFiltroProcessoId(v === "__all__" ? "" : v)}
         >
           <SelectTrigger
             data-testid="input-processo-cotacao"
@@ -127,7 +127,7 @@ export default function Cotacao() {
             <SelectValue placeholder="Todos os processos..." />
           </SelectTrigger>
           <SelectContent className="bg-[#1B1B1E] border-white/10">
-            <SelectItem value="" className="text-white/60">
+            <SelectItem value="__all__" className="text-white/60">
               Todos os processos
             </SelectItem>
             {(processos ?? []).map((p) => (
