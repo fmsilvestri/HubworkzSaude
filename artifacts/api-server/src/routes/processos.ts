@@ -71,7 +71,7 @@ router.post("/processos", async (req, res): Promise<void> => {
     const payload = pick(req.body as Record<string, unknown>, ALLOWED_CREATE);
     payload["clinica_id"] = DEFAULT_CLINICA;
     if (!payload["fase"]) payload["fase"] = 1;
-    if (!payload["status"]) payload["status"] = "pendente";
+    if (!payload["status"]) payload["status"] = "solicitado";
 
     const { data, error } = await supabase
       .from("processos")

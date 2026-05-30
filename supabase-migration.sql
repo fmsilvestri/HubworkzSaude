@@ -7,7 +7,18 @@
 ALTER TABLE processos ADD COLUMN IF NOT EXISTS fase_atual integer;
 ALTER TABLE processos ADD COLUMN IF NOT EXISTS numero_protocolo text;
 ALTER TABLE processos ADD COLUMN IF NOT EXISTS observacoes text;
+ALTER TABLE processos ADD COLUMN IF NOT EXISTS convenio text;
+ALTER TABLE processos ADD COLUMN IF NOT EXISTS paciente_id uuid REFERENCES pacientes(id) ON DELETE SET NULL;
+ALTER TABLE processos ADD COLUMN IF NOT EXISTS medicamento_id uuid REFERENCES medicamentos(id) ON DELETE SET NULL;
 UPDATE processos SET fase_atual = fase WHERE fase_atual IS NULL;
+
+-- Corrige o check constraint de status para aceitar todos os valores usados pela aplicação
+ALTER TABLE processos DROP CONSTRAINT IF EXISTS processos_status_check;
+ALTER TABLE processos ADD CONSTRAINT processos_status_check
+  CHECK (status IN (
+    'pendente','solicitado','cotacao','em_andamento',
+    'ativo','aprovado','concluido','cancelado','importado'
+  ));
 
 -- ── 2. NOTAS_FISCAIS ─────────────────────────────────────────
 ALTER TABLE notas_fiscais ADD COLUMN IF NOT EXISTS status text;

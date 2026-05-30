@@ -40,10 +40,15 @@ import { cn } from "@/lib/utils";
 const FIELD = "bg-[#0F0F12] border-white/10 text-white placeholder:text-white/30";
 
 const STATUS_COLORS: Record<string, string> = {
-  ativo: "bg-green-500/15 text-green-400 border-green-500/20",
-  pendente: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
-  concluido: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  cancelado: "bg-red-500/15 text-red-400 border-red-500/20",
+  solicitado:    "bg-purple-500/15 text-purple-400 border-purple-500/20",
+  cotacao:       "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  aprovado:      "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+  em_andamento:  "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  ativo:         "bg-green-500/15 text-green-400 border-green-500/20",
+  pendente:      "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  concluido:     "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  cancelado:     "bg-red-500/15 text-red-400 border-red-500/20",
+  importado:     "bg-gray-500/15 text-gray-400 border-gray-500/20",
 };
 
 const FASES = [
@@ -80,7 +85,7 @@ const schema = z.object({
   paciente_id: z.string().min(1, "Selecione um paciente"),
   medicamento_id: z.string().optional(),
   convenio: z.string().optional(),
-  status: z.string().min(1, "Selecione o status"),
+  status: z.string().min(1, "Selecione o status").default("solicitado"),
   fase_atual: z.coerce.number().min(1).max(4),
   numero_protocolo: z.string().optional(),
   observacoes: z.string().optional(),
@@ -92,7 +97,7 @@ const DEFAULT: FormValues = {
   paciente_id: "",
   medicamento_id: "",
   convenio: "",
-  status: "pendente",
+  status: "solicitado",
   fase_atual: 1,
   numero_protocolo: "",
   observacoes: "",
@@ -211,10 +216,12 @@ function ProcessoFormFields({
                 </SelectTrigger>
               </FormControl>
               <SelectContent className="bg-[#1B1B1E] border-white/10">
-                <SelectItem value="pendente" className="text-white focus:bg-white/10">Pendente</SelectItem>
-                <SelectItem value="ativo" className="text-white focus:bg-white/10">Ativo</SelectItem>
-                <SelectItem value="concluido" className="text-white focus:bg-white/10">Concluído</SelectItem>
-                <SelectItem value="cancelado" className="text-white focus:bg-white/10">Cancelado</SelectItem>
+                <SelectItem value="solicitado"   className="text-white focus:bg-white/10">Solicitado</SelectItem>
+                <SelectItem value="cotacao"      className="text-white focus:bg-white/10">Em Cotação</SelectItem>
+                <SelectItem value="aprovado"     className="text-white focus:bg-white/10">Aprovado</SelectItem>
+                <SelectItem value="em_andamento" className="text-white focus:bg-white/10">Em Andamento</SelectItem>
+                <SelectItem value="concluido"    className="text-white focus:bg-white/10">Concluído</SelectItem>
+                <SelectItem value="cancelado"    className="text-white focus:bg-white/10">Cancelado</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
