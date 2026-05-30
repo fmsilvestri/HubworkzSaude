@@ -276,14 +276,110 @@ export default function Cotacao() {
     );
   };
 
-  const list = cotacoes ?? [];
+  const allCotacoes = cotacoes ?? [];
+  const list = allCotacoes;
 
-  // Stats
-  const aprovadas = list.filter((c) => normalizeStatus(c.status) === "aprovado");
-  const reprovadas = list.filter((c) => normalizeStatus(c.status) === "reprovado");
+  // Stats (computed over all, unfiltered)
+  const aprovadas = allCotacoes.filter((c) => normalizeStatus(c.status) === "aprovado");
+  const reprovadas = allCotacoes.filter((c) => normalizeStatus(c.status) === "reprovado");
+  const pendentes = allCotacoes.filter((c) => normalizeStatus(c.status) === "pendente");
   const totalAprovado = aprovadas.reduce((s, c) => s + (Number(c.valor_aprovado) || 0), 0);
-  const totalNoova = list.reduce((s, c) => s + (Number(c.valor_noova) || 0), 0);
-  const totalResultado = list.reduce((s, c) => s + (Number(c.resultado) || 0), 0);
+  const totalNoova = allCotacoes.reduce((s, c) => s + (Number(c.valor_noova) || 0), 0);
+  const totalResultado = allCotacoes.reduce((s, c) => s + (Number(c.resultado) || 0), 0);
+
+  function toggleFiltro(val: string) {
+    setStatusFiltro((prev) => (prev === val ? "" : val));
+  }
+
+  const statCards = [
+    {
+      label: "Total",
+      value: allCotacoes.length,
+      icon: FileText,
+      filtro: "",
+      gradient: "linear-gradient(135deg, #2a2a35 0%, #1B1B1E 100%)",
+      glow: "rgba(255,255,255,0.06)",
+      border: "rgba(255,255,255,0.14)",
+      iconBg: "rgba(255,255,255,0.07)",
+      iconColor: "rgba(255,255,255,0.5)",
+      valueColor: "#ffffff",
+      sublabel: "cotações cadastradas",
+    },
+    {
+      label: "Aprovadas",
+      value: aprovadas.length,
+      icon: CheckCircle2,
+      filtro: "aprovado",
+      gradient: "linear-gradient(135deg, #0d2b1a 0%, #112418 100%)",
+      glow: "rgba(34,197,94,0.18)",
+      border: "rgba(34,197,94,0.25)",
+      iconBg: "rgba(34,197,94,0.15)",
+      iconColor: "#4ade80",
+      valueColor: "#4ade80",
+      sublabel: "aprovadas pelo convênio",
+    },
+    {
+      label: "Reprovadas",
+      value: reprovadas.length,
+      icon: XCircle,
+      filtro: "reprovado",
+      gradient: "linear-gradient(135deg, #2b0d0d 0%, #241212 100%)",
+      glow: "rgba(239,68,68,0.18)",
+      border: "rgba(239,68,68,0.25)",
+      iconBg: "rgba(239,68,68,0.15)",
+      iconColor: "#f87171",
+      valueColor: "#f87171",
+      sublabel: "não aprovadas",
+    },
+    {
+      label: "Pendentes",
+      value: pendentes.length,
+      icon: Clock,
+      filtro: "pendente",
+      gradient: "linear-gradient(135deg, #2b2200 0%, #241e0a 100%)",
+      glow: "rgba(234,179,8,0.18)",
+      border: "rgba(234,179,8,0.25)",
+      iconBg: "rgba(234,179,8,0.15)",
+      iconColor: "#facc15",
+      valueColor: "#facc15",
+      sublabel: "aguardando retorno",
+    },
+  ];
+
+  const financialCards = [
+    {
+      label: "Valor Total Noova",
+      value: totalNoova,
+      filtro: "",
+      gradient: "linear-gradient(135deg, #2b1800 0%, #221508 100%)",
+      glow: "rgba(245,110,15,0.22)",
+      border: "rgba(245,110,15,0.3)",
+      valueColor: "#F56E0F",
+      sublabel: "soma de todos os valores Noova",
+    },
+    {
+      label: "Valor Total Aprovado",
+      value: totalAprovado,
+      filtro: "aprovado",
+      gradient: "linear-gradient(135deg, #0d2b1a 0%, #112418 100%)",
+      glow: "rgba(34,197,94,0.18)",
+      border: "rgba(34,197,94,0.28)",
+      valueColor: "#4ade80",
+      sublabel: "soma dos valores aprovados",
+    },
+    {
+      label: "Resultado Total",
+      value: totalResultado,
+      filtro: "",
+      gradient: totalResultado >= 0
+        ? "linear-gradient(135deg, #0a2a1e 0%, #0e2318 100%)"
+        : "linear-gradient(135deg, #2b0d0d 0%, #241212 100%)",
+      glow: totalResultado >= 0 ? "rgba(165,255,214,0.15)" : "rgba(239,68,68,0.15)",
+      border: totalResultado >= 0 ? "rgba(165,255,214,0.25)" : "rgba(239,68,68,0.25)",
+      valueColor: totalResultado >= 0 ? "#A5FFD6" : "#f87171",
+      sublabel: "lucro líquido total",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -305,70 +401,83 @@ export default function Cotacao() {
         </Button>
       </div>
 
-      {/* Stats */}
+      {/* Stats — clickable, 3D */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          {
-            label: "Total",
-            value: list.length,
-            icon: FileText,
-            color: "text-white/60",
-            bg: "bg-white/5",
-          },
-          {
-            label: "Aprovadas",
-            value: aprovadas.length,
-            icon: CheckCircle2,
-            color: "text-green-400",
-            bg: "bg-green-500/10",
-          },
-          {
-            label: "Reprovadas",
-            value: reprovadas.length,
-            icon: XCircle,
-            color: "text-red-400",
-            bg: "bg-red-500/10",
-          },
-          {
-            label: "Pendentes",
-            value: list.filter((c) => normalizeStatus(c.status) === "pendente").length,
-            icon: Clock,
-            color: "text-yellow-400",
-            bg: "bg-yellow-500/10",
-          },
-        ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="bg-[#1B1B1E] border border-white/10 rounded-xl p-4 flex items-center gap-3">
-            <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", bg)}>
-              <Icon className={cn("h-4 w-4", color)} />
-            </div>
-            <div>
-              <p className="text-white/40 text-xs">{label}</p>
-              <p className="text-white font-bold text-lg">{value}</p>
-            </div>
-          </div>
-        ))}
+        {statCards.map(({ label, value, icon: Icon, filtro, gradient, glow, border, iconBg, iconColor, valueColor, sublabel }) => {
+          const isActive = statusFiltro === filtro && (filtro !== "" || statusFiltro === "");
+          const isFiltered = filtro === "" ? statusFiltro === "" : statusFiltro === filtro;
+          return (
+            <button
+              key={label}
+              onClick={() => toggleFiltro(filtro)}
+              style={{
+                background: gradient,
+                boxShadow: isFiltered
+                  ? `0 0 0 1.5px ${border}, 0 4px 24px ${glow}, 0 1px 0 rgba(255,255,255,0.06) inset`
+                  : `0 0 0 1px ${border}, 0 2px 12px ${glow}, 0 1px 0 rgba(255,255,255,0.04) inset`,
+                transform: isFiltered ? "translateY(-1px)" : "none",
+              }}
+              className={cn(
+                "rounded-xl p-4 flex items-center gap-3 text-left transition-all duration-200 hover:-translate-y-0.5 group w-full",
+                isFiltered && "ring-1 ring-white/20"
+              )}
+            >
+              <div
+                className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110"
+                style={{ background: iconBg, boxShadow: `0 0 12px ${glow}` }}
+              >
+                <Icon className="h-4 w-4" style={{ color: iconColor }} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-white/40 text-xs mb-0.5">{label}</p>
+                <p className="font-bold text-2xl leading-none mb-1" style={{ color: valueColor }}>{value}</p>
+                <p className="text-white/25 text-[10px] leading-snug truncate">{sublabel}</p>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Financial summary */}
+      {/* Financial summary — 3D */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {[
-          { label: "Valor Total Noova", value: totalNoova, color: "text-[#F56E0F]" },
-          { label: "Valor Total Aprovado", value: totalAprovado, color: "text-green-400" },
-          { label: "Resultado Total", value: totalResultado, color: totalResultado >= 0 ? "text-[#A5FFD6]" : "text-red-400" },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="bg-[#1B1B1E] border border-white/10 rounded-xl px-5 py-3 flex items-center gap-3">
-            <TrendingUp className={cn("h-4 w-4 shrink-0", color)} />
-            <div>
-              <p className="text-white/40 text-xs">{label}</p>
-              <p className={cn("font-bold text-sm", color)}>
-                R$ {value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-          </div>
-        ))}
+        {financialCards.map(({ label, value, filtro, gradient, glow, border, valueColor, sublabel }) => {
+          const isFiltered = filtro !== "" && statusFiltro === filtro;
+          return (
+            <button
+              key={label}
+              onClick={() => filtro && toggleFiltro(filtro)}
+              style={{
+                background: gradient,
+                boxShadow: isFiltered
+                  ? `0 0 0 1.5px ${border}, 0 4px 24px ${glow}, 0 1px 0 rgba(255,255,255,0.05) inset`
+                  : `0 0 0 1px ${border}, 0 2px 12px ${glow}, 0 1px 0 rgba(255,255,255,0.03) inset`,
+                transform: isFiltered ? "translateY(-1px)" : "none",
+                cursor: filtro ? "pointer" : "default",
+              }}
+              className={cn(
+                "rounded-xl px-5 py-4 flex items-center gap-4 text-left transition-all duration-200 w-full",
+                filtro && "hover:-translate-y-0.5 group"
+              )}
+            >
+              <div
+                className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: `${glow.replace("0.22", "0.3").replace("0.18", "0.25").replace("0.15", "0.2")}`, boxShadow: `0 0 14px ${glow}` }}
+              >
+                <TrendingUp className="h-4 w-4" style={{ color: valueColor }} />
+              </div>
+              <div>
+                <p className="text-white/40 text-xs mb-0.5">{label}</p>
+                <p className="font-bold text-lg leading-none mb-1" style={{ color: valueColor }}>
+                  R$ {value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-white/25 text-[10px]">{sublabel}</p>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Filter */}
+      {/* Filter + active indicator */}
       <div className="flex items-center gap-3">
         <Select
           value={statusFiltro || "__all__"}
@@ -385,9 +494,14 @@ export default function Cotacao() {
           </SelectContent>
         </Select>
         {statusFiltro && (
-          <Button variant="ghost" size="sm" onClick={() => setStatusFiltro("")} className="text-white/40 hover:text-white">
-            Limpar filtro
-          </Button>
+          <>
+            <span className="text-white/30 text-sm">
+              Filtrando: <span className="text-white/60 capitalize">{statusFiltro}</span> — {list.length} resultado{list.length !== 1 ? "s" : ""}
+            </span>
+            <Button variant="ghost" size="sm" onClick={() => setStatusFiltro("")} className="text-white/40 hover:text-white">
+              Limpar filtro
+            </Button>
+          </>
         )}
       </div>
 
