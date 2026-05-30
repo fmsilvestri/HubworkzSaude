@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Activity, Send, Loader2, User, Bot } from "lucide-react";
+import { Send, Loader2, User, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const SUGGESTIONS = [
@@ -58,7 +58,7 @@ export default function DiIA() {
       {/* Sidebar */}
       <div className="hidden xl:flex flex-col w-72 bg-[#1B1B1E] border border-white/10 rounded-[14px] p-5 space-y-5">
         <div className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-[#A5FFD6]" />
+          <img src="/di-avatar.png" alt="Di" className="h-8 w-8 rounded-full object-cover object-top border border-[#A5FFD6]/30" />
           <h2 className="text-white font-semibold">Di IA</h2>
         </div>
         <div>
@@ -83,14 +83,18 @@ export default function DiIA() {
       <div className="flex-1 flex flex-col bg-[#1B1B1E] border border-white/10 rounded-[14px] overflow-hidden">
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b border-white/5 bg-[rgba(63,52,137,0.15)]">
-          <div className="h-9 w-9 bg-[#3C3489] rounded-xl flex items-center justify-center">
-            <Activity className="h-5 w-5 text-[#A5FFD6]" />
+          <div className="relative shrink-0">
+            <img
+              src="/di-avatar.png"
+              alt="Di"
+              className="h-10 w-10 rounded-xl object-cover object-top border border-[#A5FFD6]/25 shadow-lg shadow-[#3C3489]/40"
+            />
+            <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#A5FFD6] border-2 border-[#1B1B1E] animate-pulse" />
           </div>
           <div>
             <h3 className="text-white font-semibold text-sm">Di IA — Assistente Farmacêutico</h3>
             <p className="text-[#A5FFD6] text-xs">Especialista em intermediação oncológica</p>
           </div>
-          <div className="ml-auto h-2 w-2 rounded-full bg-[#A5FFD6] animate-pulse" />
         </div>
 
         {/* Messages */}
@@ -101,8 +105,13 @@ export default function DiIA() {
             </div>
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="h-16 w-16 bg-[rgba(63,52,137,0.4)] rounded-2xl flex items-center justify-center mb-4">
-                <Activity className="h-8 w-8 text-[#A5FFD6]" />
+              <div className="relative mb-5">
+                <img
+                  src="/di-avatar.png"
+                  alt="Di"
+                  className="h-24 w-24 rounded-2xl object-cover object-top border-2 border-[#A5FFD6]/30 shadow-2xl shadow-[#3C3489]/50"
+                />
+                <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-[#A5FFD6] border-2 border-[#1B1B1E] animate-pulse" />
               </div>
               <h3 className="text-white font-semibold text-lg mb-2">Olá, sou a Di IA</h3>
               <p className="text-white/40 max-w-sm text-sm leading-relaxed">

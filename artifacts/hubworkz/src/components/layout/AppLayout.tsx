@@ -21,7 +21,6 @@ import {
   LogOut,
   Menu,
   Activity,
-  Sparkles,
   Sun,
   Moon,
   type LucideIcon,
@@ -290,13 +289,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
 
-          <Button
+          <button
             onClick={() => setLocation("/di-ia")}
-            className="bg-[#3C3489] hover:bg-[#3C3489]/80 text-[#A5FFD6] rounded-full px-4 h-9 font-semibold text-sm border-none shadow-lg shadow-[#3C3489]/20 transition-all hover:scale-105"
+            className="flex items-center gap-2 bg-[#3C3489] hover:bg-[#3C3489]/80 text-[#A5FFD6] rounded-full pl-1 pr-4 h-9 font-semibold text-sm border-none shadow-lg shadow-[#3C3489]/20 transition-all hover:scale-105"
           >
-            <Sparkles className="h-4 w-4 mr-2" />
+            <img
+              src="/di-avatar.png"
+              alt="Di"
+              className="h-7 w-7 rounded-full object-cover object-top border border-[#A5FFD6]/30"
+            />
             Di IA
-          </Button>
+          </button>
         </div>
       </header>
 
