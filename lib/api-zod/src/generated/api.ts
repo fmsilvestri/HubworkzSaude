@@ -179,6 +179,7 @@ export const ListPacientesResponseItem = zod.object({
   "diagnostico": zod.string().nullish(),
   "cid": zod.string().nullish(),
   "endereco": zod.string().nullish(),
+  "mandato_pdf_url": zod.string().nullish(),
   "mandato_ativo": zod.boolean().optional(),
   "created_at": zod.string()
 })
@@ -222,6 +223,7 @@ export const GetPacienteResponse = zod.object({
   "diagnostico": zod.string().nullish(),
   "cid": zod.string().nullish(),
   "endereco": zod.string().nullish(),
+  "mandato_pdf_url": zod.string().nullish(),
   "mandato_ativo": zod.boolean().optional(),
   "created_at": zod.string()
 })
@@ -258,6 +260,7 @@ export const UpdatePacienteResponse = zod.object({
   "diagnostico": zod.string().nullish(),
   "cid": zod.string().nullish(),
   "endereco": zod.string().nullish(),
+  "mandato_pdf_url": zod.string().nullish(),
   "mandato_ativo": zod.boolean().optional(),
   "created_at": zod.string()
 })

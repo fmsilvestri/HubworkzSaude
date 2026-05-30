@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   useListPacientes,
   useCreatePaciente,
@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Users, Plus, FileCheck, Pencil, Trash2 } from "lucide-react";
+import { Search, Users, Plus, FileCheck, Pencil, Trash2, FileText, ExternalLink, Upload, Loader2 } from "lucide-react";
 
 const FIELD = "bg-[#0F0F12] border-white/10 text-white placeholder:text-white/30";
 
@@ -58,6 +58,7 @@ type Paciente = {
   numero_carteirinha?: string | null;
   diagnostico?: string | null;
   cid?: string | null;
+  mandato_pdf_url?: string | null;
   mandato_ativo?: boolean | null;
   created_at: string;
 };
@@ -168,6 +169,8 @@ export default function Pacientes() {
   const [openNew, setOpenNew] = useState(false);
   const [editItem, setEditItem] = useState<Paciente | null>(null);
   const [deleteItem, setDeleteItem] = useState<Paciente | null>(null);
+  const [uploadingMandato, setUploadingMandato] = useState(false);
+  const mandatoPdfRef = useRef<HTMLInputElement>(null);
 
   const { data: pacientes, isLoading } = useListPacientes({ search: search || undefined });
   const createPaciente = useCreatePaciente();
@@ -233,6 +236,25 @@ export default function Pacientes() {
       },
       onError: () => toast({ title: "Erro ao excluir paciente.", variant: "destructive" }),
     });
+  }
+
+  async function handleMandatoUpload(file: File) {
+    if (!editItem) return;
+    setUploadingMandato(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const resp = await fetch(`/api/pacientes/${editItem.id}/mandato-upload`, { method: "POST", body: fd });
+      const data = await resp.json() as { url?: string; error?: string };
+      if (!resp.ok || !data.url) throw new Error(data.error ?? "Upload failed");
+      toast({ title: "Mandato anexado com sucesso." });
+      setEditItem((prev) => prev ? { ...prev, mandato_pdf_url: data.url ?? null, mandato_ativo: true } : null);
+      invalidate();
+    } catch {
+      toast({ title: "Erro ao fazer upload do mandato.", variant: "destructive" });
+    } finally {
+      setUploadingMandato(false);
+    }
   }
 
   const list = (pacientes as Paciente[] ?? []);
@@ -343,6 +365,15 @@ export default function Pacientes() {
         )}
       </div>
 
+      {/* Hidden PDF input */}
+      <input
+        ref={mandatoPdfRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleMandatoUpload(f); e.target.value = ""; }}
+      />
+
       {/* Sheet de edição */}
       <Sheet open={!!editItem} onOpenChange={(o) => { if (!o) setEditItem(null); }}>
         <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[540px] sm:max-w-[540px] overflow-y-auto">
@@ -352,6 +383,52 @@ export default function Pacientes() {
           <Form {...editForm}>
             <PacienteForm onSubmit={handleUpdate} isPending={updatePaciente.isPending} submitLabel="Salvar Alterações" />
           </Form>
+
+          {/* Mandato PDF */}
+          <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
+            <p className="text-white/50 text-xs uppercase tracking-wider font-medium">Mandato Judicial / PDF</p>
+            {editItem?.mandato_pdf_url ? (
+              <div className="flex items-center justify-between bg-[#0F0F12] rounded-xl border border-white/10 px-4 py-3">
+                <a
+                  href={editItem.mandato_pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-[#F56E0F] hover:underline"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>Ver mandato</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                <button
+                  onClick={() => mandatoPdfRef.current?.click()}
+                  disabled={uploadingMandato}
+                  className="text-xs text-white/40 hover:text-white/70 transition-colors"
+                >
+                  {uploadingMandato ? <Loader2 className="h-3 w-3 animate-spin" /> : "Substituir"}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => mandatoPdfRef.current?.click()}
+                disabled={uploadingMandato}
+                className="w-full h-24 rounded-xl border border-dashed border-white/20 hover:border-[#F56E0F]/50 flex flex-col items-center justify-center gap-2 transition-colors text-white/40 hover:text-white/60"
+              >
+                {uploadingMandato ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-[#F56E0F]" />
+                ) : (
+                  <>
+                    <Upload className="h-6 w-6" />
+                    <span className="text-xs">Clique para anexar o mandato em PDF</span>
+                  </>
+                )}
+              </button>
+            )}
+            {editItem?.mandato_ativo && (
+              <p className="text-green-400 text-xs flex items-center gap-1.5">
+                <FileCheck className="h-3 w-3" /> Mandato ativo
+              </p>
+            )}
+          </div>
         </SheetContent>
       </Sheet>
 

@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import multer from "multer";
 import { supabase } from "../lib/supabase";
 
 const router: IRouter = Router();
@@ -9,6 +10,14 @@ const ALLOWED = [
   "nome", "cpf", "data_nascimento", "email", "telefone",
   "convenio", "numero_carteirinha", "diagnostico", "cid", "endereco", "mandato_ativo",
 ];
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    cb(null, file.mimetype === "application/pdf");
+  },
+});
 
 function pick(body: Record<string, unknown>) {
   const out: Record<string, unknown> = {};
@@ -95,5 +104,47 @@ router.delete("/pacientes/:id", async (req, res): Promise<void> => {
     res.status(500).json({ error: "Failed to delete paciente" });
   }
 });
+
+router.post(
+  "/pacientes/:id/mandato-upload",
+  upload.single("file"),
+  async (req, res): Promise<void> => {
+    try {
+      const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
+      const file = req.file;
+
+      if (!file) {
+        res.status(400).json({ error: "Nenhum arquivo enviado. Apenas PDF é aceito." });
+        return;
+      }
+
+      const storagePath = `${id}/mandato.pdf`;
+
+      const { error: upErr } = await supabase.storage
+        .from("pacientes")
+        .upload(storagePath, file.buffer, { contentType: "application/pdf", upsert: true });
+
+      if (upErr) throw upErr;
+
+      const { data: urlData } = supabase.storage
+        .from("pacientes")
+        .getPublicUrl(storagePath);
+
+      const publicUrl = urlData.publicUrl;
+
+      const { error: updateErr } = await supabase
+        .from("pacientes")
+        .update({ mandato_pdf_url: publicUrl, mandato_ativo: true })
+        .eq("id", id);
+
+      if (updateErr) throw updateErr;
+
+      res.json({ url: publicUrl });
+    } catch (err) {
+      req.log.error({ err }, "Failed to upload mandato PDF");
+      res.status(500).json({ error: "Falha ao fazer upload do mandato" });
+    }
+  }
+);
 
 export default router;

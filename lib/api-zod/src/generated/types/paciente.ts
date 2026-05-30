@@ -28,6 +28,8 @@ export interface Paciente {
   cid?: string | null;
   /** @nullable */
   endereco?: string | null;
+  /** @nullable */
+  mandato_pdf_url?: string | null;
   mandato_ativo?: boolean;
   created_at: string;
 }
