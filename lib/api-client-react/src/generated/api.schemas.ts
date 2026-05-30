@@ -236,6 +236,18 @@ export interface FaturaUpdate {
   valor?: number;
 }
 
+export interface FaturaEdit {
+  numero_nf?: string;
+  tipo?: string;
+  valor?: number;
+  status?: string;
+  data_emissao?: string;
+  data_vencimento?: string;
+  processo_id?: string;
+  paciente_id?: string;
+  convenio_id?: string;
+}
+
 export interface Glosa {
   id: string;
   /** @nullable */

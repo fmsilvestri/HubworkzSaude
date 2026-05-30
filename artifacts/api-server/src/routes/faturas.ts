@@ -53,13 +53,25 @@ router.get("/faturas/:id", async (req, res): Promise<void> => {
   }
 });
 
+const PATCH_ALLOWED = ["status", "numero_nf", "valor"];
+const PUT_ALLOWED = ["numero_nf", "tipo", "valor", "status", "data_emissao", "data_vencimento", "processo_id", "paciente_id", "convenio_id"];
+
+function pick(body: Record<string, unknown>, allowed: string[]) {
+  const out: Record<string, unknown> = {};
+  for (const k of allowed) {
+    if (Object.prototype.hasOwnProperty.call(body, k)) out[k] = body[k];
+  }
+  return out;
+}
+
 router.patch("/faturas/:id", async (req, res): Promise<void> => {
   try {
-    const raw = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
+    const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
+    const payload = pick(req.body as Record<string, unknown>, PATCH_ALLOWED);
     const { data, error } = await supabase
       .from("notas_fiscais")
-      .update(req.body)
-      .eq("id", raw)
+      .update(payload)
+      .eq("id", id)
       .select()
       .single();
     if (error || !data) { res.status(404).json({ error: "Fatura not found" }); return; }
@@ -67,6 +79,36 @@ router.patch("/faturas/:id", async (req, res): Promise<void> => {
   } catch (err) {
     req.log.error({ err }, "Failed to update fatura");
     res.status(500).json({ error: "Failed to update fatura" });
+  }
+});
+
+router.put("/faturas/:id", async (req, res): Promise<void> => {
+  try {
+    const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
+    const payload = pick(req.body as Record<string, unknown>, PUT_ALLOWED);
+    const { data, error } = await supabase
+      .from("notas_fiscais")
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error || !data) { res.status(404).json({ error: "Fatura not found" }); return; }
+    res.json(data);
+  } catch (err) {
+    req.log.error({ err }, "Failed to edit fatura");
+    res.status(500).json({ error: "Failed to edit fatura" });
+  }
+});
+
+router.delete("/faturas/:id", async (req, res): Promise<void> => {
+  try {
+    const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
+    const { error } = await supabase.from("notas_fiscais").delete().eq("id", id);
+    if (error) throw error;
+    res.status(204).send();
+  } catch (err) {
+    req.log.error({ err }, "Failed to delete fatura");
+    res.status(500).json({ error: "Failed to delete fatura" });
   }
 });
 

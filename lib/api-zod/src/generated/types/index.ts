@@ -20,6 +20,7 @@ export * from './distribuidora';
 export * from './distribuidoraInput';
 export * from './faseStat';
 export * from './fatura';
+export * from './faturaEdit';
 export * from './faturaInput';
 export * from './faturaUpdate';
 export * from './getAiHistoryParams';

@@ -566,6 +566,48 @@ export const UpdateFaturaResponse = zod.object({
 
 
 /**
+ * @summary Full edit of an invoice
+ */
+export const EditFaturaParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const EditFaturaBody = zod.object({
+  "numero_nf": zod.string().optional(),
+  "tipo": zod.string().optional(),
+  "valor": zod.number().optional(),
+  "status": zod.string().optional(),
+  "data_emissao": zod.string().optional(),
+  "data_vencimento": zod.string().optional(),
+  "processo_id": zod.string().optional(),
+  "paciente_id": zod.string().optional(),
+  "convenio_id": zod.string().optional()
+})
+
+export const EditFaturaResponse = zod.object({
+  "id": zod.string(),
+  "processo_id": zod.string().nullish(),
+  "paciente_id": zod.string().nullish(),
+  "convenio_id": zod.string().nullish(),
+  "tipo": zod.string(),
+  "numero_nf": zod.string().nullish(),
+  "valor": zod.number().nullish(),
+  "status": zod.string(),
+  "data_emissao": zod.string().nullish(),
+  "data_vencimento": zod.string().nullish(),
+  "created_at": zod.string()
+})
+
+
+/**
+ * @summary Delete an invoice
+ */
+export const DeleteFaturaParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
  * @summary List glosas
  */
 export const ListGlosasQueryParams = zod.object({

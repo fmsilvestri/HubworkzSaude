@@ -33,6 +33,7 @@ import type {
   DistribuidoraInput,
   FaseStat,
   Fatura,
+  FaturaEdit,
   FaturaInput,
   FaturaUpdate,
   GetAiHistoryParams,
@@ -2173,6 +2174,148 @@ export const useUpdateFatura = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateFaturaMutationOptions(options));
+    }
+
+export const getEditFaturaUrl = (id: string,) => {
+
+
+
+
+  return `/api/faturas/${id}`
+}
+
+/**
+ * @summary Full edit of an invoice
+ */
+export const editFatura = async (id: string,
+    faturaEdit: FaturaEdit, options?: RequestInit): Promise<Fatura> => {
+
+  return customFetch<Fatura>(getEditFaturaUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      faturaEdit,)
+  }
+);}
+
+
+
+
+export const getEditFaturaMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editFatura>>, TError,{id: string;data: BodyType<FaturaEdit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof editFatura>>, TError,{id: string;data: BodyType<FaturaEdit>}, TContext> => {
+
+const mutationKey = ['editFatura'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editFatura>>, {id: string;data: BodyType<FaturaEdit>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  editFatura(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EditFaturaMutationResult = NonNullable<Awaited<ReturnType<typeof editFatura>>>
+    export type EditFaturaMutationBody = BodyType<FaturaEdit>
+    export type EditFaturaMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Full edit of an invoice
+ */
+export const useEditFatura = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editFatura>>, TError,{id: string;data: BodyType<FaturaEdit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof editFatura>>,
+        TError,
+        {id: string;data: BodyType<FaturaEdit>},
+        TContext
+      > => {
+      return useMutation(getEditFaturaMutationOptions(options));
+    }
+
+export const getDeleteFaturaUrl = (id: string,) => {
+
+
+
+
+  return `/api/faturas/${id}`
+}
+
+/**
+ * @summary Delete an invoice
+ */
+export const deleteFatura = async (id: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteFaturaUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteFaturaMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFatura>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteFatura>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteFatura'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteFatura>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteFatura(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteFaturaMutationResult = NonNullable<Awaited<ReturnType<typeof deleteFatura>>>
+
+    export type DeleteFaturaMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an invoice
+ */
+export const useDeleteFatura = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFatura>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteFatura>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteFaturaMutationOptions(options));
     }
 
 export const getListGlosasUrl = (params?: ListGlosasParams,) => {

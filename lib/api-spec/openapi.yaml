@@ -548,6 +548,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Fatura"
+    put:
+      operationId: editFatura
+      tags: [faturas]
+      summary: Full edit of an invoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaturaEdit"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fatura"
+    delete:
+      operationId: deleteFatura
+      tags: [faturas]
+      summary: Delete an invoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
 
   /glosas:
     get:
@@ -1236,6 +1272,28 @@ components:
           type: string
         valor:
           type: number
+
+    FaturaEdit:
+      type: object
+      properties:
+        numero_nf:
+          type: string
+        tipo:
+          type: string
+        valor:
+          type: number
+        status:
+          type: string
+        data_emissao:
+          type: string
+        data_vencimento:
+          type: string
+        processo_id:
+          type: string
+        paciente_id:
+          type: string
+        convenio_id:
+          type: string
 
     Glosa:
       type: object
