@@ -87,13 +87,13 @@ router.put("/medicamentos/:id", async (req, res): Promise<void> => {
     };
 
     const payload: Record<string, unknown> = {};
-    if (nome !== undefined) payload["nome"] = nome;
-    if (principio_ativo !== undefined) payload["principio_ativo"] = principio_ativo || null;
-    if (apresentacao !== undefined) payload["apresentacao"] = apresentacao || null;
-    if (modo_uso !== undefined) payload["modo_uso"] = modo_uso || null;
-    if (conservacao !== undefined) payload["conservacao"] = conservacao || null;
-    if (registro !== undefined) payload["registro"] = registro || null;
-    if (classe !== undefined) payload["classe"] = classe || null;
+    if (nome !== undefined && nome !== "") payload["nome"] = nome;
+    if (principio_ativo !== undefined && principio_ativo !== "") payload["principio_ativo"] = principio_ativo;
+    if (apresentacao !== undefined && apresentacao !== "") payload["apresentacao"] = apresentacao;
+    if (modo_uso !== undefined && modo_uso !== "") payload["modo_uso"] = modo_uso;
+    if (conservacao !== undefined && conservacao !== "") payload["conservacao"] = conservacao;
+    if (registro !== undefined && registro !== "") payload["registro"] = registro;
+    if (classe !== undefined && classe !== "") payload["classe"] = classe;
 
     const { data, error } = await supabase
       .from("medicamentos")
