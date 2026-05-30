@@ -215,6 +215,18 @@ export default function Medicamentos() {
   const fotoInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
+  // New form: pending image before medicamento is created
+  const [newFotoFile, setNewFotoFile] = useState<File | null>(null);
+  const [newFotoPreview, setNewFotoPreview] = useState<string | null>(null);
+  const [uploadingNew, setUploadingNew] = useState(false);
+  const newFotoInputRef = useRef<HTMLInputElement>(null);
+
+  function handleNewFotoSelect(file: File) {
+    setNewFotoFile(file);
+    const url = URL.createObjectURL(file);
+    setNewFotoPreview(url);
+  }
+
   const { data: medicamentos, isLoading } = useListMedicamentos({ search: search || undefined });
   const createMedicamento = useCreateMedicamento();
   const updateMedicamento = useUpdateMedicamento();
@@ -263,11 +275,26 @@ export default function Medicamentos() {
 
   function handleCreate(values: FormValues) {
     createMedicamento.mutate({ data: values }, {
-      onSuccess: () => {
+      onSuccess: async (created) => {
+        if (newFotoFile && created?.id) {
+          setUploadingNew(true);
+          try {
+            const fd = new FormData();
+            fd.append("file", newFotoFile);
+            fd.append("type", "foto");
+            await fetch(`/api/medicamentos/${created.id}/upload`, { method: "POST", body: fd });
+          } catch {
+            // non-fatal — medicamento already saved
+          } finally {
+            setUploadingNew(false);
+          }
+        }
         toast({ title: "Medicamento cadastrado com sucesso." });
         invalidate();
         setOpenNew(false);
         newForm.reset();
+        setNewFotoFile(null);
+        if (newFotoPreview) { URL.revokeObjectURL(newFotoPreview); setNewFotoPreview(null); }
       },
       onError: () => toast({ title: "Erro ao cadastrar medicamento.", variant: "destructive" }),
     });
@@ -334,15 +361,65 @@ export default function Medicamentos() {
               <Plus className="h-4 w-4" /> Novo Medicamento
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[500px] sm:max-w-[500px]">
-            <SheetHeader className="mb-6">
+          <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[500px] sm:max-w-[500px] overflow-y-auto">
+            <SheetHeader className="mb-4">
               <SheetTitle className="text-white">Cadastrar Medicamento</SheetTitle>
             </SheetHeader>
+
+            {/* Image upload for new form */}
+            <div className="mb-5">
+              <p className="text-white/50 text-xs uppercase tracking-wider mb-2 font-medium">Ícone / Foto</p>
+              {newFotoPreview ? (
+                <div className="relative rounded-xl overflow-hidden border border-white/10 group/img">
+                  <img src={newFotoPreview} alt="preview" className="w-full h-36 object-cover" />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => newFotoInputRef.current?.click()}
+                      className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <ImagePlus className="h-3.5 w-3.5" /> Trocar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setNewFotoFile(null); if (newFotoPreview) { URL.revokeObjectURL(newFotoPreview); setNewFotoPreview(null); } }}
+                      className="flex items-center gap-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Remover
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => newFotoInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const f = e.dataTransfer.files[0];
+                    if (f && f.type.startsWith("image/")) handleNewFotoSelect(f);
+                  }}
+                  className="w-full h-28 rounded-xl border-2 border-dashed border-white/15 hover:border-[#F56E0F]/50 hover:bg-[#F56E0F]/5 flex flex-col items-center justify-center gap-2 transition-all text-white/30 hover:text-white/60 group/drop"
+                >
+                  <ImagePlus className="h-7 w-7 group-hover/drop:text-[#F56E0F]/70 transition-colors" />
+                  <span className="text-xs">Clique ou arraste uma imagem aqui</span>
+                  <span className="text-[10px] text-white/20">JPG, PNG, WebP</span>
+                </button>
+              )}
+              <input
+                ref={newFotoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleNewFotoSelect(f); e.target.value = ""; }}
+              />
+            </div>
+
             <FormProvider {...newForm}>
               <MedicamentoForm
                 onSubmit={handleCreate}
-                isPending={createMedicamento.isPending}
-                submitLabel="Cadastrar Medicamento"
+                isPending={createMedicamento.isPending || uploadingNew}
+                submitLabel={uploadingNew ? "Enviando imagem..." : createMedicamento.isPending ? "Cadastrando..." : "Cadastrar Medicamento"}
               />
             </FormProvider>
           </SheetContent>
