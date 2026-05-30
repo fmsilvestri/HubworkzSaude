@@ -24,6 +24,7 @@ import {
   Sun,
   Moon,
   MessageSquare,
+  PackageSearch,
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -146,6 +147,13 @@ const NAV_ITEMS: NavItem[] = [
     icon: MessageSquare,
     gradient: "linear-gradient(135deg, #25D366 0%, #1a9e4b 100%)",
     glow: "rgba(37,211,102,0.45)",
+  },
+  {
+    href: "/elo-saude",
+    label: "Elo Saude Importados",
+    icon: PackageSearch,
+    gradient: "linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)",
+    glow: "rgba(168,85,247,0.45)",
   },
   {
     href: "/configuracoes",

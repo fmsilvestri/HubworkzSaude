@@ -26,6 +26,7 @@ import Pedidos from "@/pages/pedidos";
 import Rastreio from "@/pages/rastreio";
 import Configuracoes from "@/pages/configuracoes";
 import Comunicacao from "@/pages/comunicacao";
+import EloSaude from "@/pages/elo-saude";
 import Restrito from "@/pages/restrito";
 import PacientePortal from "@/pages/paciente-portal";
 
@@ -98,6 +99,7 @@ function Router() {
       <Route path="/rastreio">{() => <ProtectedRoute component={Rastreio} />}</Route>
       <Route path="/di-ia">{() => <ProtectedRoute component={DiIA} />}</Route>
       <Route path="/comunicacao">{() => <ProtectedRoute component={Comunicacao} />}</Route>
+      <Route path="/elo-saude">{() => <ProtectedRoute component={EloSaude} />}</Route>
       <Route path="/configuracoes">{() => <ProtectedRoute component={Configuracoes} />}</Route>
 
       {/* Restricted access roles */}
