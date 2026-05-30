@@ -63,6 +63,19 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 const STATUS_OPTIONS = ["pendente", "aprovado", "reprovado", "não apresentado"];
 const TIPO_OPTIONS = ["comp", "fa", "outro"];
@@ -476,6 +489,154 @@ export default function Cotacao() {
           );
         })}
       </div>
+
+      {/* Charts */}
+      {allCotacoes.length > 0 && (() => {
+        const pieData = [
+          { name: "Aprovadas", value: aprovadas.length, color: "#4ade80" },
+          { name: "Reprovadas", value: reprovadas.length, color: "#f87171" },
+          { name: "Pendentes", value: pendentes.length, color: "#facc15" },
+          { name: "N. Apresentado", value: allCotacoes.filter((c) => normalizeStatus(c.status) === "não apresentado").length, color: "#6b7280" },
+        ].filter((d) => d.value > 0);
+
+        const barData = allCotacoes
+          .slice(-12)
+          .map((c) => ({
+            nome: (c.nome_paciente ?? "—").split(" ")[0],
+            "V. Noova": Number(c.valor_noova) || 0,
+            "V. Aprovado": Number(c.valor_aprovado) || 0,
+            "Resultado": Number(c.resultado) || 0,
+          }));
+
+        const fmtBRL = (v: number) =>
+          `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+        const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) => {
+          if (!active || !payload?.length) return null;
+          return (
+            <div className="bg-[#0F0F12] border border-white/10 rounded-xl px-4 py-3 text-xs shadow-xl">
+              <p className="text-white/50 mb-2 font-medium">{label}</p>
+              {payload.map((p) => (
+                <p key={p.name} style={{ color: p.color }} className="mb-0.5">
+                  {p.name}: <span className="font-bold">{fmtBRL(p.value)}</span>
+                </p>
+              ))}
+            </div>
+          );
+        };
+
+        const PieTooltip = ({ active, payload }: { active?: boolean; payload?: { name: string; value: number; payload: { color: string } }[] }) => {
+          if (!active || !payload?.length) return null;
+          const p = payload[0];
+          return (
+            <div className="bg-[#0F0F12] border border-white/10 rounded-xl px-4 py-2 text-xs shadow-xl">
+              <p style={{ color: p.payload.color }} className="font-bold">{p.name}</p>
+              <p className="text-white/60">{p.value} cotação{p.value !== 1 ? "es" : ""}</p>
+              <p className="text-white/30">{Math.round((p.value / allCotacoes.length) * 100)}% do total</p>
+            </div>
+          );
+        };
+
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
+            {/* Donut — status distribution */}
+            <div className="lg:col-span-2 bg-[#1B1B1E] border border-white/10 rounded-[14px] p-5">
+              <p className="text-white/50 text-xs uppercase tracking-wider mb-1">Distribuição por Status</p>
+              <p className="text-white font-semibold text-sm mb-4">Aprovadas x Reprovadas x Pendentes</p>
+              <div className="flex items-center gap-4">
+                <div style={{ width: 140, height: 140, flexShrink: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={42}
+                        outerRadius={62}
+                        paddingAngle={3}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={index} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<PieTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Legend */}
+                <div className="flex flex-col gap-2.5 flex-1">
+                  {pieData.map((d) => (
+                    <div key={d.name} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: d.color }} />
+                        <span className="text-white/50 text-xs truncate">{d.name}</span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-white font-bold text-sm" style={{ color: d.color }}>{d.value}</span>
+                        <span className="text-white/25 text-[10px] ml-1">
+                          {Math.round((d.value / allCotacoes.length) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Taxa de aprovação */}
+                  <div className="mt-2 pt-2.5 border-t border-white/5">
+                    <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">Taxa de aprovação</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${Math.round((aprovadas.length / Math.max(allCotacoes.length, 1)) * 100)}%`,
+                            background: "linear-gradient(90deg, #4ade80, #22c55e)",
+                          }}
+                        />
+                      </div>
+                      <span className="text-green-400 text-xs font-bold">
+                        {Math.round((aprovadas.length / Math.max(allCotacoes.length, 1)) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bar chart — values per cotação */}
+            <div className="lg:col-span-3 bg-[#1B1B1E] border border-white/10 rounded-[14px] p-5">
+              <p className="text-white/50 text-xs uppercase tracking-wider mb-1">Comparativo de Valores</p>
+              <p className="text-white font-semibold text-sm mb-4">Valor Noova vs Aprovado por cotação (últimas {barData.length})</p>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={barData} barSize={10} barGap={2}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <XAxis
+                    dataKey="nome"
+                    tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+                    width={38}
+                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+                  <Legend
+                    wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.4)", paddingTop: 8 }}
+                    formatter={(value: string) => <span style={{ color: "rgba(255,255,255,0.4)" }}>{value}</span>}
+                  />
+                  <Bar dataKey="V. Noova" fill="#F56E0F" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="V. Aprovado" fill="#4ade80" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="Resultado" fill="#A5FFD6" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Filter + active indicator */}
       <div className="flex items-center gap-3">
