@@ -36,8 +36,11 @@ router.post("/medicamentos", async (req, res): Promise<void> => {
     };
 
     const CLINICA_ID = "00000000-0000-0000-0000-000000000001";
-    const payload: Record<string, unknown> = { nome, clinica_id: CLINICA_ID };
-    if (principio_ativo !== undefined && principio_ativo !== "") payload["principio_ativo"] = principio_ativo;
+    const payload: Record<string, unknown> = {
+      nome,
+      clinica_id: CLINICA_ID,
+      principio_ativo: principio_ativo ?? "",
+    };
     if (apresentacao !== undefined && apresentacao !== "") payload["apresentacao"] = apresentacao;
     if (modo_uso !== undefined && modo_uso !== "") payload["modo_uso"] = modo_uso;
     if (conservacao !== undefined && conservacao !== "") payload["conservacao"] = conservacao;
