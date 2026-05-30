@@ -28,6 +28,12 @@ export interface Medicamento {
   /** @nullable */
   data_ultima_compra?: string | null;
   /** @nullable */
+  lote?: string | null;
+  /** @nullable */
+  validade?: string | null;
+  /** @nullable */
+  orientacoes_uso?: string | null;
+  /** @nullable */
   valor?: number | null;
   /** @nullable */
   quantidade_estoque?: number | null;

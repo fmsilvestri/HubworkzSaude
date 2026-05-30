@@ -27,7 +27,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Pill, Plus, Thermometer, BookOpen, Pencil, Trash2, FlaskConical, Barcode, Calendar, DollarSign, Package, ImagePlus, FileText, Loader2, ExternalLink } from "lucide-react";
+import { Search, Pill, Plus, Thermometer, BookOpen, Pencil, Trash2, FlaskConical, Barcode, Calendar, DollarSign, Package, ImagePlus, FileText, Loader2, ExternalLink, Hash, AlertTriangle, ClipboardList } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 const schema = z.object({
   nome: z.string().min(2, "Nome obrigatório"),
@@ -39,6 +40,9 @@ const schema = z.object({
   classe: z.string().optional(),
   codigo_barras: z.string().optional(),
   data_ultima_compra: z.string().optional(),
+  lote: z.string().optional(),
+  validade: z.string().optional(),
+  orientacoes_uso: z.string().optional(),
   valor: z.coerce.number().optional(),
   quantidade_estoque: z.coerce.number().int().optional(),
 });
@@ -57,6 +61,9 @@ type Medicamento = {
   ativo?: boolean | null;
   codigo_barras?: string | null;
   data_ultima_compra?: string | null;
+  lote?: string | null;
+  validade?: string | null;
+  orientacoes_uso?: string | null;
   valor?: number | null;
   quantidade_estoque?: number | null;
   foto_url?: string | null;
@@ -137,6 +144,36 @@ function MedicamentoForm({
         </FormItem>
       )} />
       <div className="grid grid-cols-2 gap-3">
+        <FormField control={form.control} name="lote" render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-white/70">Lote</FormLabel>
+            <FormControl><Input {...field} placeholder="Ex: LOT-2024-001" className={FIELD_STYLES} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="validade" render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-white/70">Validade</FormLabel>
+            <FormControl><Input {...field} type="date" className={FIELD_STYLES + " [color-scheme:dark]"} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+      </div>
+      <FormField control={form.control} name="orientacoes_uso" render={({ field }) => (
+        <FormItem>
+          <FormLabel className="text-white/70">Orientações de Uso</FormLabel>
+          <FormControl>
+            <Textarea
+              {...field}
+              rows={4}
+              placeholder="Ex: Administrar por via oral, 1 comprimido ao dia com água. Não partir ou mastigar."
+              className={FIELD_STYLES + " resize-none"}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )} />
+      <div className="grid grid-cols-2 gap-3">
         <FormField control={form.control} name="data_ultima_compra" render={({ field }) => (
           <FormItem>
             <FormLabel className="text-white/70">Última Compra</FormLabel>
@@ -190,6 +227,7 @@ export default function Medicamentos() {
   const EMPTY_FORM: FormValues = {
     nome: "", principio_ativo: "", apresentacao: "", modo_uso: "", conservacao: "",
     registro: "", classe: "", codigo_barras: "", data_ultima_compra: "",
+    lote: "", validade: "", orientacoes_uso: "",
     valor: undefined, quantidade_estoque: undefined,
   };
 
@@ -215,6 +253,9 @@ export default function Medicamentos() {
       classe: m.classe ?? "",
       codigo_barras: m.codigo_barras ?? "",
       data_ultima_compra: m.data_ultima_compra ?? "",
+      lote: m.lote ?? "",
+      validade: m.validade ?? "",
+      orientacoes_uso: m.orientacoes_uso ?? "",
       valor: m.valor ?? undefined,
       quantidade_estoque: m.quantidade_estoque ?? undefined,
     });
@@ -410,6 +451,33 @@ export default function Medicamentos() {
                     <div className="flex items-center gap-2 text-xs text-white/40">
                       <Calendar className="h-3 w-3 shrink-0" />
                       <span>Última compra: {new Date(m.data_ultima_compra + "T00:00:00").toLocaleDateString("pt-BR")}</span>
+                    </div>
+                  )}
+                  {m.lote && (
+                    <div className="flex items-center gap-2 text-xs text-white/40">
+                      <Hash className="h-3 w-3 shrink-0" />
+                      <span>Lote: {m.lote}</span>
+                    </div>
+                  )}
+                  {m.validade && (() => {
+                    const val = new Date(m.validade + "T00:00:00");
+                    const hoje = new Date();
+                    const vencido = val < hoje;
+                    const proximoVencimento = !vencido && (val.getTime() - hoje.getTime()) < 60 * 24 * 60 * 60 * 1000;
+                    return (
+                      <div className={`flex items-center gap-2 text-xs ${vencido ? "text-red-400" : proximoVencimento ? "text-yellow-400" : "text-white/40"}`}>
+                        {vencido || proximoVencimento
+                          ? <AlertTriangle className="h-3 w-3 shrink-0" />
+                          : <Calendar className="h-3 w-3 shrink-0" />
+                        }
+                        <span>Validade: {val.toLocaleDateString("pt-BR")}{vencido ? " — VENCIDO" : proximoVencimento ? " — vence em breve" : ""}</span>
+                      </div>
+                    );
+                  })()}
+                  {m.orientacoes_uso && (
+                    <div className="flex items-start gap-2 text-xs text-white/40">
+                      <ClipboardList className="h-3 w-3 shrink-0 mt-0.5" />
+                      <span className="line-clamp-2">{m.orientacoes_uso}</span>
                     </div>
                   )}
                   {m.pdf_url && (

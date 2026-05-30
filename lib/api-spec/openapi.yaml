@@ -1149,6 +1149,12 @@ components:
           type: ["string", "null"]
         data_ultima_compra:
           type: ["string", "null"]
+        lote:
+          type: ["string", "null"]
+        validade:
+          type: ["string", "null"]
+        orientacoes_uso:
+          type: ["string", "null"]
         valor:
           type: ["number", "null"]
         quantidade_estoque:
@@ -1181,6 +1187,12 @@ components:
         codigo_barras:
           type: string
         data_ultima_compra:
+          type: string
+        lote:
+          type: string
+        validade:
+          type: string
+        orientacoes_uso:
           type: string
         valor:
           type: number

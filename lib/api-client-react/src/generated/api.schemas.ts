@@ -150,6 +150,12 @@ export interface Medicamento {
   /** @nullable */
   data_ultima_compra?: string | null;
   /** @nullable */
+  lote?: string | null;
+  /** @nullable */
+  validade?: string | null;
+  /** @nullable */
+  orientacoes_uso?: string | null;
+  /** @nullable */
   valor?: number | null;
   /** @nullable */
   quantidade_estoque?: number | null;
@@ -170,6 +176,9 @@ export interface MedicamentoInput {
   classe?: string;
   codigo_barras?: string;
   data_ultima_compra?: string;
+  lote?: string;
+  validade?: string;
+  orientacoes_uso?: string;
   valor?: number;
   quantidade_estoque?: number;
 }
