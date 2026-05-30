@@ -704,6 +704,78 @@ export const CreateCotacaoBody = zod.object({
 
 
 /**
+ * @summary List declarations
+ */
+export const ListDeclaracoesQueryParams = zod.object({
+  "paciente_id": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const ListDeclaracoesResponseItem = zod.object({
+  "id": zod.string(),
+  "paciente_id": zod.string().nullish(),
+  "paciente_nome": zod.string().nullish(),
+  "modalidade": zod.string().nullish(),
+  "status": zod.string().nullish(),
+  "data": zod.string().nullish(),
+  "pdf_url": zod.string().nullish(),
+  "clinica_id": zod.string().nullish(),
+  "created_at": zod.string()
+})
+export const ListDeclaracoesResponse = zod.array(ListDeclaracoesResponseItem)
+
+
+/**
+ * @summary Create a declaration
+ */
+export const CreateDeclaracaoBody = zod.object({
+  "paciente_id": zod.string().optional(),
+  "paciente_nome": zod.string().optional(),
+  "modalidade": zod.string().optional(),
+  "status": zod.string().optional(),
+  "data": zod.string().optional(),
+  "pdf_url": zod.string().optional()
+})
+
+
+/**
+ * @summary Update a declaration
+ */
+export const UpdateDeclaracaoParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateDeclaracaoBody = zod.object({
+  "paciente_id": zod.string().optional(),
+  "paciente_nome": zod.string().optional(),
+  "modalidade": zod.string().optional(),
+  "status": zod.string().optional(),
+  "data": zod.string().optional(),
+  "pdf_url": zod.string().optional()
+})
+
+export const UpdateDeclaracaoResponse = zod.object({
+  "id": zod.string(),
+  "paciente_id": zod.string().nullish(),
+  "paciente_nome": zod.string().nullish(),
+  "modalidade": zod.string().nullish(),
+  "status": zod.string().nullish(),
+  "data": zod.string().nullish(),
+  "pdf_url": zod.string().nullish(),
+  "clinica_id": zod.string().nullish(),
+  "created_at": zod.string()
+})
+
+
+/**
+ * @summary Delete a declaration
+ */
+export const DeleteDeclaracaoParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
  * @summary Send a message to Di IA (Anthropic)
  */
 export const SendAiMessageBody = zod.object({

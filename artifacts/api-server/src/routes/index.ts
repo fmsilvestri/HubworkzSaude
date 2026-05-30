@@ -9,6 +9,7 @@ import faturasRouter from "./faturas";
 import glosasRouter from "./glosas";
 import monitoramentosRouter from "./monitoramentos";
 import cotacoesRouter from "./cotacoes";
+import declaracoesRouter from "./declaracoes";
 import aiRouter from "./ai";
 import pacientePortalRouter from "./paciente-portal";
 
@@ -25,6 +26,7 @@ router.use(faturasRouter);
 router.use(glosasRouter);
 router.use(monitoramentosRouter);
 router.use(cotacoesRouter);
+router.use(declaracoesRouter);
 router.use(aiRouter);
 
 export default router;

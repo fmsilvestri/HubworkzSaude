@@ -331,6 +331,34 @@ export interface CotacaoInput {
   recomendada?: boolean;
 }
 
+export interface Declaracao {
+  id: string;
+  /** @nullable */
+  paciente_id?: string | null;
+  /** @nullable */
+  paciente_nome?: string | null;
+  /** @nullable */
+  modalidade?: string | null;
+  /** @nullable */
+  status?: string | null;
+  /** @nullable */
+  data?: string | null;
+  /** @nullable */
+  pdf_url?: string | null;
+  /** @nullable */
+  clinica_id?: string | null;
+  created_at: string;
+}
+
+export interface DeclaracaoInput {
+  paciente_id?: string;
+  paciente_nome?: string;
+  modalidade?: string;
+  status?: string;
+  data?: string;
+  pdf_url?: string;
+}
+
 export interface AiMessageInput {
   message: string;
   clinica_id?: string;
@@ -385,6 +413,11 @@ paciente_id?: string;
 
 export type ListCotacoesParams = {
 processo_id?: string;
+};
+
+export type ListDeclaracoesParams = {
+paciente_id?: string;
+status?: string;
 };
 
 export type GetAiHistoryParams = {

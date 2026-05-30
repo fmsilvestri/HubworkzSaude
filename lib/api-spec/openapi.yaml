@@ -688,6 +688,85 @@ paths:
               schema:
                 $ref: "#/components/schemas/Cotacao"
 
+  /declaracoes:
+    get:
+      operationId: listDeclaracoes
+      tags: [declaracoes]
+      summary: List declarations
+      parameters:
+        - in: query
+          name: paciente_id
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Declaration list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Declaracao"
+    post:
+      operationId: createDeclaracao
+      tags: [declaracoes]
+      summary: Create a declaration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclaracaoInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Declaracao"
+
+  /declaracoes/{id}:
+    put:
+      operationId: updateDeclaracao
+      tags: [declaracoes]
+      summary: Update a declaration
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclaracaoInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Declaracao"
+    delete:
+      operationId: deleteDeclaracao
+      tags: [declaracoes]
+      summary: Delete a declaration
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
   /ai/chat:
     post:
       operationId: sendAiMessage
@@ -1235,6 +1314,45 @@ components:
           type: string
         recomendada:
           type: boolean
+
+    Declaracao:
+      type: object
+      required: [id, created_at]
+      properties:
+        id:
+          type: string
+        paciente_id:
+          type: ["string", "null"]
+        paciente_nome:
+          type: ["string", "null"]
+        modalidade:
+          type: ["string", "null"]
+        status:
+          type: ["string", "null"]
+        data:
+          type: ["string", "null"]
+        pdf_url:
+          type: ["string", "null"]
+        clinica_id:
+          type: ["string", "null"]
+        created_at:
+          type: string
+
+    DeclaracaoInput:
+      type: object
+      properties:
+        paciente_id:
+          type: string
+        paciente_nome:
+          type: string
+        modalidade:
+          type: string
+        status:
+          type: string
+        data:
+          type: string
+        pdf_url:
+          type: string
 
     AiMessageInput:
       type: object
