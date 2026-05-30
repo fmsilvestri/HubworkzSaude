@@ -32,10 +32,7 @@ export default function Login() {
   }
 
   return (
-    <div
-      className="mobile-container flex flex-col justify-between min-h-dvh"
-      style={{ background: "#151419" }}
-    >
+    <div className="mobile-container flex flex-col justify-between min-h-dvh">
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="mb-10 text-center">
@@ -46,18 +43,18 @@ export default function Login() {
               >
                 HW
               </div>
-              <span className="text-xl font-bold tracking-tight" style={{ color: "#fff" }}>
+              <span className="text-xl font-bold tracking-tight" style={{ color: "var(--t-text-1)" }}>
                 HubWorkz
               </span>
             </div>
-            <p className="text-sm" style={{ color: "#6B6B7A" }}>
+            <p className="text-sm" style={{ color: "var(--t-text-4)" }}>
               Gestão Oncológica — App Gestor
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#6B6B7A" }}>
+              <label className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--t-text-4)" }}>
                 Email
               </label>
               <input
@@ -69,17 +66,17 @@ export default function Login() {
                 required
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
                 style={{
-                  background: "#1B1B1E",
-                  border: "1px solid #2A2A2E",
-                  color: "#F0F0F4",
+                  background: "var(--t-surface)",
+                  border: "1px solid var(--t-border)",
+                  color: "var(--t-text-1)",
                 }}
                 onFocus={(e) => (e.target.style.borderColor = "#F56E0F")}
-                onBlur={(e) => (e.target.style.borderColor = "#2A2A2E")}
+                onBlur={(e) => (e.target.style.borderColor = "var(--t-border)")}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#6B6B7A" }}>
+              <label className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--t-text-4)" }}>
                 Senha
               </label>
               <input
@@ -91,12 +88,12 @@ export default function Login() {
                 required
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
                 style={{
-                  background: "#1B1B1E",
-                  border: "1px solid #2A2A2E",
-                  color: "#F0F0F4",
+                  background: "var(--t-surface)",
+                  border: "1px solid var(--t-border)",
+                  color: "var(--t-text-1)",
                 }}
                 onFocus={(e) => (e.target.style.borderColor = "#F56E0F")}
-                onBlur={(e) => (e.target.style.borderColor = "#2A2A2E")}
+                onBlur={(e) => (e.target.style.borderColor = "var(--t-border)")}
               />
             </div>
 
@@ -126,7 +123,7 @@ export default function Login() {
       </div>
 
       <div className="pb-8 text-center">
-        <p className="text-[10px]" style={{ color: "#3A3A42" }}>
+        <p className="text-[10px]" style={{ color: "var(--t-text-6)" }}>
           HubWorkz Saúde — Intermediação Farmacêutica Oncológica
         </p>
       </div>

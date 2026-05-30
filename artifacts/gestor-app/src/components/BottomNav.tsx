@@ -15,19 +15,12 @@ function NavItem({ path, label, Icon }: { path: string; label: string; Icon: Rea
   return (
     <Link href={path} className="flex-1">
       <button className="relative flex flex-col items-center justify-center gap-[3px] w-full h-full">
-        {/* Indicador ativo */}
         {isActive && (
           <span
             className="absolute top-0 left-1/2 -translate-x-1/2 rounded-b-full"
-            style={{
-              width: 28,
-              height: 3,
-              background: "#F56E0F",
-            }}
+            style={{ width: 28, height: 3, background: "#F56E0F" }}
           />
         )}
-
-        {/* Ícone com fundo pill quando ativo */}
         <span
           className="flex items-center justify-center rounded-xl transition-all"
           style={{
@@ -39,14 +32,12 @@ function NavItem({ path, label, Icon }: { path: string; label: string; Icon: Rea
           <Icon
             size={18}
             strokeWidth={isActive ? 2.5 : 1.8}
-            style={{ color: isActive ? "#F56E0F" : "#6B6B7A" }}
+            style={{ color: isActive ? "#F56E0F" : "var(--t-text-4)" }}
           />
         </span>
-
-        {/* Label */}
         <span
           className="text-[9px] font-semibold tracking-wide leading-none"
-          style={{ color: isActive ? "#F56E0F" : "#6B6B7A" }}
+          style={{ color: isActive ? "#F56E0F" : "var(--t-text-4)" }}
         >
           {label}
         </span>

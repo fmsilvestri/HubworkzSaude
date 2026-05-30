@@ -29,6 +29,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ── Tema escuro (padrão) ───────────────────────────── */
 :root {
   --background: 240 7% 8%;
   --foreground: 0 0% 95%;
@@ -53,6 +54,63 @@
   --color-orange: #F56E0F;
   --color-purple: #3C3489;
   --nav-height: 64px;
+
+  /* Tokens semânticos — dark */
+  --t-outer:    #0F0F12;
+  --t-bg:       #151419;
+  --t-surface:  #1B1B1E;
+  --t-border:   #2A2A2E;
+  --t-text-1:   #F0F0F4;
+  --t-text-2:   #D0D0D8;
+  --t-text-3:   #9999A8;
+  --t-text-4:   #6B6B7A;
+  --t-text-5:   #4A4A52;
+  --t-text-6:   #3A3A42;
+  --t-empty:    #2A2A2E;
+  --t-mint-bg:  #0A1F16;
+  --t-chat-ai-bg:     #1B1B1E;
+  --t-chat-ai-border: #2A2A2E;
+  --t-chat-ai-text:   #A5FFD6;
+  --t-input-placeholder: #4A4A52;
+}
+
+/* ── Tema claro ─────────────────────────────────────── */
+:root.light {
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 22 91% 51%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --primary: 22 91% 51%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 220 14% 96%;
+  --accent-foreground: 222 47% 11%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Tokens semânticos — light */
+  --t-outer:    #F2F2F7;
+  --t-bg:       #FFFFFF;
+  --t-surface:  #F3F4F6;
+  --t-border:   #E5E7EB;
+  --t-text-1:   #111827;
+  --t-text-2:   #374151;
+  --t-text-3:   #6B7280;
+  --t-text-4:   #9CA3AF;
+  --t-text-5:   #D1D5DB;
+  --t-text-6:   #E5E7EB;
+  --t-empty:    #E5E7EB;
+  --t-mint-bg:  #ECFDF5;
+  --t-chat-ai-bg:     #F3F4F6;
+  --t-chat-ai-border: #E5E7EB;
+  --t-chat-ai-text:   #065F46;
+  --t-input-placeholder: #9CA3AF;
 }
 
 @layer base {
@@ -61,12 +119,15 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    background-color: #0F0F12;
+    background-color: var(--t-outer);
     -webkit-tap-highlight-color: transparent;
     overflow-x: hidden;
   }
   input, textarea, select {
     font-family: inherit;
+  }
+  input::placeholder, textarea::placeholder {
+    color: var(--t-input-placeholder);
   }
 }
 
@@ -76,7 +137,7 @@
     margin: 0 auto;
     min-height: 100dvh;
     position: relative;
-    background-color: #151419;
+    background-color: var(--t-bg);
   }
   .bottom-safe {
     padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
@@ -94,14 +155,14 @@
     width: 100%;
     max-width: 390px;
     height: var(--nav-height);
-    background-color: #1B1B1E;
-    border-top: 1px solid #2A2A2E;
+    background-color: var(--t-surface);
+    border-top: 1px solid var(--t-border);
     padding-bottom: env(safe-area-inset-bottom, 0px);
     z-index: 50;
   }
   .card-mobile {
-    background-color: #1B1B1E;
-    border: 1px solid #2A2A2E;
+    background-color: var(--t-surface);
+    border: 1px solid var(--t-border);
     border-radius: 0.75rem;
   }
   .status-badge {
@@ -125,9 +186,9 @@
     line-height: 1.5;
   }
   .chat-bubble-ai {
-    background-color: #1B1B1E;
-    border: 1px solid #2A2A2E;
-    color: #A5FFD6;
+    background-color: var(--t-chat-ai-bg);
+    border: 1px solid var(--t-chat-ai-border);
+    color: var(--t-chat-ai-text);
     border-radius: 1rem 1rem 1rem 0.25rem;
     padding: 10px 14px;
     max-width: 78%;
