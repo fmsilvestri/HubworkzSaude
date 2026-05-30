@@ -12,11 +12,13 @@ import cotacoesRouter from "./cotacoes";
 import declaracoesRouter from "./declaracoes";
 import aiRouter from "./ai";
 import pacientePortalRouter from "./paciente-portal";
+import clinicasRouter from "./clinicas";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(pacientePortalRouter);
+router.use(clinicasRouter);
 router.use(dashboardRouter);
 router.use(processosRouter);
 router.use(pacientesRouter);

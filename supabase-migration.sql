@@ -250,3 +250,26 @@ VALUES (
 ) ON CONFLICT (id) DO NOTHING;
 
 SELECT 'Migration aplicado com sucesso!' as resultado;
+
+-- ============================================================
+-- TABELA: clinicas
+-- ============================================================
+CREATE TABLE IF NOT EXISTS clinicas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome TEXT NOT NULL,
+  cnpj TEXT,
+  email TEXT,
+  telefone TEXT,
+  endereco TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Registro padrão da clínica (ID fixo usado pelo sistema)
+INSERT INTO clinicas (id, nome, cnpj, email)
+VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  'Clínica HubWorkz',
+  '',
+  ''
+) ON CONFLICT (id) DO NOTHING;

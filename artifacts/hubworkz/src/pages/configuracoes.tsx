@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Settings, CheckCircle, AlertCircle, Key, Building2, Activity, Database } from "lucide-react";
+import { Settings, CheckCircle, AlertCircle, Key, Building2, Activity, Database, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const INTEGRATIONS = [
   { name: "Supabase", desc: "Banco de dados e autenticação", icon: Database, status: "conectado", color: "text-green-400", bg: "bg-green-500/15", border: "border-green-500/20" },
@@ -11,9 +12,54 @@ const INTEGRATIONS = [
 ];
 
 export default function Configuracoes() {
+  const { toast } = useToast();
   const [clinicaNome, setClinicaNome] = useState("");
   const [clinicaCNPJ, setClinicaCNPJ] = useState("");
   const [clinicaEmail, setClinicaEmail] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/clinica")
+      .then((r) => r.json())
+      .then((d) => {
+        setClinicaNome(d.nome ?? "");
+        setClinicaCNPJ(d.cnpj ?? "");
+        setClinicaEmail(d.email ?? "");
+      })
+      .catch(() => {
+        toast({ title: "Erro ao carregar dados da clínica", variant: "destructive" });
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave() {
+    if (!clinicaNome.trim()) {
+      toast({ title: "Razão Social é obrigatória", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/clinica", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: clinicaNome, cnpj: clinicaCNPJ, email: clinicaEmail }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`);
+      }
+      toast({ title: "Dados da clínica salvos com sucesso" });
+    } catch (err) {
+      toast({
+        title: "Erro ao salvar",
+        description: err instanceof Error ? err.message : "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="space-y-8 max-w-3xl">
@@ -28,25 +74,56 @@ export default function Configuracoes() {
           <Building2 className="h-4 w-4 text-[#F56E0F]" />
           <h3 className="text-white font-semibold">Dados da Clínica</h3>
         </div>
-        <div className="space-y-4">
-          <div>
-            <label className="text-white/60 text-sm block mb-1.5">Razão Social</label>
-            <Input data-testid="input-clinica-nome" value={clinicaNome} onChange={(e) => setClinicaNome(e.target.value)} placeholder="Nome da clínica..." className="bg-[#0F0F12] border-white/10 text-white" />
+        {loading ? (
+          <div className="flex items-center gap-2 text-white/40 text-sm py-4">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Carregando...
           </div>
-          <div className="grid grid-cols-2 gap-3">
+        ) : (
+          <div className="space-y-4">
             <div>
-              <label className="text-white/60 text-sm block mb-1.5">CNPJ</label>
-              <Input data-testid="input-clinica-cnpj" value={clinicaCNPJ} onChange={(e) => setClinicaCNPJ(e.target.value)} placeholder="00.000.000/0000-00" className="bg-[#0F0F12] border-white/10 text-white" />
+              <label className="text-white/60 text-sm block mb-1.5">Razão Social</label>
+              <Input
+                data-testid="input-clinica-nome"
+                value={clinicaNome}
+                onChange={(e) => setClinicaNome(e.target.value)}
+                placeholder="Nome da clínica..."
+                className="bg-[#0F0F12] border-white/10 text-white"
+              />
             </div>
-            <div>
-              <label className="text-white/60 text-sm block mb-1.5">Email</label>
-              <Input data-testid="input-clinica-email" value={clinicaEmail} onChange={(e) => setClinicaEmail(e.target.value)} placeholder="contato@clinica.com.br" className="bg-[#0F0F12] border-white/10 text-white" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-white/60 text-sm block mb-1.5">CNPJ</label>
+                <Input
+                  data-testid="input-clinica-cnpj"
+                  value={clinicaCNPJ}
+                  onChange={(e) => setClinicaCNPJ(e.target.value)}
+                  placeholder="00.000.000/0000-00"
+                  className="bg-[#0F0F12] border-white/10 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-white/60 text-sm block mb-1.5">Email</label>
+                <Input
+                  data-testid="input-clinica-email"
+                  value={clinicaEmail}
+                  onChange={(e) => setClinicaEmail(e.target.value)}
+                  placeholder="contato@clinica.com.br"
+                  className="bg-[#0F0F12] border-white/10 text-white"
+                />
+              </div>
             </div>
+            <Button
+              data-testid="button-save-clinica"
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white"
+            >
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Salvar Dados da Clínica
+            </Button>
           </div>
-          <Button data-testid="button-save-clinica" className="bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white">
-            Salvar Dados da Clínica
-          </Button>
-        </div>
+        )}
       </div>
 
       {/* Integrations */}
