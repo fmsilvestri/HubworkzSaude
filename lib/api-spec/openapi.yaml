@@ -160,6 +160,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Processo"
+    delete:
+      operationId: deleteProcesso
+      tags: [processos]
+      summary: Delete a processo
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
 
   /processos/stats/fases:
     get:
@@ -898,6 +911,8 @@ components:
           type: ["string", "null"]
         distribuidora_id:
           type: ["string", "null"]
+        convenio:
+          type: ["string", "null"]
         status:
           type: string
         fase_atual:
@@ -913,15 +928,15 @@ components:
 
     ProcessoInput:
       type: object
-      required: [clinica_id, fase_atual, status]
+      required: [status]
       properties:
-        clinica_id:
-          type: string
         paciente_id:
           type: string
         medicamento_id:
           type: string
         distribuidora_id:
+          type: string
+        convenio:
           type: string
         status:
           type: string
@@ -935,11 +950,17 @@ components:
     ProcessoUpdate:
       type: object
       properties:
+        paciente_id:
+          type: string
+        medicamento_id:
+          type: string
+        convenio:
+          type: string
         status:
           type: string
         fase_atual:
           type: integer
-        distribuidora_id:
+        numero_protocolo:
           type: string
         observacoes:
           type: string

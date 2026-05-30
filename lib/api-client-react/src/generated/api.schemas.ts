@@ -44,6 +44,8 @@ export interface Processo {
   medicamento_id?: string | null;
   /** @nullable */
   distribuidora_id?: string | null;
+  /** @nullable */
+  convenio?: string | null;
   status: string;
   fase_atual: number;
   /** @nullable */
@@ -56,20 +58,23 @@ export interface Processo {
 }
 
 export interface ProcessoInput {
-  clinica_id: string;
   paciente_id?: string;
   medicamento_id?: string;
   distribuidora_id?: string;
+  convenio?: string;
   status: string;
-  fase_atual: number;
+  fase_atual?: number;
   numero_protocolo?: string;
   observacoes?: string;
 }
 
 export interface ProcessoUpdate {
+  paciente_id?: string;
+  medicamento_id?: string;
+  convenio?: string;
   status?: string;
   fase_atual?: number;
-  distribuidora_id?: string;
+  numero_protocolo?: string;
   observacoes?: string;
 }
 

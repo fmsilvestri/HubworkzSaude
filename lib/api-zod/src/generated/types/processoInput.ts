@@ -7,12 +7,12 @@
  */
 
 export interface ProcessoInput {
-  clinica_id: string;
   paciente_id?: string;
   medicamento_id?: string;
   distribuidora_id?: string;
+  convenio?: string;
   status: string;
-  fase_atual: number;
+  fase_atual?: number;
   numero_protocolo?: string;
   observacoes?: string;
 }

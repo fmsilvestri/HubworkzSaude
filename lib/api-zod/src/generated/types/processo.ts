@@ -15,6 +15,8 @@ export interface Processo {
   medicamento_id?: string | null;
   /** @nullable */
   distribuidora_id?: string | null;
+  /** @nullable */
+  convenio?: string | null;
   status: string;
   fase_atual: number;
   /** @nullable */

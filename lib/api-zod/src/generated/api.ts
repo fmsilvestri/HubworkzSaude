@@ -58,6 +58,7 @@ export const ListProcessosResponseItem = zod.object({
   "paciente_id": zod.string().nullish(),
   "medicamento_id": zod.string().nullish(),
   "distribuidora_id": zod.string().nullish(),
+  "convenio": zod.string().nullish(),
   "status": zod.string(),
   "fase_atual": zod.number(),
   "numero_protocolo": zod.string().nullish(),
@@ -72,12 +73,12 @@ export const ListProcessosResponse = zod.array(ListProcessosResponseItem)
  * @summary Create a new processo
  */
 export const CreateProcessoBody = zod.object({
-  "clinica_id": zod.string(),
   "paciente_id": zod.string().optional(),
   "medicamento_id": zod.string().optional(),
   "distribuidora_id": zod.string().optional(),
+  "convenio": zod.string().optional(),
   "status": zod.string(),
-  "fase_atual": zod.number(),
+  "fase_atual": zod.number().optional(),
   "numero_protocolo": zod.string().optional(),
   "observacoes": zod.string().optional()
 })
@@ -96,6 +97,7 @@ export const GetProcessoResponse = zod.object({
   "paciente_id": zod.string().nullish(),
   "medicamento_id": zod.string().nullish(),
   "distribuidora_id": zod.string().nullish(),
+  "convenio": zod.string().nullish(),
   "status": zod.string(),
   "fase_atual": zod.number(),
   "numero_protocolo": zod.string().nullish(),
@@ -113,9 +115,12 @@ export const UpdateProcessoParams = zod.object({
 })
 
 export const UpdateProcessoBody = zod.object({
+  "paciente_id": zod.string().optional(),
+  "medicamento_id": zod.string().optional(),
+  "convenio": zod.string().optional(),
   "status": zod.string().optional(),
   "fase_atual": zod.number().optional(),
-  "distribuidora_id": zod.string().optional(),
+  "numero_protocolo": zod.string().optional(),
   "observacoes": zod.string().optional()
 })
 
@@ -125,12 +130,21 @@ export const UpdateProcessoResponse = zod.object({
   "paciente_id": zod.string().nullish(),
   "medicamento_id": zod.string().nullish(),
   "distribuidora_id": zod.string().nullish(),
+  "convenio": zod.string().nullish(),
   "status": zod.string(),
   "fase_atual": zod.number(),
   "numero_protocolo": zod.string().nullish(),
   "observacoes": zod.string().nullish(),
   "created_at": zod.string(),
   "updated_at": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete a processo
+ */
+export const DeleteProcessoParams = zod.object({
+  "id": zod.coerce.string()
 })
 
 

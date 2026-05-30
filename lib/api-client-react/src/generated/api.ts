@@ -608,6 +608,76 @@ export const useUpdateProcesso = <TError = ErrorType<unknown>,
       return useMutation(getUpdateProcessoMutationOptions(options));
     }
 
+export const getDeleteProcessoUrl = (id: string,) => {
+
+
+
+
+  return `/api/processos/${id}`
+}
+
+/**
+ * @summary Delete a processo
+ */
+export const deleteProcesso = async (id: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteProcessoUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteProcessoMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProcesso>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteProcesso>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteProcesso'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteProcesso>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteProcesso(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteProcessoMutationResult = NonNullable<Awaited<ReturnType<typeof deleteProcesso>>>
+
+    export type DeleteProcessoMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a processo
+ */
+export const useDeleteProcesso = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProcesso>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteProcesso>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteProcessoMutationOptions(options));
+    }
+
 export const getGetProcessoFaseStatsUrl = () => {
 
 

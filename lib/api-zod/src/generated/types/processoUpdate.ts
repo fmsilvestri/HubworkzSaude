@@ -7,8 +7,11 @@
  */
 
 export interface ProcessoUpdate {
+  paciente_id?: string;
+  medicamento_id?: string;
+  convenio?: string;
   status?: string;
   fase_atual?: number;
-  distribuidora_id?: string;
+  numero_protocolo?: string;
   observacoes?: string;
 }
