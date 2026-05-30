@@ -81,6 +81,7 @@ const schema = z.object({
   medicamento_nome: z.string().min(1, "Informe o medicamento"),
   tipo: z.string().optional(),
   marca_laboratorio: z.string().optional(),
+  cotacao_dolar: z.string().optional(),
   valor_importado: z.string().optional(),
   frete_imposto: z.string().optional(),
   total: z.string().optional(),
@@ -121,13 +122,19 @@ export default function Cotacao() {
 
   const watchImportado = form.watch("valor_importado");
   const watchFrete = form.watch("frete_imposto");
+  const watchDolar = form.watch("cotacao_dolar");
 
   useEffect(() => {
-    const a = parseFloat((watchImportado ?? "").replace(",", "."));
-    const b = parseFloat((watchFrete ?? "").replace(",", "."));
-    const soma = (isNaN(a) ? 0 : a) + (isNaN(b) ? 0 : b);
-    if (soma > 0) form.setValue("total", String(soma.toFixed(2)));
-  }, [watchImportado, watchFrete]);
+    const usd1 = parseFloat((watchImportado ?? "").replace(",", "."));
+    const usd2 = parseFloat((watchFrete ?? "").replace(",", "."));
+    const taxa = parseFloat((watchDolar ?? "").replace(",", "."));
+    const totalUsd = (isNaN(usd1) ? 0 : usd1) + (isNaN(usd2) ? 0 : usd2);
+    if (totalUsd > 0 && !isNaN(taxa) && taxa > 0) {
+      form.setValue("total", String((totalUsd * taxa).toFixed(2)));
+    } else if (totalUsd > 0 && (isNaN(taxa) || taxa === 0)) {
+      form.setValue("total", String(totalUsd.toFixed(2)));
+    }
+  }, [watchImportado, watchFrete, watchDolar]);
 
   const onSubmit = (values: FormValues) => {
     createCotacao.mutate(
@@ -512,21 +519,47 @@ export default function Cotacao() {
               {/* Section: Custo de Importação */}
               <div>
                 <p className="text-white/40 text-xs uppercase tracking-wider mb-3">Custo de Importação</p>
+                <div className="mb-3">
+                  <FormField control={form.control} name="cotacao_dolar" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white/70 flex items-center gap-2">
+                        Cotação do Dólar (R$ / USD)
+                        <span className="text-[10px] text-white/30 font-normal normal-case tracking-normal">os valores abaixo serão multiplicados por esta taxa</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 5.85"
+                          className="bg-[#0F0F12] border-[#F56E0F]/30 text-white max-w-[200px]"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
                 <div className="grid grid-cols-3 gap-3">
                   <FormField control={form.control} name="valor_importado" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white/70">Valor Importado</FormLabel>
+                      <FormLabel className="text-white/70">Valor Importado (USD)</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Ex: 1250 USD" className="bg-[#0F0F12] border-white/10 text-white" />
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs pointer-events-none">$</span>
+                          <Input {...field} type="number" step="0.01" placeholder="0.00" className="bg-[#0F0F12] border-white/10 text-white pl-7" />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="frete_imposto" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white/70">Frete / Imposto</FormLabel>
+                      <FormLabel className="text-white/70">Frete / Imposto (USD)</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Ex: 450 USD" className="bg-[#0F0F12] border-white/10 text-white" />
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs pointer-events-none">$</span>
+                          <Input {...field} type="number" step="0.01" placeholder="0.00" className="bg-[#0F0F12] border-white/10 text-white pl-7" />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
