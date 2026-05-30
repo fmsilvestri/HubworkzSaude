@@ -625,6 +625,44 @@ export const UpdateGlosaResponse = zod.object({
 
 
 /**
+ * @summary Edit a glosa (motivo, valor, prazo_recurso, status)
+ */
+export const EditGlosaParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const EditGlosaBody = zod.object({
+  "fatura_id": zod.string().optional(),
+  "processo_id": zod.string().optional(),
+  "motivo": zod.string().optional(),
+  "valor": zod.number().optional(),
+  "status": zod.string().optional(),
+  "prazo_recurso": zod.string().optional(),
+  "recurso_texto": zod.string().optional()
+})
+
+export const EditGlosaResponse = zod.object({
+  "id": zod.string(),
+  "fatura_id": zod.string().nullish(),
+  "processo_id": zod.string().nullish(),
+  "motivo": zod.string().nullish(),
+  "valor": zod.number().nullish(),
+  "status": zod.string(),
+  "prazo_recurso": zod.string().nullish(),
+  "recurso_texto": zod.string().nullish(),
+  "created_at": zod.string()
+})
+
+
+/**
+ * @summary Delete a glosa
+ */
+export const DeleteGlosaParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
  * @summary List D30 monitoring records
  */
 export const ListMonitoramentosQueryParams = zod.object({

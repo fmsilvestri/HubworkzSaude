@@ -24,6 +24,7 @@ export * from './faturaInput';
 export * from './faturaUpdate';
 export * from './getAiHistoryParams';
 export * from './glosa';
+export * from './glosaEdit';
 export * from './glosaInput';
 export * from './glosaUpdate';
 export * from './healthStatus';

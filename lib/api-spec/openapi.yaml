@@ -610,6 +610,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Glosa"
+    put:
+      operationId: editGlosa
+      tags: [glosas]
+      summary: Edit a glosa (motivo, valor, prazo_recurso, status)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GlosaEdit"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Glosa"
+    delete:
+      operationId: deleteGlosa
+      tags: [glosas]
+      summary: Delete a glosa
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
 
   /monitoramentos:
     get:
@@ -1245,6 +1281,24 @@ components:
       type: object
       properties:
         status:
+          type: string
+        recurso_texto:
+          type: string
+
+    GlosaEdit:
+      type: object
+      properties:
+        fatura_id:
+          type: string
+        processo_id:
+          type: string
+        motivo:
+          type: string
+        valor:
+          type: number
+        status:
+          type: string
+        prazo_recurso:
           type: string
         recurso_texto:
           type: string

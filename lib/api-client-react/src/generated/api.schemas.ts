@@ -268,6 +268,16 @@ export interface GlosaUpdate {
   recurso_texto?: string;
 }
 
+export interface GlosaEdit {
+  fatura_id?: string;
+  processo_id?: string;
+  motivo?: string;
+  valor?: number;
+  status?: string;
+  prazo_recurso?: string;
+  recurso_texto?: string;
+}
+
 export interface Monitoramento {
   id: string;
   /** @nullable */

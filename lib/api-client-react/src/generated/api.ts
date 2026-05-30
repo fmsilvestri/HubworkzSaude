@@ -37,6 +37,7 @@ import type {
   FaturaUpdate,
   GetAiHistoryParams,
   Glosa,
+  GlosaEdit,
   GlosaInput,
   GlosaUpdate,
   HealthStatus,
@@ -2399,6 +2400,148 @@ export const useUpdateGlosa = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateGlosaMutationOptions(options));
+    }
+
+export const getEditGlosaUrl = (id: string,) => {
+
+
+
+
+  return `/api/glosas/${id}`
+}
+
+/**
+ * @summary Edit a glosa (motivo, valor, prazo_recurso, status)
+ */
+export const editGlosa = async (id: string,
+    glosaEdit: GlosaEdit, options?: RequestInit): Promise<Glosa> => {
+
+  return customFetch<Glosa>(getEditGlosaUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      glosaEdit,)
+  }
+);}
+
+
+
+
+export const getEditGlosaMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editGlosa>>, TError,{id: string;data: BodyType<GlosaEdit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof editGlosa>>, TError,{id: string;data: BodyType<GlosaEdit>}, TContext> => {
+
+const mutationKey = ['editGlosa'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editGlosa>>, {id: string;data: BodyType<GlosaEdit>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  editGlosa(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EditGlosaMutationResult = NonNullable<Awaited<ReturnType<typeof editGlosa>>>
+    export type EditGlosaMutationBody = BodyType<GlosaEdit>
+    export type EditGlosaMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Edit a glosa (motivo, valor, prazo_recurso, status)
+ */
+export const useEditGlosa = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editGlosa>>, TError,{id: string;data: BodyType<GlosaEdit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof editGlosa>>,
+        TError,
+        {id: string;data: BodyType<GlosaEdit>},
+        TContext
+      > => {
+      return useMutation(getEditGlosaMutationOptions(options));
+    }
+
+export const getDeleteGlosaUrl = (id: string,) => {
+
+
+
+
+  return `/api/glosas/${id}`
+}
+
+/**
+ * @summary Delete a glosa
+ */
+export const deleteGlosa = async (id: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteGlosaUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteGlosaMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteGlosa>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteGlosa>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteGlosa'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteGlosa>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteGlosa(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteGlosaMutationResult = NonNullable<Awaited<ReturnType<typeof deleteGlosa>>>
+
+    export type DeleteGlosaMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a glosa
+ */
+export const useDeleteGlosa = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteGlosa>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteGlosa>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteGlosaMutationOptions(options));
     }
 
 export const getListMonitoramentosUrl = (params?: ListMonitoramentosParams,) => {
