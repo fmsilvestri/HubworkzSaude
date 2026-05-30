@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   useListCotacoes,
   useCreateCotacao,
@@ -6,6 +6,8 @@ import {
   useDeleteCotacao,
   getListCotacoesQueryKey,
   listCotacoes,
+  useListPacientes,
+  type Paciente,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -49,6 +51,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverAnchor,
+} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus,
@@ -61,6 +68,8 @@ import {
   ChevronUp,
   Pencil,
   Trash2,
+  Users,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -76,6 +85,97 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+
+// ── Patient combobox ────────────────────────────────────────────────────────
+function PacienteCombobox({
+  value,
+  onChange,
+  onSelectPaciente,
+  "data-testid": testId,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSelectPaciente?: (p: Paciente) => void;
+  "data-testid"?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [fromDb, setFromDb] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { data: pacientes } = useListPacientes();
+
+  const filtered = (pacientes ?? [])
+    .filter((p) => p.nome.toLowerCase().includes(value.toLowerCase()))
+    .slice(0, 8);
+
+  function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
+    onChange(e.target.value);
+    setFromDb(false);
+    setOpen(e.target.value.length > 0);
+  }
+
+  function handleSelect(p: Paciente) {
+    onChange(p.nome);
+    setFromDb(true);
+    onSelectPaciente?.(p);
+    setOpen(false);
+    inputRef.current?.blur();
+  }
+
+  return (
+    <Popover open={open && filtered.length > 0} onOpenChange={setOpen}>
+      <PopoverAnchor asChild>
+        <div className="relative">
+          <Input
+            ref={inputRef}
+            value={value}
+            onChange={handleInput}
+            onFocus={() => { if (value.length > 0 && filtered.length > 0) setOpen(true); }}
+            onBlur={() => setTimeout(() => setOpen(false), 120)}
+            placeholder="Nome completo ou buscar na base..."
+            data-testid={testId}
+            className="bg-[#0F0F12] border-white/10 text-white pr-8"
+          />
+          {fromDb && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2" title="Paciente selecionado da base de dados">
+              <Check className="h-3.5 w-3.5 text-[#A5FFD6]" />
+            </span>
+          )}
+          {!fromDb && value.length === 0 && (
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+              <Users className="h-3.5 w-3.5 text-white/20" />
+            </span>
+          )}
+        </div>
+      </PopoverAnchor>
+      <PopoverContent
+        className="p-1 bg-[#1B1B1E] border border-white/10 shadow-xl w-[var(--radix-popover-trigger-width)]"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        sideOffset={4}
+      >
+        {filtered.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); handleSelect(p); }}
+            className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/5 transition-colors group"
+          >
+            <p className="text-white text-sm font-medium truncate">{p.nome}</p>
+            {(p.convenio || p.diagnostico) && (
+              <p className="text-white/40 text-xs truncate">
+                {[p.convenio, p.diagnostico].filter(Boolean).join(" · ")}
+              </p>
+            )}
+          </button>
+        ))}
+        <div className="border-t border-white/5 mt-1 pt-1 px-3 py-1.5">
+          <p className="text-white/25 text-[10px]">
+            {filtered.length} paciente{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""} · ou continue digitando um novo nome
+          </p>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const STATUS_OPTIONS = ["pendente", "aprovado", "reprovado", "não apresentado"];
 const TIPO_OPTIONS = ["comp", "fa", "outro"];
@@ -845,7 +945,14 @@ export default function Cotacao() {
                     <FormItem>
                       <FormLabel className="text-white/70">Nome do Paciente *</FormLabel>
                       <FormControl>
-                        <Input {...field} data-testid="input-nome-paciente" placeholder="Nome completo" className="bg-[#0F0F12] border-white/10 text-white" />
+                        <PacienteCombobox
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          data-testid="input-nome-paciente"
+                          onSelectPaciente={(p) => {
+                            if (p.convenio) form.setValue("convenio", p.convenio);
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1115,7 +1222,19 @@ export default function Cotacao() {
                     <FormItem><FormLabel className="text-white/70">Convênio</FormLabel><FormControl><Input {...field} className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={editForm.control} name="nome_paciente" render={({ field }) => (
-                    <FormItem><FormLabel className="text-white/70">Nome do Paciente *</FormLabel><FormControl><Input {...field} className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                    <FormItem>
+                      <FormLabel className="text-white/70">Nome do Paciente *</FormLabel>
+                      <FormControl>
+                        <PacienteCombobox
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onSelectPaciente={(p) => {
+                            if (p.convenio) editForm.setValue("convenio", p.convenio);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )} />
                   <FormField control={editForm.control} name="origem_paciente" render={({ field }) => (
                     <FormItem><FormLabel className="text-white/70">Origem</FormLabel><FormControl><Input {...field} className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
