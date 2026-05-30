@@ -273,3 +273,6 @@ VALUES (
   '',
   ''
 ) ON CONFLICT (id) DO NOTHING;
+
+-- Adicionar coluna whatsapp_gestor na tabela clinicas (se não existir)
+ALTER TABLE clinicas ADD COLUMN IF NOT EXISTS whatsapp_gestor TEXT;

@@ -16,6 +16,8 @@ export default function Configuracoes() {
   const [clinicaNome, setClinicaNome] = useState("");
   const [clinicaCNPJ, setClinicaCNPJ] = useState("");
   const [clinicaEmail, setClinicaEmail] = useState("");
+  const [clinicaEndereco, setClinicaEndereco] = useState("");
+  const [clinicaWhatsapp, setClinicaWhatsapp] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -26,6 +28,8 @@ export default function Configuracoes() {
         setClinicaNome(d.nome ?? "");
         setClinicaCNPJ(d.cnpj ?? "");
         setClinicaEmail(d.email ?? "");
+        setClinicaEndereco(d.endereco ?? "");
+        setClinicaWhatsapp(d.whatsapp_gestor ?? "");
       })
       .catch(() => {
         toast({ title: "Erro ao carregar dados da clínica", variant: "destructive" });
@@ -43,7 +47,13 @@ export default function Configuracoes() {
       const res = await fetch("/api/clinica", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome: clinicaNome, cnpj: clinicaCNPJ, email: clinicaEmail }),
+        body: JSON.stringify({
+          nome: clinicaNome,
+          cnpj: clinicaCNPJ,
+          email: clinicaEmail,
+          endereco: clinicaEndereco,
+          whatsapp_gestor: clinicaWhatsapp,
+        }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -91,6 +101,7 @@ export default function Configuracoes() {
                 className="bg-[#0F0F12] border-white/10 text-white"
               />
             </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-white/60 text-sm block mb-1.5">CNPJ</label>
@@ -113,6 +124,29 @@ export default function Configuracoes() {
                 />
               </div>
             </div>
+
+            <div>
+              <label className="text-white/60 text-sm block mb-1.5">Endereço</label>
+              <Input
+                data-testid="input-clinica-endereco"
+                value={clinicaEndereco}
+                onChange={(e) => setClinicaEndereco(e.target.value)}
+                placeholder="Rua, número, bairro, cidade — UF"
+                className="bg-[#0F0F12] border-white/10 text-white"
+              />
+            </div>
+
+            <div>
+              <label className="text-white/60 text-sm block mb-1.5">WhatsApp do Responsável / Gestor</label>
+              <Input
+                data-testid="input-clinica-whatsapp"
+                value={clinicaWhatsapp}
+                onChange={(e) => setClinicaWhatsapp(e.target.value)}
+                placeholder="(00) 90000-0000"
+                className="bg-[#0F0F12] border-white/10 text-white"
+              />
+            </div>
+
             <Button
               data-testid="button-save-clinica"
               onClick={handleSave}
@@ -161,9 +195,9 @@ export default function Configuracoes() {
         </div>
         <div className="space-y-3">
           {[
-            { label: "SUPABASE_URL", env: "VITE_SUPABASE_URL" },
-            { label: "SUPABASE_ANON_KEY", env: "VITE_SUPABASE_ANON_KEY" },
-            { label: "ANTHROPIC_API_KEY", env: "ANTHROPIC_API_KEY" },
+            { label: "SUPABASE_URL" },
+            { label: "SUPABASE_ANON_KEY" },
+            { label: "ANTHROPIC_API_KEY" },
           ].map(({ label }) => (
             <div key={label} className="flex items-center gap-3">
               <div className="flex-1">
