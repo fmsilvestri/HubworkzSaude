@@ -98,7 +98,6 @@ export interface Paciente {
 }
 
 export interface PacienteInput {
-  clinica_id: string;
   nome: string;
   cpf?: string;
   data_nascimento?: string;

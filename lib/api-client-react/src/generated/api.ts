@@ -989,6 +989,76 @@ export const useUpdatePaciente = <TError = ErrorType<unknown>,
       return useMutation(getUpdatePacienteMutationOptions(options));
     }
 
+export const getDeletePacienteUrl = (id: string,) => {
+
+
+
+
+  return `/api/pacientes/${id}`
+}
+
+/**
+ * @summary Delete a patient
+ */
+export const deletePaciente = async (id: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeletePacienteUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeletePacienteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePaciente>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePaciente>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deletePaciente'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePaciente>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deletePaciente(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePacienteMutationResult = NonNullable<Awaited<ReturnType<typeof deletePaciente>>>
+
+    export type DeletePacienteMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a patient
+ */
+export const useDeletePaciente = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePaciente>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deletePaciente>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeletePacienteMutationOptions(options));
+    }
+
 export const getListMedicamentosUrl = (params?: ListMedicamentosParams,) => {
   const normalizedParams = new URLSearchParams();
 

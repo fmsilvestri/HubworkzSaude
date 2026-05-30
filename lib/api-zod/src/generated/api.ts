@@ -174,7 +174,6 @@ export const ListPacientesResponse = zod.array(ListPacientesResponseItem)
  * @summary Create a patient
  */
 export const CreatePacienteBody = zod.object({
-  "clinica_id": zod.string(),
   "nome": zod.string(),
   "cpf": zod.string().optional(),
   "data_nascimento": zod.string().optional(),
@@ -242,6 +241,14 @@ export const UpdatePacienteResponse = zod.object({
   "cid": zod.string().nullish(),
   "mandato_ativo": zod.boolean().optional(),
   "created_at": zod.string()
+})
+
+
+/**
+ * @summary Delete a patient
+ */
+export const DeletePacienteParams = zod.object({
+  "id": zod.coerce.string()
 })
 
 

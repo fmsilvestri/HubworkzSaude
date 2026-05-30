@@ -260,6 +260,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Paciente"
+    delete:
+      operationId: deletePaciente
+      tags: [pacientes]
+      summary: Delete a patient
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
 
   /medicamentos:
     get:
@@ -964,10 +977,8 @@ components:
 
     PacienteInput:
       type: object
-      required: [nome, clinica_id]
+      required: [nome]
       properties:
-        clinica_id:
-          type: string
         nome:
           type: string
         cpf:
