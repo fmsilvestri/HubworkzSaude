@@ -31,5 +31,9 @@ export interface Medicamento {
   valor?: number | null;
   /** @nullable */
   quantidade_estoque?: number | null;
+  /** @nullable */
+  foto_url?: string | null;
+  /** @nullable */
+  pdf_url?: string | null;
   created_at: string;
 }

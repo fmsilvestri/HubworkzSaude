@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   useListMedicamentos,
   useCreateMedicamento,
@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Pill, Plus, Thermometer, BookOpen, Pencil, Trash2, FlaskConical, Barcode, Calendar, DollarSign, Package } from "lucide-react";
+import { Search, Pill, Plus, Thermometer, BookOpen, Pencil, Trash2, FlaskConical, Barcode, Calendar, DollarSign, Package, ImagePlus, FileText, Loader2, ExternalLink } from "lucide-react";
 
 const schema = z.object({
   nome: z.string().min(2, "Nome obrigatório"),
@@ -59,6 +59,8 @@ type Medicamento = {
   data_ultima_compra?: string | null;
   valor?: number | null;
   quantidade_estoque?: number | null;
+  foto_url?: string | null;
+  pdf_url?: string | null;
   created_at: string;
 };
 
@@ -172,6 +174,9 @@ export default function Medicamentos() {
   const [openNew, setOpenNew] = useState(false);
   const [editItem, setEditItem] = useState<Medicamento | null>(null);
   const [deleteItem, setDeleteItem] = useState<Medicamento | null>(null);
+  const [uploadingType, setUploadingType] = useState<"foto" | "pdf" | null>(null);
+  const fotoInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const { data: medicamentos, isLoading } = useListMedicamentos({ search: search || undefined });
   const createMedicamento = useCreateMedicamento();
@@ -251,6 +256,26 @@ export default function Medicamentos() {
     });
   }
 
+  async function handleUpload(file: File, type: "foto" | "pdf") {
+    if (!editItem) return;
+    setUploadingType(type);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("type", type);
+      const resp = await fetch(`/api/medicamentos/${editItem.id}/upload`, { method: "POST", body: fd });
+      const data = await resp.json() as { url?: string; error?: string };
+      if (!resp.ok || !data.url) throw new Error(data.error ?? "Upload failed");
+      toast({ title: type === "foto" ? "Foto atualizada." : "PDF atualizado." });
+      setEditItem((prev) => prev ? { ...prev, [type === "foto" ? "foto_url" : "pdf_url"]: data.url } : null);
+      invalidate();
+    } catch {
+      toast({ title: "Erro ao fazer upload do arquivo.", variant: "destructive" });
+    } finally {
+      setUploadingType(null);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -313,12 +338,20 @@ export default function Medicamentos() {
             <div
               key={m.id}
               data-testid={`card-medicamento-${m.id}`}
-              className="bg-[#1B1B1E] border border-white/10 rounded-[14px] p-5 hover:border-white/20 transition-colors group"
+              className="bg-[#1B1B1E] border border-white/10 rounded-[14px] overflow-hidden hover:border-white/20 transition-colors group"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="h-10 w-10 bg-[#F56E0F]/15 rounded-xl flex items-center justify-center">
-                  <Pill className="h-5 w-5 text-[#F56E0F]" />
+              {m.foto_url && (
+                <div className="h-32 w-full overflow-hidden bg-[#0F0F12]">
+                  <img src={m.foto_url} alt={m.nome} className="w-full h-full object-cover" />
                 </div>
+              )}
+              <div className={`flex items-start justify-between mb-3 ${m.foto_url ? "px-5 pt-4" : "p-5 pb-0"}`}>
+                {!m.foto_url && (
+                  <div className="h-10 w-10 bg-[#F56E0F]/15 rounded-xl flex items-center justify-center">
+                    <Pill className="h-5 w-5 text-[#F56E0F]" />
+                  </div>
+                )}
+                {m.foto_url && <div />}
                 <div className="flex items-center gap-1.5">
                   {m.classe && (
                     <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/20 text-xs">{m.classe}</Badge>
@@ -343,60 +376,73 @@ export default function Medicamentos() {
                 </div>
               </div>
 
-              <h3 className="text-white font-semibold text-sm">{m.nome}</h3>
-              {m.principio_ativo && (
-                <p className="text-white/50 text-xs mt-1">{m.principio_ativo}</p>
-              )}
-
-              <div className="mt-4 space-y-2">
-                {m.apresentacao && (
-                  <div className="flex items-center gap-2 text-xs text-white/40">
-                    <BookOpen className="h-3 w-3 shrink-0" />
-                    <span>{m.apresentacao}</span>
-                  </div>
+              <div className={m.foto_url ? "px-5 pb-5" : "px-5 pb-5"}>
+                <h3 className="text-white font-semibold text-sm">{m.nome}</h3>
+                {m.principio_ativo && (
+                  <p className="text-white/50 text-xs mt-1">{m.principio_ativo}</p>
                 )}
-                {m.modo_uso && (
-                  <div className="flex items-center gap-2 text-xs text-white/40">
-                    <FlaskConical className="h-3 w-3 shrink-0" />
-                    <span>{m.modo_uso}</span>
-                  </div>
-                )}
-                {m.conservacao && (
-                  <div className="flex items-center gap-2 text-xs text-white/40">
-                    <Thermometer className="h-3 w-3 shrink-0" />
-                    <span>{m.conservacao}</span>
-                  </div>
-                )}
-                {m.codigo_barras && (
-                  <div className="flex items-center gap-2 text-xs text-white/40">
-                    <Barcode className="h-3 w-3 shrink-0" />
-                    <span>{m.codigo_barras}</span>
-                  </div>
-                )}
-                {m.data_ultima_compra && (
-                  <div className="flex items-center gap-2 text-xs text-white/40">
-                    <Calendar className="h-3 w-3 shrink-0" />
-                    <span>Última compra: {new Date(m.data_ultima_compra + "T00:00:00").toLocaleDateString("pt-BR")}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-3 mt-3">
-                  {m.valor != null && (
-                    <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20 text-xs">
-                      <DollarSign className="h-3 w-3 mr-1" />
-                      {m.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                    </Badge>
+                <div className="mt-3 space-y-1.5">
+                  {m.apresentacao && (
+                    <div className="flex items-center gap-2 text-xs text-white/40">
+                      <BookOpen className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{m.apresentacao}</span>
+                    </div>
                   )}
-                  {m.quantidade_estoque != null && (
-                    <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/20 text-xs">
-                      <Package className="h-3 w-3 mr-1" />
-                      {m.quantidade_estoque} un.
-                    </Badge>
+                  {m.modo_uso && (
+                    <div className="flex items-center gap-2 text-xs text-white/40">
+                      <FlaskConical className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{m.modo_uso}</span>
+                    </div>
                   )}
-                  {m.registro && (
-                    <Badge className="bg-green-500/15 text-green-400 border-green-500/20 text-xs">
-                      ANVISA: {m.registro}
-                    </Badge>
+                  {m.conservacao && (
+                    <div className="flex items-center gap-2 text-xs text-white/40">
+                      <Thermometer className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{m.conservacao}</span>
+                    </div>
                   )}
+                  {m.codigo_barras && (
+                    <div className="flex items-center gap-2 text-xs text-white/40">
+                      <Barcode className="h-3 w-3 shrink-0" />
+                      <span>{m.codigo_barras}</span>
+                    </div>
+                  )}
+                  {m.data_ultima_compra && (
+                    <div className="flex items-center gap-2 text-xs text-white/40">
+                      <Calendar className="h-3 w-3 shrink-0" />
+                      <span>Última compra: {new Date(m.data_ultima_compra + "T00:00:00").toLocaleDateString("pt-BR")}</span>
+                    </div>
+                  )}
+                  {m.pdf_url && (
+                    <a
+                      href={m.pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs text-[#F56E0F]/80 hover:text-[#F56E0F] transition-colors"
+                    >
+                      <FileText className="h-3 w-3 shrink-0" />
+                      <span>Bula / Documento PDF</span>
+                      <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  )}
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {m.valor != null && (
+                      <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20 text-xs">
+                        <DollarSign className="h-3 w-3 mr-1" />
+                        {m.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </Badge>
+                    )}
+                    {m.quantidade_estoque != null && (
+                      <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/20 text-xs">
+                        <Package className="h-3 w-3 mr-1" />
+                        {m.quantidade_estoque} un.
+                      </Badge>
+                    )}
+                    {m.registro && (
+                      <Badge className="bg-green-500/15 text-green-400 border-green-500/20 text-xs">
+                        ANVISA: {m.registro}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -404,9 +450,25 @@ export default function Medicamentos() {
         </div>
       )}
 
+      {/* hidden file inputs */}
+      <input
+        ref={fotoInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "foto"); e.target.value = ""; }}
+      />
+      <input
+        ref={pdfInputRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "pdf"); e.target.value = ""; }}
+      />
+
       {/* Sheet de edição */}
       <Sheet open={!!editItem} onOpenChange={(o) => { if (!o) setEditItem(null); }}>
-        <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[500px] sm:max-w-[500px]">
+        <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[500px] sm:max-w-[500px] overflow-y-auto">
           <SheetHeader className="mb-6">
             <SheetTitle className="text-white">Editar Medicamento</SheetTitle>
           </SheetHeader>
@@ -417,6 +479,72 @@ export default function Medicamentos() {
               submitLabel="Salvar Alterações"
             />
           </FormProvider>
+
+          {/* Upload de arquivos */}
+          <div className="mt-6 pt-6 border-t border-white/10 space-y-4">
+            <p className="text-white/50 text-xs uppercase tracking-wider font-medium">Arquivos</p>
+
+            {/* Foto */}
+            <div className="space-y-2">
+              <p className="text-white/70 text-sm">Foto do Medicamento</p>
+              {editItem?.foto_url ? (
+                <div className="relative rounded-xl overflow-hidden border border-white/10">
+                  <img src={editItem.foto_url} alt="foto" className="w-full h-36 object-cover" />
+                  <button
+                    onClick={() => fotoInputRef.current?.click()}
+                    className="absolute bottom-2 right-2 h-7 px-3 rounded-lg bg-black/60 hover:bg-black/80 text-white text-xs flex items-center gap-1.5 transition-colors"
+                    disabled={uploadingType === "foto"}
+                  >
+                    {uploadingType === "foto" ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImagePlus className="h-3 w-3" />}
+                    Trocar foto
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fotoInputRef.current?.click()}
+                  disabled={uploadingType === "foto"}
+                  className="w-full h-24 rounded-xl border border-dashed border-white/20 hover:border-white/40 flex flex-col items-center justify-center gap-2 transition-colors text-white/40 hover:text-white/60"
+                >
+                  {uploadingType === "foto"
+                    ? <Loader2 className="h-6 w-6 animate-spin text-[#F56E0F]" />
+                    : <><ImagePlus className="h-6 w-6" /><span className="text-xs">Clique para enviar foto (JPG, PNG, WebP)</span></>
+                  }
+                </button>
+              )}
+            </div>
+
+            {/* PDF */}
+            <div className="space-y-2">
+              <p className="text-white/70 text-sm">Bula / Documento PDF</p>
+              {editItem?.pdf_url ? (
+                <div className="flex items-center justify-between bg-[#0F0F12] rounded-xl border border-white/10 px-4 py-3">
+                  <a href={editItem.pdf_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-[#F56E0F] hover:underline">
+                    <FileText className="h-4 w-4" />
+                    <span>Ver documento</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                  <button
+                    onClick={() => pdfInputRef.current?.click()}
+                    className="text-xs text-white/40 hover:text-white/70 transition-colors"
+                    disabled={uploadingType === "pdf"}
+                  >
+                    {uploadingType === "pdf" ? <Loader2 className="h-3 w-3 animate-spin" /> : "Substituir"}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => pdfInputRef.current?.click()}
+                  disabled={uploadingType === "pdf"}
+                  className="w-full h-20 rounded-xl border border-dashed border-white/20 hover:border-white/40 flex flex-col items-center justify-center gap-2 transition-colors text-white/40 hover:text-white/60"
+                >
+                  {uploadingType === "pdf"
+                    ? <Loader2 className="h-6 w-6 animate-spin text-[#F56E0F]" />
+                    : <><FileText className="h-5 w-5" /><span className="text-xs">Clique para enviar PDF</span></>
+                  }
+                </button>
+              )}
+            </div>
+          </div>
         </SheetContent>
       </Sheet>
 

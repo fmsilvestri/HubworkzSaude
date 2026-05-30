@@ -1,5 +1,15 @@
 import { Router, type IRouter } from "express";
+import multer from "multer";
 import { supabase } from "../lib/supabase";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    cb(null, allowed.includes(file.mimetype));
+  },
+});
 
 const router: IRouter = Router();
 
@@ -143,5 +153,48 @@ router.delete("/medicamentos/:id", async (req, res): Promise<void> => {
     res.status(500).json({ error: "Failed to delete medicamento" });
   }
 });
+
+router.post(
+  "/medicamentos/:id/upload",
+  upload.single("file"),
+  async (req, res): Promise<void> => {
+    try {
+      const id = String(req.params["id"]);
+      const fileType = String(req.body["type"] ?? "foto"); // "foto" | "pdf"
+      const file = req.file;
+
+      if (!file) {
+        res.status(400).json({ error: "No file provided" });
+        return;
+      }
+
+      const ext = file.mimetype === "application/pdf" ? "pdf" : file.originalname.split(".").pop() ?? "jpg";
+      const storagePath = `${id}/${fileType}.${ext}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("medicamentos")
+        .upload(storagePath, file.buffer, { contentType: file.mimetype, upsert: true });
+      if (upErr) throw upErr;
+
+      const { data: urlData } = supabase.storage
+        .from("medicamentos")
+        .getPublicUrl(storagePath);
+
+      const publicUrl = urlData.publicUrl;
+      const field = fileType === "pdf" ? "pdf_url" : "foto_url";
+
+      const { error: updateErr } = await supabase
+        .from("medicamentos")
+        .update({ [field]: publicUrl })
+        .eq("id", id);
+      if (updateErr) throw updateErr;
+
+      res.json({ url: publicUrl });
+    } catch (err) {
+      req.log.error({ err }, "Failed to upload medicamento file");
+      res.status(500).json({ error: "Failed to upload file" });
+    }
+  }
+);
 
 export default router;

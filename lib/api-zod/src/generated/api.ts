@@ -266,6 +266,8 @@ export const ListMedicamentosResponseItem = zod.object({
   "data_ultima_compra": zod.string().nullish(),
   "valor": zod.number().nullish(),
   "quantidade_estoque": zod.number().nullish(),
+  "foto_url": zod.string().nullish(),
+  "pdf_url": zod.string().nullish(),
   "created_at": zod.string()
 })
 export const ListMedicamentosResponse = zod.array(ListMedicamentosResponseItem)
@@ -310,6 +312,8 @@ export const GetMedicamentoResponse = zod.object({
   "data_ultima_compra": zod.string().nullish(),
   "valor": zod.number().nullish(),
   "quantidade_estoque": zod.number().nullish(),
+  "foto_url": zod.string().nullish(),
+  "pdf_url": zod.string().nullish(),
   "created_at": zod.string()
 })
 
@@ -349,6 +353,8 @@ export const UpdateMedicamentoResponse = zod.object({
   "data_ultima_compra": zod.string().nullish(),
   "valor": zod.number().nullish(),
   "quantidade_estoque": zod.number().nullish(),
+  "foto_url": zod.string().nullish(),
+  "pdf_url": zod.string().nullish(),
   "created_at": zod.string()
 })
 

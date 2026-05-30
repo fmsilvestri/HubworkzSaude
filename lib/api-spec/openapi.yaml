@@ -920,6 +920,10 @@ components:
           type: ["number", "null"]
         quantidade_estoque:
           type: ["integer", "null"]
+        foto_url:
+          type: ["string", "null"]
+        pdf_url:
+          type: ["string", "null"]
         created_at:
           type: string
 
