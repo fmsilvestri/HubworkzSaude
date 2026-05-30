@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useListCotacoes,
   useCreateCotacao,
@@ -118,6 +118,16 @@ export default function Cotacao() {
     resolver: zodResolver(schema),
     defaultValues: { status: "pendente", tipo: "comp" },
   });
+
+  const watchImportado = form.watch("valor_importado");
+  const watchFrete = form.watch("frete_imposto");
+
+  useEffect(() => {
+    const a = parseFloat((watchImportado ?? "").replace(",", "."));
+    const b = parseFloat((watchFrete ?? "").replace(",", "."));
+    const soma = (isNaN(a) ? 0 : a) + (isNaN(b) ? 0 : b);
+    if (soma > 0) form.setValue("total", String(soma.toFixed(2)));
+  }, [watchImportado, watchFrete]);
 
   const onSubmit = (values: FormValues) => {
     createCotacao.mutate(
@@ -523,9 +533,19 @@ export default function Cotacao() {
                   )} />
                   <FormField control={form.control} name="total" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white/70">Total Custo (R$)</FormLabel>
+                      <FormLabel className="text-white/70">
+                        Total Custo (R$)
+                        <span className="ml-2 text-[10px] text-[#A5FFD6]/70 font-normal normal-case tracking-normal">calculado automaticamente</span>
+                      </FormLabel>
                       <FormControl>
-                        <Input {...field} type="number" step="0.01" placeholder="0,00" className="bg-[#0F0F12] border-white/10 text-white" />
+                        <Input
+                          {...field}
+                          type="number"
+                          step="0.01"
+                          placeholder="0,00"
+                          readOnly
+                          className="bg-[#0F0F12] border-white/10 text-[#A5FFD6] font-semibold cursor-default focus-visible:ring-0 focus-visible:ring-offset-0"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
