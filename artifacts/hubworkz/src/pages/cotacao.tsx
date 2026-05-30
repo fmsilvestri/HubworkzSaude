@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import {
   useListCotacoes,
   useCreateCotacao,
+  useUpdateCotacao,
+  useDeleteCotacao,
   getListCotacoesQueryKey,
+  listCotacoes,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -21,6 +24,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Form,
   FormControl,
@@ -46,6 +59,8 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronUp,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -103,18 +118,50 @@ function parseNum(s: string | undefined) {
   return isNaN(n) ? undefined : n;
 }
 
+type Cotacao = Awaited<ReturnType<typeof listCotacoes>>[number];
+
+function buildPayload(values: FormValues) {
+  return {
+    data_cotacao: values.data_cotacao || undefined,
+    nome_paciente: values.nome_paciente,
+    origem_paciente: values.origem_paciente || undefined,
+    convenio: values.convenio || undefined,
+    medicamento_nome: values.medicamento_nome,
+    tipo: values.tipo || undefined,
+    marca_laboratorio: values.marca_laboratorio || undefined,
+    valor_importado: values.valor_importado || undefined,
+    frete_imposto: values.frete_imposto || undefined,
+    total: parseNum(values.total),
+    valor_noova: parseNum(values.valor_noova),
+    valor_brasindice: parseNum(values.valor_brasindice),
+    valor_enviado_convenio: parseNum(values.valor_enviado_convenio),
+    data_envio: values.data_envio || undefined,
+    status: values.status,
+    valor_aprovado: parseNum(values.valor_aprovado),
+    imposto: parseNum(values.imposto),
+    resultado: parseNum(values.resultado),
+  };
+}
+
 export default function Cotacao() {
   const [statusFiltro, setStatusFiltro] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [editItem, setEditItem] = useState<Cotacao | null>(null);
+  const [deleteItem, setDeleteItem] = useState<Cotacao | null>(null);
 
   const { data: cotacoes, isLoading } = useListCotacoes({
     status: statusFiltro || undefined,
   });
   const createCotacao = useCreateCotacao();
+  const updateCotacao = useUpdateCotacao();
+  const deleteCotacao = useDeleteCotacao();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: getListCotacoesQueryKey() });
+
+  // ── Create form ──────────────────────────────────────────────────────
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { status: "pendente", tipo: "comp" },
@@ -136,34 +183,90 @@ export default function Cotacao() {
     }
   }, [watchImportado, watchFrete, watchDolar]);
 
+  // ── Edit form ────────────────────────────────────────────────────────
+  const editForm = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { status: "pendente", tipo: "comp" },
+  });
+
+  const watchEditImportado = editForm.watch("valor_importado");
+  const watchEditFrete = editForm.watch("frete_imposto");
+  const watchEditDolar = editForm.watch("cotacao_dolar");
+
+  useEffect(() => {
+    const usd1 = parseFloat((watchEditImportado ?? "").replace(",", "."));
+    const usd2 = parseFloat((watchEditFrete ?? "").replace(",", "."));
+    const taxa = parseFloat((watchEditDolar ?? "").replace(",", "."));
+    const totalUsd = (isNaN(usd1) ? 0 : usd1) + (isNaN(usd2) ? 0 : usd2);
+    if (totalUsd > 0 && !isNaN(taxa) && taxa > 0) {
+      editForm.setValue("total", String((totalUsd * taxa).toFixed(2)));
+    } else if (totalUsd > 0 && (isNaN(taxa) || taxa === 0)) {
+      editForm.setValue("total", String(totalUsd.toFixed(2)));
+    }
+  }, [watchEditImportado, watchEditFrete, watchEditDolar]);
+
+  function openEdit(c: Cotacao) {
+    editForm.reset({
+      data_cotacao: c.data_cotacao ?? "",
+      nome_paciente: c.nome_paciente ?? "",
+      origem_paciente: c.origem_paciente ?? "",
+      convenio: c.convenio ?? "",
+      medicamento_nome: c.medicamento_nome ?? "",
+      tipo: c.tipo ?? "comp",
+      marca_laboratorio: c.marca_laboratorio ?? "",
+      valor_importado: c.valor_importado ?? "",
+      frete_imposto: c.frete_imposto ?? "",
+      total: c.total != null ? String(c.total) : "",
+      valor_noova: c.valor_noova != null ? String(c.valor_noova) : "",
+      valor_brasindice: c.valor_brasindice != null ? String(c.valor_brasindice) : "",
+      valor_enviado_convenio: c.valor_enviado_convenio != null ? String(c.valor_enviado_convenio) : "",
+      data_envio: c.data_envio ?? "",
+      status: c.status ?? "pendente",
+      valor_aprovado: c.valor_aprovado != null ? String(c.valor_aprovado) : "",
+      imposto: c.imposto != null ? String(c.imposto) : "",
+      resultado: c.resultado != null ? String(c.resultado) : "",
+    });
+    setEditItem(c);
+  }
+
+  function onSubmitEdit(values: FormValues) {
+    if (!editItem) return;
+    updateCotacao.mutate(
+      { id: editItem.id, data: buildPayload(values) },
+      {
+        onSuccess: () => {
+          toast({ title: "Cotação atualizada!" });
+          invalidate();
+          setEditItem(null);
+        },
+        onError: () => toast({ title: "Erro ao atualizar cotação", variant: "destructive" }),
+      },
+    );
+  }
+
+  function handleDelete() {
+    if (!deleteItem) return;
+    deleteCotacao.mutate(
+      { id: deleteItem.id },
+      {
+        onSuccess: () => {
+          toast({ title: "Cotação excluída." });
+          invalidate();
+          setDeleteItem(null);
+          setExpandedId(null);
+        },
+        onError: () => toast({ title: "Erro ao excluir cotação", variant: "destructive" }),
+      },
+    );
+  }
+
   const onSubmit = (values: FormValues) => {
     createCotacao.mutate(
-      {
-        data: {
-          data_cotacao: values.data_cotacao || undefined,
-          nome_paciente: values.nome_paciente,
-          origem_paciente: values.origem_paciente || undefined,
-          convenio: values.convenio || undefined,
-          medicamento_nome: values.medicamento_nome,
-          tipo: values.tipo || undefined,
-          marca_laboratorio: values.marca_laboratorio || undefined,
-          valor_importado: values.valor_importado || undefined,
-          frete_imposto: values.frete_imposto || undefined,
-          total: parseNum(values.total),
-          valor_noova: parseNum(values.valor_noova),
-          valor_brasindice: parseNum(values.valor_brasindice),
-          valor_enviado_convenio: parseNum(values.valor_enviado_convenio),
-          data_envio: values.data_envio || undefined,
-          status: values.status,
-          valor_aprovado: parseNum(values.valor_aprovado),
-          imposto: parseNum(values.imposto),
-          resultado: parseNum(values.resultado),
-        },
-      },
+      { data: buildPayload(values) },
       {
         onSuccess: () => {
           toast({ title: "Cotação registrada!" });
-          queryClient.invalidateQueries({ queryKey: getListCotacoesQueryKey() });
+          invalidate();
           form.reset({ status: "pendente", tipo: "comp" });
           setOpenDialog(false);
         },
@@ -406,6 +509,20 @@ export default function Cotacao() {
                         <p className="text-white/60 text-xs leading-relaxed whitespace-pre-line">{c.marca_laboratorio}</p>
                       </div>
                     )}
+                    <div className="col-span-2 md:col-span-4 flex gap-2 pt-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEdit(c); }}
+                        className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white border border-white/10 hover:border-white/30 rounded-lg px-3 py-1.5 transition-colors"
+                      >
+                        <Pencil className="h-3 w-3" /> Editar
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteItem(c); }}
+                        className="flex items-center gap-1.5 text-xs text-red-400/60 hover:text-red-400 border border-red-500/10 hover:border-red-500/30 rounded-lg px-3 py-1.5 transition-colors"
+                      >
+                        <Trash2 className="h-3 w-3" /> Excluir
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -700,6 +817,158 @@ export default function Cotacao() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Editar Cotação Dialog */}
+      <Dialog open={!!editItem} onOpenChange={(o) => { if (!o) setEditItem(null); }}>
+        <DialogContent className="bg-[#1B1B1E] border border-white/10 text-white sm:max-w-[720px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white">Editar Cotação</DialogTitle>
+            <DialogDescription className="text-white/40">
+              {editItem?.nome_paciente} — {editItem?.medicamento_nome}
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onSubmitEdit)} className="space-y-5 mt-2">
+              <div>
+                <p className="text-white/40 text-xs uppercase tracking-wider mb-3">Identificação</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField control={editForm.control} name="data_cotacao" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Data</FormLabel><FormControl><Input {...field} type="date" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="convenio" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Convênio</FormLabel><FormControl><Input {...field} className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="nome_paciente" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Nome do Paciente *</FormLabel><FormControl><Input {...field} className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="origem_paciente" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Origem</FormLabel><FormControl><Input {...field} className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="medicamento_nome" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Medicamento *</FormLabel><FormControl><Input {...field} className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="tipo" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Tipo</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <FormControl><SelectTrigger className="bg-[#0F0F12] border-white/10 text-white"><SelectValue placeholder="Tipo..." /></SelectTrigger></FormControl>
+                        <SelectContent className="bg-[#1B1B1E] border-white/10">
+                          {TIPO_OPTIONS.map((t) => <SelectItem key={t} value={t}>{t.toUpperCase()}</SelectItem>)}
+                        </SelectContent>
+                      </Select><FormMessage />
+                    </FormItem>
+                  )} />
+                  <div className="col-span-2">
+                    <FormField control={editForm.control} name="marca_laboratorio" render={({ field }) => (
+                      <FormItem><FormLabel className="text-white/70">Marca / Laboratório</FormLabel><FormControl><Textarea {...field} className="bg-[#0F0F12] border-white/10 text-white min-h-[60px] resize-none" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-white/40 text-xs uppercase tracking-wider mb-3">Custo de Importação</p>
+                <div className="mb-3">
+                  <FormField control={editForm.control} name="cotacao_dolar" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70 flex items-center gap-2">Cotação do Dólar (R$ / USD)<span className="text-[10px] text-white/30 font-normal normal-case tracking-normal">multiplica valor + frete</span></FormLabel>
+                      <FormControl><Input {...field} type="number" step="0.01" placeholder="Ex: 5.85" className="bg-[#0F0F12] border-[#F56E0F]/30 text-white max-w-[200px]" /></FormControl><FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <FormField control={editForm.control} name="valor_importado" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Valor Importado (USD)</FormLabel>
+                      <FormControl><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs pointer-events-none">$</span><Input {...field} type="number" step="0.01" placeholder="0.00" className="bg-[#0F0F12] border-white/10 text-white pl-7" /></div></FormControl><FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="frete_imposto" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Frete / Imposto (USD)</FormLabel>
+                      <FormControl><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs pointer-events-none">$</span><Input {...field} type="number" step="0.01" placeholder="0.00" className="bg-[#0F0F12] border-white/10 text-white pl-7" /></div></FormControl><FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="total" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Total Custo (R$)<span className="ml-2 text-[10px] text-[#A5FFD6]/70 font-normal normal-case tracking-normal">automático</span></FormLabel>
+                      <FormControl><Input {...field} type="number" step="0.01" readOnly className="bg-[#0F0F12] border-white/10 text-[#A5FFD6] font-semibold cursor-default focus-visible:ring-0 focus-visible:ring-offset-0" /></FormControl><FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-white/40 text-xs uppercase tracking-wider mb-3">Preços de Venda</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <FormField control={editForm.control} name="valor_noova" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Valor Noova (R$)</FormLabel><FormControl><Input {...field} type="number" step="0.01" placeholder="0,00" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="valor_brasindice" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Brasíndice (R$)</FormLabel><FormControl><Input {...field} type="number" step="0.01" placeholder="0,00" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="valor_enviado_convenio" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Enviado ao Convênio (R$)</FormLabel><FormControl><Input {...field} type="number" step="0.01" placeholder="0,00" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-white/40 text-xs uppercase tracking-wider mb-3">Resultado</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField control={editForm.control} name="status" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Status</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? "pendente"}>
+                        <FormControl><SelectTrigger className="bg-[#0F0F12] border-white/10 text-white"><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent className="bg-[#1B1B1E] border-white/10">
+                          {STATUS_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select><FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="data_envio" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Data Envio</FormLabel><FormControl><Input {...field} type="date" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="valor_aprovado" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Valor Aprovado (R$)</FormLabel><FormControl><Input {...field} type="number" step="0.01" placeholder="0,00" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={editForm.control} name="imposto" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Imposto (R$)</FormLabel><FormControl><Input {...field} type="number" step="0.01" placeholder="0,00" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <div className="col-span-2">
+                    <FormField control={editForm.control} name="resultado" render={({ field }) => (
+                      <FormItem><FormLabel className="text-white/70">Resultado (R$)</FormLabel><FormControl><Input {...field} type="number" step="0.01" placeholder="0,00" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2 pt-2">
+                <Button type="button" variant="ghost" onClick={() => setEditItem(null)} className="text-white/60 hover:text-white">
+                  Cancelar
+                </Button>
+                <Button type="submit" className="bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white" disabled={updateCotacao.isPending}>
+                  {updateCotacao.isPending ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmação de exclusão */}
+      <AlertDialog open={!!deleteItem} onOpenChange={(o) => { if (!o) setDeleteItem(null); }}>
+        <AlertDialogContent className="bg-[#1B1B1E] border border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Excluir cotação?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/50">
+              A cotação de <span className="text-white font-medium">{deleteItem?.nome_paciente}</span> — {deleteItem?.medicamento_nome} será removida permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white" disabled={deleteCotacao.isPending}>
+              {deleteCotacao.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

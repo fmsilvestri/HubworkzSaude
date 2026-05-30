@@ -3069,6 +3069,148 @@ export const useCreateCotacao = <TError = ErrorType<unknown>,
       return useMutation(getCreateCotacaoMutationOptions(options));
     }
 
+export const getUpdateCotacaoUrl = (id: string,) => {
+
+
+
+
+  return `/api/cotacoes/${id}`
+}
+
+/**
+ * @summary Update a quotation
+ */
+export const updateCotacao = async (id: string,
+    cotacaoInput: CotacaoInput, options?: RequestInit): Promise<Cotacao> => {
+
+  return customFetch<Cotacao>(getUpdateCotacaoUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      cotacaoInput,)
+  }
+);}
+
+
+
+
+export const getUpdateCotacaoMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCotacao>>, TError,{id: string;data: BodyType<CotacaoInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCotacao>>, TError,{id: string;data: BodyType<CotacaoInput>}, TContext> => {
+
+const mutationKey = ['updateCotacao'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCotacao>>, {id: string;data: BodyType<CotacaoInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateCotacao(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCotacaoMutationResult = NonNullable<Awaited<ReturnType<typeof updateCotacao>>>
+    export type UpdateCotacaoMutationBody = BodyType<CotacaoInput>
+    export type UpdateCotacaoMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a quotation
+ */
+export const useUpdateCotacao = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCotacao>>, TError,{id: string;data: BodyType<CotacaoInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCotacao>>,
+        TError,
+        {id: string;data: BodyType<CotacaoInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateCotacaoMutationOptions(options));
+    }
+
+export const getDeleteCotacaoUrl = (id: string,) => {
+
+
+
+
+  return `/api/cotacoes/${id}`
+}
+
+/**
+ * @summary Delete a quotation
+ */
+export const deleteCotacao = async (id: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteCotacaoUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteCotacaoMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCotacao>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCotacao>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteCotacao'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCotacao>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteCotacao(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCotacaoMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCotacao>>>
+
+    export type DeleteCotacaoMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a quotation
+ */
+export const useDeleteCotacao = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCotacao>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCotacao>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteCotacaoMutationOptions(options));
+    }
+
 export const getListDeclaracoesUrl = (params?: ListDeclaracoesParams,) => {
   const normalizedParams = new URLSearchParams();
 
