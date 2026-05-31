@@ -599,7 +599,7 @@ export default function Cotacao() {
         c.tipo?.toUpperCase() ?? "—",
         c.valor_noova != null ? `R$ ${Number(c.valor_noova).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—",
         c.valor_aprovado != null ? `R$ ${Number(c.valor_aprovado).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—",
-        resultado !== 0 ? `R$ ${resultado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—",
+        c.resultado != null ? `R$ ${Number(c.resultado).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—",
         st.charAt(0).toUpperCase() + st.slice(1),
       ];
     });
@@ -636,24 +636,18 @@ export default function Cotacao() {
         7: { cellWidth: 28 },
         8: { cellWidth: 22 },
       },
-      didDrawCell: (data) => {
+      didParseCell: (data) => {
         if (data.section === "body" && data.column.index === 8) {
           const val = String(data.cell.raw ?? "").toLowerCase();
           if (val === "aprovado") {
-            doc.setTextColor(74, 222, 128);
+            data.cell.styles.textColor = [74, 222, 128];
           } else if (val === "reprovado") {
-            doc.setTextColor(248, 113, 113);
+            data.cell.styles.textColor = [248, 113, 113];
           } else if (val === "pendente") {
-            doc.setTextColor(250, 204, 21);
+            data.cell.styles.textColor = [250, 204, 21];
           } else {
-            doc.setTextColor(150, 150, 150);
+            data.cell.styles.textColor = [150, 150, 150];
           }
-          doc.setFontSize(7.5);
-          doc.text(
-            String(data.cell.raw ?? ""),
-            data.cell.x + 2,
-            data.cell.y + data.cell.height / 2 + 1,
-          );
         }
       },
       margin: { left: 14, right: 14 },
