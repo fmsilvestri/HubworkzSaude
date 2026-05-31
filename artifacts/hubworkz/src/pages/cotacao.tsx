@@ -394,13 +394,6 @@ export default function Cotacao() {
       const processoPayload: Record<string, unknown> = {
         status: "em_andamento",
         fase_atual: 1,
-        observacoes: [
-          `Processo gerado a partir da cotação.`,
-          `Paciente: ${c.nome_paciente ?? "não informado"}.`,
-          `Medicamento: ${c.medicamento_nome ?? "não informado"}.`,
-          c.convenio ? `Convênio: ${c.convenio}.` : null,
-          c.valor_aprovado != null ? `Valor aprovado: R$ ${Number(c.valor_aprovado).toFixed(2)}.` : null,
-        ].filter(Boolean).join(" "),
       };
       if (pacienteId) processoPayload["paciente_id"] = pacienteId;
       if (c.medicamento_id) processoPayload["medicamento_id"] = c.medicamento_id;

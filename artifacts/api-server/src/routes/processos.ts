@@ -8,12 +8,12 @@ const DEFAULT_CLINICA = "00000000-0000-0000-0000-000000000001";
 // DB column is "fase" — map fase_atual ↔ fase at the boundary
 const ALLOWED_CREATE = [
   "paciente_id", "medicamento_id", "distribuidora_id", "convenio",
-  "status", "fase_atual", "numero_protocolo", "observacoes",
+  "status", "fase_atual", "numero_protocolo",
 ];
 
 const ALLOWED_UPDATE = [
   "paciente_id", "medicamento_id", "convenio",
-  "status", "fase_atual", "numero_protocolo", "observacoes",
+  "status", "fase_atual", "numero_protocolo",
 ];
 
 /** Pick allowed fields from request body, mapping fase_atual → fase for DB */
