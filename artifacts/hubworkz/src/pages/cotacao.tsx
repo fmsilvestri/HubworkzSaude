@@ -316,6 +316,7 @@ const schema = z.object({
   valor_aprovado: z.string().optional(),
   imposto: z.string().optional(),
   resultado: z.string().optional(),
+  base_resultado: z.string().default("noova"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -394,10 +395,25 @@ export default function Cotacao() {
     }
   }, [watchImportado, watchFrete, watchDolar, watchCaixas]);
 
+  const watchAprovado = form.watch("valor_aprovado");
+  const watchNoova = form.watch("valor_noova");
+  const watchTotal = form.watch("total");
+  const watchBase = form.watch("base_resultado");
+
+  useEffect(() => {
+    const aprovado = parseFloat((watchAprovado ?? "").replace(",", "."));
+    if (isNaN(aprovado)) return;
+    const base = watchBase === "custo"
+      ? parseFloat((watchTotal ?? "").replace(",", "."))
+      : parseFloat((watchNoova ?? "").replace(",", "."));
+    if (isNaN(base)) return;
+    form.setValue("resultado", String((aprovado - base).toFixed(2)));
+  }, [watchAprovado, watchNoova, watchTotal, watchBase]);
+
   // ── Edit form ────────────────────────────────────────────────────────
   const editForm = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { status: "pendente", tipo: "comp" },
+    defaultValues: { status: "pendente", tipo: "comp", base_resultado: "noova" },
   });
 
   const watchEditImportado = editForm.watch("valor_importado");
@@ -418,6 +434,21 @@ export default function Cotacao() {
       editForm.setValue("total", String(totalUsd.toFixed(2)));
     }
   }, [watchEditImportado, watchEditFrete, watchEditDolar, watchEditCaixas]);
+
+  const watchEditAprovado = editForm.watch("valor_aprovado");
+  const watchEditNoova = editForm.watch("valor_noova");
+  const watchEditTotal = editForm.watch("total");
+  const watchEditBase = editForm.watch("base_resultado");
+
+  useEffect(() => {
+    const aprovado = parseFloat((watchEditAprovado ?? "").replace(",", "."));
+    if (isNaN(aprovado)) return;
+    const base = watchEditBase === "custo"
+      ? parseFloat((watchEditTotal ?? "").replace(",", "."))
+      : parseFloat((watchEditNoova ?? "").replace(",", "."));
+    if (isNaN(base)) return;
+    editForm.setValue("resultado", String((aprovado - base).toFixed(2)));
+  }, [watchEditAprovado, watchEditNoova, watchEditTotal, watchEditBase]);
 
   function openEdit(c: Cotacao) {
     editForm.reset({
@@ -1435,11 +1466,51 @@ export default function Cotacao() {
                     </FormItem>
                   )} />
                   <div className="col-span-2">
+                    <FormField control={form.control} name="base_resultado" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white/70 flex items-center gap-2">
+                          Base do Resultado
+                          <span className="text-[10px] text-white/30 font-normal normal-case tracking-normal">Aprovado menos qual valor?</span>
+                        </FormLabel>
+                        <div className="flex gap-1 mt-1">
+                          {[
+                            { value: "noova", label: "V. Noova" },
+                            { value: "custo", label: "Total Custo" },
+                          ].map((opt) => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => field.onChange(opt.value)}
+                              className={cn(
+                                "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                                field.value === opt.value
+                                  ? "bg-[#F56E0F]/15 border-[#F56E0F]/40 text-[#F56E0F]"
+                                  : "bg-white/5 border-white/10 text-white/40 hover:text-white/70 hover:border-white/20"
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="col-span-2">
                     <FormField control={form.control} name="resultado" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-white/70">Resultado (R$)</FormLabel>
+                        <FormLabel className="text-white/70">
+                          Resultado (R$)
+                          <span className="ml-2 text-[10px] text-[#A5FFD6]/70 font-normal normal-case tracking-normal">calculado automaticamente</span>
+                        </FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" step="0.01" placeholder="Calculado automaticamente (aprovado - noova - imposto)" className="bg-[#0F0F12] border-white/10 text-white" />
+                          <Input
+                            {...field}
+                            type="number"
+                            step="0.01"
+                            readOnly
+                            placeholder="Aprovado − base selecionada"
+                            className="bg-[#0F0F12] border-white/10 text-[#A5FFD6] font-semibold cursor-default focus-visible:ring-0 focus-visible:ring-offset-0"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1609,8 +1680,54 @@ export default function Cotacao() {
                     <FormItem><FormLabel className="text-white/70">Imposto (R$)</FormLabel><FormControl><Input {...field} type="number" step="0.01" placeholder="0,00" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
                   )} />
                   <div className="col-span-2">
+                    <FormField control={editForm.control} name="base_resultado" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white/70 flex items-center gap-2">
+                          Base do Resultado
+                          <span className="text-[10px] text-white/30 font-normal normal-case tracking-normal">Aprovado menos qual valor?</span>
+                        </FormLabel>
+                        <div className="flex gap-1 mt-1">
+                          {[
+                            { value: "noova", label: "V. Noova" },
+                            { value: "custo", label: "Total Custo" },
+                          ].map((opt) => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => field.onChange(opt.value)}
+                              className={cn(
+                                "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                                field.value === opt.value
+                                  ? "bg-[#F56E0F]/15 border-[#F56E0F]/40 text-[#F56E0F]"
+                                  : "bg-white/5 border-white/10 text-white/40 hover:text-white/70 hover:border-white/20"
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="col-span-2">
                     <FormField control={editForm.control} name="resultado" render={({ field }) => (
-                      <FormItem><FormLabel className="text-white/70">Resultado (R$)</FormLabel><FormControl><Input {...field} type="number" step="0.01" placeholder="0,00" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                      <FormItem>
+                        <FormLabel className="text-white/70">
+                          Resultado (R$)
+                          <span className="ml-2 text-[10px] text-[#A5FFD6]/70 font-normal normal-case tracking-normal">calculado automaticamente</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="number"
+                            step="0.01"
+                            readOnly
+                            placeholder="Aprovado − base selecionada"
+                            className="bg-[#0F0F12] border-white/10 text-[#A5FFD6] font-semibold cursor-default focus-visible:ring-0 focus-visible:ring-offset-0"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )} />
                   </div>
                 </div>
