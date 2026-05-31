@@ -1472,20 +1472,28 @@ export default function Cotacao() {
                           Base do Resultado
                           <span className="text-[10px] text-white/30 font-normal normal-case tracking-normal">Aprovado menos qual valor?</span>
                         </FormLabel>
-                        <div className="flex gap-1 mt-1">
+                        <div className="flex gap-2 mt-1">
                           {[
-                            { value: "noova", label: "V. Noova" },
-                            { value: "custo", label: "Total Custo" },
+                            {
+                              value: "noova",
+                              label: "V. Noova",
+                              active: "bg-[#A5FFD6]/15 border-[#A5FFD6]/50 text-[#A5FFD6] shadow-[0_0_8px_rgba(165,255,214,0.15)]",
+                              inactive: "bg-white/5 border-white/10 text-white/35 hover:text-[#A5FFD6]/60 hover:border-[#A5FFD6]/25",
+                            },
+                            {
+                              value: "custo",
+                              label: "Total Custo",
+                              active: "bg-[#F56E0F]/15 border-[#F56E0F]/50 text-[#F56E0F] shadow-[0_0_8px_rgba(245,110,15,0.15)]",
+                              inactive: "bg-white/5 border-white/10 text-white/35 hover:text-[#F56E0F]/60 hover:border-[#F56E0F]/25",
+                            },
                           ].map((opt) => (
                             <button
                               key={opt.value}
                               type="button"
                               onClick={() => field.onChange(opt.value)}
                               className={cn(
-                                "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
-                                field.value === opt.value
-                                  ? "bg-[#F56E0F]/15 border-[#F56E0F]/40 text-[#F56E0F]"
-                                  : "bg-white/5 border-white/10 text-white/40 hover:text-white/70 hover:border-white/20"
+                                "px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150",
+                                field.value === opt.value ? opt.active : opt.inactive
                               )}
                             >
                               {opt.label}
@@ -1686,20 +1694,28 @@ export default function Cotacao() {
                           Base do Resultado
                           <span className="text-[10px] text-white/30 font-normal normal-case tracking-normal">Aprovado menos qual valor?</span>
                         </FormLabel>
-                        <div className="flex gap-1 mt-1">
+                        <div className="flex gap-2 mt-1">
                           {[
-                            { value: "noova", label: "V. Noova" },
-                            { value: "custo", label: "Total Custo" },
+                            {
+                              value: "noova",
+                              label: "V. Noova",
+                              active: "bg-[#A5FFD6]/15 border-[#A5FFD6]/50 text-[#A5FFD6] shadow-[0_0_8px_rgba(165,255,214,0.15)]",
+                              inactive: "bg-white/5 border-white/10 text-white/35 hover:text-[#A5FFD6]/60 hover:border-[#A5FFD6]/25",
+                            },
+                            {
+                              value: "custo",
+                              label: "Total Custo",
+                              active: "bg-[#F56E0F]/15 border-[#F56E0F]/50 text-[#F56E0F] shadow-[0_0_8px_rgba(245,110,15,0.15)]",
+                              inactive: "bg-white/5 border-white/10 text-white/35 hover:text-[#F56E0F]/60 hover:border-[#F56E0F]/25",
+                            },
                           ].map((opt) => (
                             <button
                               key={opt.value}
                               type="button"
                               onClick={() => field.onChange(opt.value)}
                               className={cn(
-                                "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
-                                field.value === opt.value
-                                  ? "bg-[#F56E0F]/15 border-[#F56E0F]/40 text-[#F56E0F]"
-                                  : "bg-white/5 border-white/10 text-white/40 hover:text-white/70 hover:border-white/20"
+                                "px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150",
+                                field.value === opt.value ? opt.active : opt.inactive
                               )}
                             >
                               {opt.label}
