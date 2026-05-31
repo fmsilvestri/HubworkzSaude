@@ -1472,13 +1472,13 @@ export default function Cotacao() {
                               value: "noova",
                               label: "V. Noova",
                               active: "bg-[#A5FFD6]/15 border-[#A5FFD6]/50 text-[#A5FFD6] shadow-[0_0_8px_rgba(165,255,214,0.15)]",
-                              inactive: "bg-white/5 border-white/10 text-white/35 hover:text-[#A5FFD6]/60 hover:border-[#A5FFD6]/25",
+                              inactive: "bg-[#A5FFD6]/5 border-[#A5FFD6]/20 text-[#A5FFD6]/45 hover:text-[#A5FFD6]/70 hover:border-[#A5FFD6]/35",
                             },
                             {
                               value: "custo",
                               label: "Total Custo",
                               active: "bg-[#F56E0F]/15 border-[#F56E0F]/50 text-[#F56E0F] shadow-[0_0_8px_rgba(245,110,15,0.15)]",
-                              inactive: "bg-white/5 border-white/10 text-white/35 hover:text-[#F56E0F]/60 hover:border-[#F56E0F]/25",
+                              inactive: "bg-[#F56E0F]/5 border-[#F56E0F]/20 text-[#F56E0F]/45 hover:text-[#F56E0F]/70 hover:border-[#F56E0F]/35",
                             },
                           ].map((opt) => (
                             <button
@@ -1694,13 +1694,13 @@ export default function Cotacao() {
                               value: "noova",
                               label: "V. Noova",
                               active: "bg-[#A5FFD6]/15 border-[#A5FFD6]/50 text-[#A5FFD6] shadow-[0_0_8px_rgba(165,255,214,0.15)]",
-                              inactive: "bg-white/5 border-white/10 text-white/35 hover:text-[#A5FFD6]/60 hover:border-[#A5FFD6]/25",
+                              inactive: "bg-[#A5FFD6]/5 border-[#A5FFD6]/20 text-[#A5FFD6]/45 hover:text-[#A5FFD6]/70 hover:border-[#A5FFD6]/35",
                             },
                             {
                               value: "custo",
                               label: "Total Custo",
                               active: "bg-[#F56E0F]/15 border-[#F56E0F]/50 text-[#F56E0F] shadow-[0_0_8px_rgba(245,110,15,0.15)]",
-                              inactive: "bg-white/5 border-white/10 text-white/35 hover:text-[#F56E0F]/60 hover:border-[#F56E0F]/25",
+                              inactive: "bg-[#F56E0F]/5 border-[#F56E0F]/20 text-[#F56E0F]/45 hover:text-[#F56E0F]/70 hover:border-[#F56E0F]/35",
                             },
                           ].map((opt) => (
                             <button
