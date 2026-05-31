@@ -7,7 +7,9 @@ import {
   getListCotacoesQueryKey,
   listCotacoes,
   useListPacientes,
+  useListMedicamentos,
   type Paciente,
+  type Medicamento,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -170,6 +172,95 @@ function PacienteCombobox({
         <div className="border-t border-white/5 mt-1 pt-1 px-3 py-1.5">
           <p className="text-white/25 text-[10px]">
             {filtered.length} paciente{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""} · ou continue digitando um novo nome
+          </p>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ── Medicamento combobox ─────────────────────────────────────────────────────
+function MedicamentoCombobox({
+  value,
+  onChange,
+  onSelectMedicamento,
+  "data-testid": testId,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSelectMedicamento?: (m: Medicamento) => void;
+  "data-testid"?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [fromDb, setFromDb] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { data: medicamentos } = useListMedicamentos();
+
+  const filtered = (medicamentos ?? [])
+    .filter((m) =>
+      m.nome.toLowerCase().includes(value.toLowerCase()) ||
+      (m.principio_ativo ?? "").toLowerCase().includes(value.toLowerCase())
+    )
+    .slice(0, 8);
+
+  function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
+    onChange(e.target.value);
+    setFromDb(false);
+    setOpen(e.target.value.length > 0);
+  }
+
+  function handleSelect(m: Medicamento) {
+    onChange(m.nome);
+    setFromDb(true);
+    onSelectMedicamento?.(m);
+    setOpen(false);
+    inputRef.current?.blur();
+  }
+
+  return (
+    <Popover open={open && filtered.length > 0} onOpenChange={setOpen}>
+      <PopoverAnchor asChild>
+        <div className="relative">
+          <Input
+            ref={inputRef}
+            value={value}
+            onChange={handleInput}
+            onFocus={() => { if (value.length > 0 && filtered.length > 0) setOpen(true); }}
+            onBlur={() => setTimeout(() => setOpen(false), 120)}
+            placeholder="Nome ou princípio ativo..."
+            data-testid={testId}
+            className="bg-[#0F0F12] border-white/10 text-white pr-8"
+          />
+          {fromDb && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2" title="Medicamento selecionado da base de dados">
+              <Check className="h-3.5 w-3.5 text-[#A5FFD6]" />
+            </span>
+          )}
+        </div>
+      </PopoverAnchor>
+      <PopoverContent
+        className="p-1 bg-[#1B1B1E] border border-white/10 shadow-xl w-[var(--radix-popover-trigger-width)]"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        sideOffset={4}
+      >
+        {filtered.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); handleSelect(m); }}
+            className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/5 transition-colors group"
+          >
+            <p className="text-white text-sm font-medium truncate">{m.nome}</p>
+            {(m.principio_ativo || m.apresentacao) && (
+              <p className="text-white/40 text-xs truncate">
+                {[m.principio_ativo, m.apresentacao].filter(Boolean).join(" · ")}
+              </p>
+            )}
+          </button>
+        ))}
+        <div className="border-t border-white/5 mt-1 pt-1 px-3 py-1.5">
+          <p className="text-white/25 text-[10px]">
+            {filtered.length} medicamento{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""} · ou continue digitando um novo nome
           </p>
         </div>
       </PopoverContent>
@@ -978,7 +1069,14 @@ export default function Cotacao() {
                       <FormItem>
                         <FormLabel className="text-white/70">Medicamento *</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-medicamento-nome" placeholder="Ex: Verzenios 150mg 60cp" className="bg-[#0F0F12] border-white/10 text-white" />
+                          <MedicamentoCombobox
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            data-testid="input-medicamento-nome"
+                            onSelectMedicamento={(m) => {
+                              if (m.principio_ativo) form.setValue("marca_laboratorio", m.principio_ativo);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1240,7 +1338,19 @@ export default function Cotacao() {
                     <FormItem><FormLabel className="text-white/70">Origem</FormLabel><FormControl><Input {...field} className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={editForm.control} name="medicamento_nome" render={({ field }) => (
-                    <FormItem><FormLabel className="text-white/70">Medicamento *</FormLabel><FormControl><Input {...field} className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage /></FormItem>
+                    <FormItem>
+                      <FormLabel className="text-white/70">Medicamento *</FormLabel>
+                      <FormControl>
+                        <MedicamentoCombobox
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          onSelectMedicamento={(m) => {
+                            if (m.principio_ativo) editForm.setValue("marca_laboratorio", m.principio_ativo);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )} />
                   <FormField control={editForm.control} name="tipo" render={({ field }) => (
                     <FormItem><FormLabel className="text-white/70">Tipo</FormLabel>
