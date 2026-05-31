@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useSendAiMessage, useGetAiHistory, getGetAiHistoryQueryKey } from "@workspace/api-client-react";
+import { useSendAiMessage, useGetAiHistory, useClearAiHistory, getGetAiHistoryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -205,6 +205,7 @@ export default function DiIA() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const { profile } = useAuth();
   const sendMessage = useSendAiMessage();
+  const clearHistory = useClearAiHistory();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
@@ -225,6 +226,12 @@ export default function DiIA() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleNewConversation = async () => {
+    await clearHistory.mutateAsync({ params: { clinica_id: profile?.clinica_id } });
+    setMessages([{ role: "assistant", content: WELCOME_MSG }]);
+    queryClient.invalidateQueries({ queryKey: getGetAiHistoryQueryKey() });
+  };
 
   const handleSend = (text?: string) => {
     const msg = (text ?? input).trim();
@@ -331,6 +338,17 @@ export default function DiIA() {
           <div>
             <h3 className="text-white font-semibold text-base">Di IA — Assistente Farmaceutica</h3>
             <p className="text-[#A5FFD6] text-xs mt-0.5">Integrada a todos os modulos · claude-sonnet-4-6</p>
+          </div>
+          <div className="ml-auto">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleNewConversation}
+              disabled={clearHistory.isPending}
+              className="text-[#F56E0F]/70 hover:text-[#F56E0F] hover:bg-[#F56E0F]/10 text-xs border border-[#F56E0F]/20 hover:border-[#F56E0F]/40 px-3 h-8"
+            >
+              {clearHistory.isPending ? "Limpando..." : "Nova conversa"}
+            </Button>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useGetAiHistory, useSendAiMessage } from "@workspace/api-client-react";
+import { useGetAiHistory, useSendAiMessage, useClearAiHistory } from "@workspace/api-client-react";
 import { Send, Loader2 } from "lucide-react";
 
 export default function DiIA() {
@@ -11,6 +11,7 @@ export default function DiIA() {
 
   const { data: history, isLoading: historyLoading, refetch } = useGetAiHistory({ limit: 40 });
   const sendMessage = useSendAiMessage();
+  const clearHistory = useClearAiHistory();
 
   const [localMessages, setLocalMessages] = useState<
     Array<{ id: string; role: "user" | "assistant"; content: string; created_at: string }>
@@ -34,6 +35,11 @@ export default function DiIA() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [localMessages]);
+
+  async function handleNewConversation() {
+    await clearHistory.mutateAsync({ params: {} });
+    setLocalMessages([{ id: "welcome", role: "assistant", content: WELCOME_MSG, created_at: new Date().toISOString() }]);
+  }
 
   async function handleSend() {
     const msg = input.trim();
@@ -90,7 +96,7 @@ export default function DiIA() {
             style={{ background: "#A5FFD6", border: "2px solid var(--t-bg)" }}
           />
         </div>
-        <div>
+        <div className="flex-1">
           <p className="text-sm font-bold" style={{ color: "#A5FFD6" }}>
             Di IA
           </p>
@@ -98,6 +104,14 @@ export default function DiIA() {
             Assistente farmaceutica oncologica
           </p>
         </div>
+        <button
+          onClick={handleNewConversation}
+          disabled={clearHistory.isPending}
+          className="text-[11px] px-3 py-1.5 rounded-lg shrink-0"
+          style={{ background: "rgba(245,110,15,0.12)", color: "#F56E0F", border: "1px solid rgba(245,110,15,0.25)" }}
+        >
+          {clearHistory.isPending ? "Limpando..." : "Nova conversa"}
+        </button>
       </div>
 
       {/* Mensagens */}

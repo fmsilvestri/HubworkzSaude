@@ -10,6 +10,8 @@ export * from './activityItem';
 export * from './aiMessage';
 export * from './aiMessageInput';
 export * from './aiMessageResponse';
+export * from './clearAiHistory200';
+export * from './clearAiHistoryParams';
 export * from './cotacao';
 export * from './cotacaoInput';
 export * from './dashboardStats';

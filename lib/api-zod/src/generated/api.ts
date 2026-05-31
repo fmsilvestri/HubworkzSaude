@@ -1126,3 +1126,15 @@ export const GetAiHistoryResponseItem = zod.object({
 export const GetAiHistoryResponse = zod.array(GetAiHistoryResponseItem)
 
 
+/**
+ * @summary Clear Di IA chat history
+ */
+export const ClearAiHistoryQueryParams = zod.object({
+  "clinica_id": zod.coerce.string().optional()
+})
+
+export const ClearAiHistoryResponse = zod.object({
+  "deleted": zod.number()
+})
+
+

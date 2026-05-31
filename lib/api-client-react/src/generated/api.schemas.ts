@@ -551,3 +551,11 @@ clinica_id?: string;
 limit?: number;
 };
 
+export type ClearAiHistoryParams = {
+clinica_id?: string;
+};
+
+export type ClearAiHistory200 = {
+  deleted: number;
+};
+

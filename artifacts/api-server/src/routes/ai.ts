@@ -209,4 +209,29 @@ router.get("/ai/history", async (req, res): Promise<void> => {
   }
 });
 
+// ─── DELETE /api/ai/history ───────────────────────────────────────────────────
+
+router.delete("/ai/history", async (req, res): Promise<void> => {
+  try {
+    let query = supabase.from("di_messages").delete();
+
+    if (req.query["user_id"]) {
+      query = query.eq("user_id", String(req.query["user_id"]));
+    } else if (req.query["clinica_id"]) {
+      query = query.eq("clinica_id", String(req.query["clinica_id"]));
+    } else {
+      // safety: require at least one filter
+      res.status(400).json({ error: "clinica_id or user_id required" });
+      return;
+    }
+
+    const { error, count } = await query.select();
+    if (error) throw error;
+    res.json({ deleted: count ?? 0 });
+  } catch (err) {
+    req.log.error({ err }, "Failed to clear AI history");
+    res.status(500).json({ error: "Failed to clear history" });
+  }
+});
+
 export default router;

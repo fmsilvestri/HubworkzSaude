@@ -24,6 +24,8 @@ import type {
   AiMessage,
   AiMessageInput,
   AiMessageResponse,
+  ClearAiHistory200,
+  ClearAiHistoryParams,
   Cotacao,
   CotacaoInput,
   DashboardStats,
@@ -3962,4 +3964,81 @@ export function useGetAiHistory<TData = Awaited<ReturnType<typeof getAiHistory>>
 
 
 
+
+export const getClearAiHistoryUrl = (params?: ClearAiHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/ai/history?${stringifiedParams}` : `/api/ai/history`
+}
+
+/**
+ * @summary Clear Di IA chat history
+ */
+export const clearAiHistory = async (params?: ClearAiHistoryParams, options?: RequestInit): Promise<ClearAiHistory200> => {
+
+  return customFetch<ClearAiHistory200>(getClearAiHistoryUrl(params),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getClearAiHistoryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearAiHistory>>, TError,{params?: ClearAiHistoryParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof clearAiHistory>>, TError,{params?: ClearAiHistoryParams}, TContext> => {
+
+const mutationKey = ['clearAiHistory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearAiHistory>>, {params?: ClearAiHistoryParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  clearAiHistory(params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClearAiHistoryMutationResult = NonNullable<Awaited<ReturnType<typeof clearAiHistory>>>
+
+    export type ClearAiHistoryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Clear Di IA chat history
+ */
+export const useClearAiHistory = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearAiHistory>>, TError,{params?: ClearAiHistoryParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof clearAiHistory>>,
+        TError,
+        {params?: ClearAiHistoryParams},
+        TContext
+      > => {
+      return useMutation(getClearAiHistoryMutationOptions(options));
+    }
 

@@ -1036,6 +1036,26 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AiMessage"
+    delete:
+      operationId: clearAiHistory
+      tags: [ai]
+      summary: Clear Di IA chat history
+      parameters:
+        - in: query
+          name: clinica_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: History cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted]
+                properties:
+                  deleted:
+                    type: integer
 
 components:
   schemas:
