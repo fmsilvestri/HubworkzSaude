@@ -57,4 +57,16 @@ router.patch("/monitoramentos/:id", async (req, res): Promise<void> => {
   }
 });
 
+router.delete("/monitoramentos/:id", async (req, res): Promise<void> => {
+  try {
+    const raw = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
+    const { error } = await supabase.from("monitoramentos").delete().eq("id", raw);
+    if (error) throw error;
+    res.status(204).end();
+  } catch (err) {
+    req.log.error({ err }, "Failed to delete monitoramento");
+    res.status(500).json({ error: "Failed to delete monitoramento" });
+  }
+});
+
 export default router;
