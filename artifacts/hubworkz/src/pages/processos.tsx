@@ -297,6 +297,7 @@ export default function Processos() {
   const { data: processos, isLoading } = useListProcessos(params);
   const { data: faseStats } = useGetProcessoFaseStats();
   const { data: pacientes } = useListPacientes();
+  const { data: medicamentos } = useListMedicamentos();
 
   const createProcesso = useCreateProcesso();
   const updateProcesso = useUpdateProcesso();
@@ -309,6 +310,10 @@ export default function Processos() {
 
   const pacienteMap = Object.fromEntries(
     ((pacientes ?? []) as Array<{ id: string; nome: string }>).map((p) => [p.id, p.nome])
+  );
+
+  const medMap = Object.fromEntries(
+    ((medicamentos ?? []) as Array<{ id: string; nome: string }>).map((m) => [m.id, m.nome])
   );
 
   function invalidate() {
@@ -466,9 +471,10 @@ export default function Processos() {
 
       {/* Tabela */}
       <div className="bg-[#1B1B1E] border border-white/10 rounded-[14px] overflow-hidden">
-        <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] text-xs text-white/40 uppercase tracking-wider px-5 py-3 border-b border-white/5">
+        <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto_auto] text-xs text-white/40 uppercase tracking-wider px-5 py-3 border-b border-white/5">
           <span>Processo</span>
           <span className="w-40">Paciente</span>
+          <span className="w-36">Medicamento</span>
           <span className="w-32 text-center">Fase</span>
           <span className="w-28 text-center">Status</span>
           <span className="w-28 text-center">Criado em</span>
@@ -490,7 +496,7 @@ export default function Processos() {
             <div
               key={p.id}
               data-testid={`row-processo-${p.id}`}
-              className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] items-center px-5 py-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group"
+              className="grid grid-cols-[1fr_auto_auto_auto_auto_auto_auto] items-center px-5 py-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group"
             >
               <div
                 className="cursor-pointer"
@@ -506,6 +512,11 @@ export default function Processos() {
               <div className="w-40">
                 <p className="text-white/70 text-sm">
                   {p.paciente_id ? (pacienteMap[p.paciente_id] ?? "—") : "—"}
+                </p>
+              </div>
+              <div className="w-36">
+                <p className="text-white/70 text-sm truncate">
+                  {p.medicamento_id ? (medMap[p.medicamento_id] ?? "—") : "—"}
                 </p>
               </div>
               <div className="w-32 flex justify-center">
@@ -596,6 +607,7 @@ export default function Processos() {
                   {[
                     { label: "Protocolo", value: selected.numero_protocolo ?? "—" },
                     { label: "Paciente", value: selected.paciente_id ? (pacienteMap[selected.paciente_id] ?? selected.paciente_id.slice(0, 8) + "...") : "—" },
+                    { label: "Medicamento", value: selected.medicamento_id ? (medMap[selected.medicamento_id] ?? selected.medicamento_id.slice(0, 8) + "...") : "—" },
                     { label: "Convênio", value: selected.convenio ?? "—" },
                     { label: "Criado em", value: new Date(selected.created_at).toLocaleDateString("pt-BR") },
                     { label: "Observações", value: selected.observacoes ?? "—" },
