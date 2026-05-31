@@ -194,9 +194,15 @@ function parseMessageParts(content: string): MessagePart[] {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  cards?: DiCard[];
+}
+
 export default function DiIA() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const { profile } = useAuth();
   const sendMessage = useSendAiMessage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -230,7 +236,11 @@ export default function DiIA() {
       { data: { message: msg, clinica_id: profile?.clinica_id } },
       {
         onSuccess: (data) => {
-          setMessages((prev) => [...prev, { role: "assistant", content: data.response }]);
+          const cards = (data as unknown as { cards?: DiCard[] }).cards ?? [];
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: data.response, cards: cards.length > 0 ? cards : undefined },
+          ]);
           queryClient.invalidateQueries({ queryKey: getGetAiHistoryQueryKey() });
         },
         onError: () => {
@@ -371,8 +381,9 @@ export default function DiIA() {
                 );
               }
 
-              // Assistant message — parse cards
-              const parts = parseMessageParts(msg.content);
+              // Assistant message — prefer msg.cards, fallback to parse from text
+              const cards: DiCard[] = msg.cards && msg.cards.length > 0 ? msg.cards : [];
+              const textParts = parseMessageParts(msg.content).filter((p) => p.kind === "text");
               return (
                 <div key={idx} className="flex gap-3">
                   <div className="shrink-0 mt-1">
@@ -382,14 +393,22 @@ export default function DiIA() {
                       className="h-10 w-10 rounded-xl object-cover object-top border border-[#A5FFD6]/25 shadow-md shadow-[#3C3489]/30"
                     />
                   </div>
-                  <div className="flex-1 max-w-[88%] space-y-2">
-                    {parts.map((part, pi) => {
-                      if (part.kind === "card") {
-                        return <DiCardRenderer key={pi} card={part.card} />;
-                      }
+                  <div className="flex-1 max-w-[88%] space-y-3">
+                    {/* Cards from tool results */}
+                    {cards.length > 0 && (
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {cards.map((card, ci) => (
+                          <DiCardRenderer key={ci} card={card} />
+                        ))}
+                      </div>
+                    )}
+                    {/* Text analysis */}
+                    {textParts.map((part, pi) => {
+                      const cleanText = part.content.trim();
+                      if (!cleanText) return null;
                       return (
                         <div key={pi} className="rounded-2xl px-5 py-3 bg-[rgba(63,52,137,0.3)] border border-[#3C3489]/40 text-white/90">
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{part.content}</p>
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{cleanText}</p>
                         </div>
                       );
                     })}

@@ -208,16 +208,15 @@ FERRAMENTAS DISPONÍVEIS (use sempre que o usuário pedir dados, listas ou anál
 - gerar_wa_d30(paciente_id, observacoes?) — mensagem para monitoramento D30
 - gerar_wa_remessa(paciente_id, evento) — mensagem de notificação de entrega
 
-REGRAS DE RESPOSTA:
-1. Para qualquer pedido de dados, listas ou análises: USE SEMPRE as ferramentas. Nunca invente ou estime dados.
-2. Para relatórios e resumos visuais: use gerar_relatorio_completo ou chame múltiplas ferramentas em sequência para gerar vários cards coloridos.
-3. Para análise de um módulo específico: chame a ferramenta correspondente e analise os dados retornados.
-4. Após receber dados das ferramentas, escreva uma análise concisa em português antes ou depois dos cards.
-5. Para perguntas simples e conversas: responda em texto direto e objetivo.
-6. Para mensagens de comunicação geradas: retorne o texto formatado sem JSON.
-7. Idioma: sempre português brasileiro.
-8. Seja analítico — identifique tendências, pontos de atenção e recomendações baseadas nos dados reais.
-9. Máximo 4 parágrafos de texto entre cards.`;
+REGRAS DE RESPOSTA — OBRIGATÓRIAS:
+1. USE SEMPRE as ferramentas para qualquer dado. NUNCA invente, estime ou reproduza dados.
+2. Para relatórios ou resumos: chame gerar_relatorio_completo ou as ferramentas específicas. Os cards coloridos são exibidos automaticamente pelo sistema — NÃO os reproduza no texto.
+3. Após receber resultados das ferramentas: escreva APENAS 1 a 3 frases de análise em texto simples. NUNCA reproduza os dados como texto.
+4. PROIBIDO: markdown (tabelas, headers ##, listas com -, negrito **), emojis, JSON no texto final.
+5. Para perguntas simples: responda em texto direto, sem ferramentas.
+6. Para mensagens WA: retorne apenas o texto da mensagem, sem formatação.
+7. Idioma: sempre português brasileiro, sem emojis.
+8. Seja conciso — máximo 3 frases após os cards. Os dados já estão visíveis nos cards.`;
 }
 
 export function buildSystemPromptPaciente(ctx: PacienteCtx): string {
