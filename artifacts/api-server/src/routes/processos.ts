@@ -143,17 +143,26 @@ router.patch("/processos/:id", async (req, res): Promise<void> => {
 router.delete("/processos/:id", async (req, res): Promise<void> => {
   try {
     const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
+
+    // Cascade: remove all dependent records before deleting the processo
+    // Tables confirmed to have processo_id FK in Supabase:
+    const dependents: Array<{ table: string; label: string }> = [
+      { table: "cotacoes", label: "cotações" },
+      { table: "monitoramentos", label: "monitoramentos" },
+      { table: "notas_fiscais", label: "faturas" },
+    ];
+    for (const { table, label } of dependents) {
+      const { error: depErr } = await supabase.from(table).delete().eq("processo_id", id);
+      if (depErr) {
+        req.log.warn({ err: depErr, table }, `Failed to cascade-delete ${label}`);
+        // Non-fatal: the main delete may still fail with FK error if table is unknown
+      }
+    }
+
     const { error } = await supabase.from("processos").delete().eq("id", id);
     if (error) throw error;
     res.status(204).send();
   } catch (err) {
-    const pgErr = err as { code?: string };
-    if (pgErr?.code === "23503") {
-      res.status(409).json({
-        error: "Este processo possui registros vinculados (cotações, glosas ou faturas) e não pode ser excluído. Remova os registros relacionados antes.",
-      });
-      return;
-    }
     req.log.error({ err }, "Failed to delete processo");
     res.status(500).json({ error: "Erro ao excluir processo." });
   }
