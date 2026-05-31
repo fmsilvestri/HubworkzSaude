@@ -376,28 +376,38 @@ export default function Cotacao() {
   async function handleGerarProcesso(c: Cotacao) {
     setGerandoProcessoId(c.id);
     try {
-      // 1. Try to resolve paciente_id by searching for the patient by name
-      let pacienteId: string | undefined;
-      if (c.nome_paciente) {
-        try {
-          const resp = await fetch(`/api/pacientes?search=${encodeURIComponent(c.nome_paciente)}`);
-          if (resp.ok) {
+      // 1. Resolve paciente_id and medicamento_id in parallel
+      const [pacienteId, medicamentoId] = await Promise.all([
+        (async () => {
+          if (!c.nome_paciente) return undefined;
+          try {
+            const resp = await fetch(`/api/pacientes?search=${encodeURIComponent(c.nome_paciente)}`);
+            if (!resp.ok) return undefined;
             const lista = await resp.json() as Array<{ id: string; nome: string }>;
-            if (lista.length > 0) pacienteId = lista[0].id;
-          }
-        } catch {
-          // Non-blocking — proceed without paciente_id if lookup fails
-        }
-      }
+            return lista.length > 0 ? lista[0].id : undefined;
+          } catch { return undefined; }
+        })(),
+        (async () => {
+          // Prefer explicit medicamento_id stored on cotação; fall back to name search
+          if (c.medicamento_id) return c.medicamento_id as string;
+          if (!c.medicamento_nome) return undefined;
+          try {
+            const resp = await fetch(`/api/medicamentos?search=${encodeURIComponent(c.medicamento_nome)}`);
+            if (!resp.ok) return undefined;
+            const lista = await resp.json() as Array<{ id: string; nome: string }>;
+            return lista.length > 0 ? lista[0].id : undefined;
+          } catch { return undefined; }
+        })(),
+      ]);
 
       // 2. Build processo payload
       const processoPayload: Record<string, unknown> = {
         status: "em_andamento",
         fase_atual: 1,
       };
-      if (pacienteId) processoPayload["paciente_id"] = pacienteId;
-      if (c.medicamento_id) processoPayload["medicamento_id"] = c.medicamento_id;
-      if (c.convenio) processoPayload["convenio"] = c.convenio;
+      if (pacienteId)    processoPayload["paciente_id"]    = pacienteId;
+      if (medicamentoId) processoPayload["medicamento_id"] = medicamentoId;
+      if (c.convenio)    processoPayload["convenio"]       = c.convenio;
 
       // 3. Create processo
       const processoResp = await fetch("/api/processos", {
