@@ -4,7 +4,6 @@ import {
   useCreateCotacao,
   useUpdateCotacao,
   useDeleteCotacao,
-  useCreateProcesso,
   getListCotacoesQueryKey,
   listCotacoes,
   useListPacientes,
@@ -369,7 +368,6 @@ export default function Cotacao() {
   const createCotacao = useCreateCotacao();
   const updateCotacao = useUpdateCotacao();
   const deleteCotacao = useDeleteCotacao();
-  const createProcesso = useCreateProcesso();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -378,50 +376,69 @@ export default function Cotacao() {
   async function handleGerarProcesso(c: Cotacao) {
     setGerandoProcessoId(c.id);
     try {
-      // Resolve paciente_id from an existing linked processo, if any
+      // 1. Try to resolve paciente_id by searching for the patient by name
       let pacienteId: string | undefined;
-      if (c.processo_id) {
-        const resp = await fetch(`/api/processos/${c.processo_id}`);
-        if (resp.ok) {
-          const proc = await resp.json() as Record<string, unknown>;
-          if (proc["paciente_id"]) pacienteId = proc["paciente_id"] as string;
+      if (c.nome_paciente) {
+        try {
+          const resp = await fetch(`/api/pacientes?search=${encodeURIComponent(c.nome_paciente)}`);
+          if (resp.ok) {
+            const lista = await resp.json() as Array<{ id: string; nome: string }>;
+            if (lista.length > 0) pacienteId = lista[0].id;
+          }
+        } catch {
+          // Non-blocking — proceed without paciente_id if lookup fails
         }
       }
 
-      createProcesso.mutate(
-        {
-          data: {
-            paciente_id: pacienteId,
-            medicamento_id: c.medicamento_id ?? undefined,
-            convenio: c.convenio ?? undefined,
-            status: "em_andamento",
-            fase_atual: 1,
-            observacoes: `Processo gerado manualmente a partir da cotação. Medicamento: ${c.medicamento_nome ?? "não informado"}. Paciente: ${c.nome_paciente ?? "não informado"}. Valor aprovado: ${c.valor_aprovado != null ? `R$ ${Number(c.valor_aprovado).toFixed(2)}` : "não informado"}.`,
-          },
-        },
-        {
-          onSuccess: async (novoProcesso) => {
-            const proc = novoProcesso as unknown as Record<string, unknown>;
-            // Link the new processo back to this cotação
-            await fetch(`/api/cotacoes/${c.id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ processo_id: proc["id"] }),
-            });
-            toast({
-              title: "Processo criado com sucesso!",
-              description: `Processo vinculado à cotação de ${c.nome_paciente ?? "paciente"}.`,
-            });
-            invalidate();
-          },
-          onError: () => {
-            toast({ title: "Erro ao gerar processo.", variant: "destructive" });
-          },
-          onSettled: () => setGerandoProcessoId(null),
-        },
-      );
-    } catch {
-      toast({ title: "Erro ao gerar processo.", variant: "destructive" });
+      // 2. Build processo payload
+      const processoPayload: Record<string, unknown> = {
+        status: "em_andamento",
+        fase_atual: 1,
+        observacoes: [
+          `Processo gerado a partir da cotação.`,
+          `Paciente: ${c.nome_paciente ?? "não informado"}.`,
+          `Medicamento: ${c.medicamento_nome ?? "não informado"}.`,
+          c.convenio ? `Convênio: ${c.convenio}.` : null,
+          c.valor_aprovado != null ? `Valor aprovado: R$ ${Number(c.valor_aprovado).toFixed(2)}.` : null,
+        ].filter(Boolean).join(" "),
+      };
+      if (pacienteId) processoPayload["paciente_id"] = pacienteId;
+      if (c.medicamento_id) processoPayload["medicamento_id"] = c.medicamento_id;
+      if (c.convenio) processoPayload["convenio"] = c.convenio;
+
+      // 3. Create processo
+      const processoResp = await fetch("/api/processos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(processoPayload),
+      });
+
+      if (!processoResp.ok) {
+        const errBody = await processoResp.json().catch(() => ({})) as Record<string, unknown>;
+        throw new Error(String(errBody["error"] ?? `HTTP ${processoResp.status}`));
+      }
+
+      const novoProcesso = await processoResp.json() as Record<string, unknown>;
+
+      // 4. Link cotação → processo
+      await fetch(`/api/cotacoes/${c.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ processo_id: novoProcesso["id"] }),
+      });
+
+      toast({
+        title: "Processo criado com sucesso!",
+        description: `Processo vinculado à cotação de ${c.nome_paciente ?? "paciente"}.`,
+      });
+      invalidate();
+    } catch (err) {
+      toast({
+        title: "Erro ao gerar processo.",
+        description: err instanceof Error ? err.message : "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
       setGerandoProcessoId(null);
     }
   }
