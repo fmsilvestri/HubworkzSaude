@@ -72,8 +72,11 @@ import {
   Trash2,
   Users,
   Check,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   PieChart,
   Pie,
@@ -502,6 +505,144 @@ export default function Cotacao() {
     setStatusFiltro((prev) => (prev === val ? "" : val));
   }
 
+  function generatePDF() {
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const now = new Date();
+    const dataGeracao = now.toLocaleDateString("pt-BR") + " " + now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+    // Header
+    doc.setFillColor(15, 15, 18);
+    doc.rect(0, 0, 297, 297, "F");
+
+    doc.setFontSize(18);
+    doc.setTextColor(245, 110, 15);
+    doc.setFont("helvetica", "bold");
+    doc.text("HubWorkz Saude", 14, 18);
+
+    doc.setFontSize(13);
+    doc.setTextColor(255, 255, 255);
+    doc.text("Relatorio de Cotacoes", 14, 26);
+
+    doc.setFontSize(8);
+    doc.setTextColor(160, 160, 160);
+    doc.text(`Gerado em: ${dataGeracao}`, 14, 32);
+
+    const filtroLabel = statusFiltro ? `  |  Filtro: ${statusFiltro}` : "  |  Todas as cotacoes";
+    doc.text(`Total: ${allCotacoes.length} cotacao(s)${filtroLabel}`, 14, 37);
+
+    // Summary boxes
+    const boxY = 43;
+    const boxes = [
+      { label: "Total", value: String(allCotacoes.length), color: [80, 80, 90] as [number, number, number] },
+      { label: "Aprovadas", value: String(aprovadas.length), color: [30, 100, 50] as [number, number, number] },
+      { label: "Reprovadas", value: String(reprovadas.length), color: [120, 30, 30] as [number, number, number] },
+      { label: "Pendentes", value: String(pendentes.length), color: [100, 80, 10] as [number, number, number] },
+      { label: "V. Noova Total", value: `R$ ${totalNoova.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, color: [100, 50, 5] as [number, number, number] },
+      { label: "V. Aprovado Total", value: `R$ ${totalAprovado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, color: [20, 80, 50] as [number, number, number] },
+      { label: "Resultado Total", value: `R$ ${totalResultado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, color: totalResultado >= 0 ? [20, 80, 50] as [number, number, number] : [120, 30, 30] as [number, number, number] },
+    ];
+    const boxW = (297 - 28 - (boxes.length - 1) * 3) / boxes.length;
+    boxes.forEach((b, i) => {
+      const x = 14 + i * (boxW + 3);
+      doc.setFillColor(...b.color);
+      doc.roundedRect(x, boxY, boxW, 14, 2, 2, "F");
+      doc.setFontSize(7);
+      doc.setTextColor(180, 180, 180);
+      doc.setFont("helvetica", "normal");
+      doc.text(b.label, x + 2, boxY + 5);
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.text(b.value, x + 2, boxY + 11);
+    });
+
+    // Table
+    const rows = list.map((c) => {
+      const st = normalizeStatus(c.status);
+      const resultado = Number(c.resultado) || 0;
+      return [
+        c.data_cotacao ? new Date(c.data_cotacao).toLocaleDateString("pt-BR") : "—",
+        c.nome_paciente ?? "—",
+        c.medicamento_nome ?? "—",
+        c.convenio ?? "—",
+        c.tipo?.toUpperCase() ?? "—",
+        c.valor_noova != null ? `R$ ${Number(c.valor_noova).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—",
+        c.valor_aprovado != null ? `R$ ${Number(c.valor_aprovado).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—",
+        resultado !== 0 ? `R$ ${resultado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—",
+        st.charAt(0).toUpperCase() + st.slice(1),
+      ];
+    });
+
+    autoTable(doc, {
+      startY: boxY + 18,
+      head: [["Data", "Paciente", "Medicamento", "Convenio", "Tipo", "V. Noova", "V. Aprovado", "Resultado", "Status"]],
+      body: rows,
+      theme: "grid",
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 2.5,
+        textColor: [220, 220, 220],
+        fillColor: [27, 27, 30],
+        lineColor: [50, 50, 55],
+        lineWidth: 0.2,
+        font: "helvetica",
+      },
+      headStyles: {
+        fillColor: [40, 40, 48],
+        textColor: [245, 110, 15],
+        fontStyle: "bold",
+        fontSize: 8,
+      },
+      alternateRowStyles: { fillColor: [20, 20, 24] },
+      columnStyles: {
+        0: { cellWidth: 20 },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 55 },
+        3: { cellWidth: 30 },
+        4: { cellWidth: 12 },
+        5: { cellWidth: 28 },
+        6: { cellWidth: 28 },
+        7: { cellWidth: 28 },
+        8: { cellWidth: 22 },
+      },
+      didDrawCell: (data) => {
+        if (data.section === "body" && data.column.index === 8) {
+          const val = String(data.cell.raw ?? "").toLowerCase();
+          if (val === "aprovado") {
+            doc.setTextColor(74, 222, 128);
+          } else if (val === "reprovado") {
+            doc.setTextColor(248, 113, 113);
+          } else if (val === "pendente") {
+            doc.setTextColor(250, 204, 21);
+          } else {
+            doc.setTextColor(150, 150, 150);
+          }
+          doc.setFontSize(7.5);
+          doc.text(
+            String(data.cell.raw ?? ""),
+            data.cell.x + 2,
+            data.cell.y + data.cell.height / 2 + 1,
+          );
+        }
+      },
+      margin: { left: 14, right: 14 },
+    });
+
+    // Footer
+    const pageCount = (doc as jsPDF & { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(80, 80, 80);
+      doc.setFont("helvetica", "normal");
+      doc.text(`HubWorkz Saude — Relatorio de Cotacoes — ${dataGeracao}`, 14, 205);
+      doc.text(`Pagina ${i} de ${pageCount}`, 283, 205, { align: "right" });
+    }
+
+    const filename = `cotacoes_${now.toISOString().slice(0, 10)}.pdf`;
+    doc.save(filename);
+  }
+
   const statCards = [
     {
       label: "Total",
@@ -602,14 +743,25 @@ export default function Cotacao() {
             Controle de preços e aprovações por convênio
           </p>
         </div>
-        <Button
-          onClick={() => setOpenDialog(true)}
-          data-testid="button-nova-cotacao"
-          className="bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Nova Cotação
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={generatePDF}
+            variant="outline"
+            disabled={allCotacoes.length === 0}
+            className="border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Relatório PDF
+          </Button>
+          <Button
+            onClick={() => setOpenDialog(true)}
+            data-testid="button-nova-cotacao"
+            className="bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Nova Cotação
+          </Button>
+        </div>
       </div>
 
       {/* Stats — clickable, 3D */}
