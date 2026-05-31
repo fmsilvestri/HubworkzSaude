@@ -618,14 +618,14 @@ export default function EloSaude() {
                       <button
                         onClick={() => setEditItem(item)}
                         title="Editar"
-                        className="text-white/25 hover:text-[#F56E0F] hover:bg-[#F56E0F]/10 transition-colors p-1.5 rounded-lg"
+                        className="text-[#F56E0F]/60 hover:text-[#F56E0F] hover:bg-[#F56E0F]/10 transition-colors p-1.5 rounded-lg"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => setDeleteItem(item)}
                         title="Excluir"
-                        className="text-white/25 hover:text-red-400 hover:bg-red-400/10 transition-colors p-1.5 rounded-lg"
+                        className="text-red-400/60 hover:text-red-400 hover:bg-red-400/10 transition-colors p-1.5 rounded-lg"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
