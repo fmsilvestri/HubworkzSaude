@@ -80,7 +80,10 @@ CREATE TABLE IF NOT EXISTS elo_saude_importados (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 ALTER TABLE elo_saude_importados ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS service_all ON elo_saude_importados;
+DO $$ BEGIN
+  DROP POLICY IF EXISTS service_all ON elo_saude_importados;
+EXCEPTION WHEN undefined_table THEN NULL;
+END $$;
 CREATE POLICY service_all ON elo_saude_importados
   USING (true) WITH CHECK (true);`;
 
