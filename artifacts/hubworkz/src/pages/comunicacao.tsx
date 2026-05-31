@@ -30,7 +30,7 @@ const TEMPLATES: Template[] = [
   },
   {
     id: "lembrete_contato",
-    label: "Lembrete D30",
+    label: "Acompanhamento Paciente",
     descricao: "Contato mensal de monitoramento clinico",
     cor: "bg-green-500/15 text-green-400 border-green-500/20",
   },
