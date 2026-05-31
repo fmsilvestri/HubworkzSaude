@@ -241,9 +241,19 @@ export default function DiIA() {
     <div className="flex gap-6 h-[calc(100vh-10rem)]">
       {/* Sidebar */}
       <div className="hidden xl:flex flex-col w-72 bg-[#1B1B1E] border border-white/10 rounded-[14px] p-5 space-y-4 overflow-y-auto">
-        <div className="flex items-center gap-2">
-          <img src="/di-avatar.png" alt="Di" className="h-8 w-8 rounded-full object-cover object-top border border-[#A5FFD6]/30" />
-          <h2 className="text-white font-semibold text-sm">Di IA</h2>
+        <div className="flex flex-col items-center gap-3 pb-3 border-b border-white/8">
+          <div className="relative">
+            <img
+              src="/di-avatar.png"
+              alt="Di"
+              className="h-28 w-28 rounded-2xl object-cover object-top border-2 border-[#A5FFD6]/30 shadow-xl shadow-[#3C3489]/40"
+            />
+            <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full bg-[#A5FFD6] border-2 border-[#1B1B1E] animate-pulse" />
+          </div>
+          <div className="text-center">
+            <h2 className="text-white font-semibold text-sm">Di IA</h2>
+            <p className="text-[#A5FFD6] text-[11px] mt-0.5">Assistente Farmaceutica</p>
+          </div>
         </div>
 
         <div>
@@ -296,18 +306,18 @@ export default function DiIA() {
       {/* Chat Area */}
       <div className="flex-1 flex flex-col bg-[#1B1B1E] border border-white/10 rounded-[14px] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-white/5 bg-[rgba(63,52,137,0.15)]">
+        <div className="flex items-center gap-4 px-6 py-3 border-b border-white/5 bg-[rgba(63,52,137,0.15)]">
           <div className="relative shrink-0">
             <img
               src="/di-avatar.png"
               alt="Di"
-              className="h-10 w-10 rounded-xl object-cover object-top border border-[#A5FFD6]/25 shadow-lg shadow-[#3C3489]/40"
+              className="h-16 w-16 rounded-2xl object-cover object-top border-2 border-[#A5FFD6]/30 shadow-xl shadow-[#3C3489]/50"
             />
-            <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#A5FFD6] border-2 border-[#1B1B1E] animate-pulse" />
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[#A5FFD6] border-2 border-[#1B1B1E] animate-pulse" />
           </div>
           <div>
-            <h3 className="text-white font-semibold text-sm">Di IA — Assistente Farmaceutico</h3>
-            <p className="text-[#A5FFD6] text-xs">Integrada a todos os modulos · claude-sonnet-4-6</p>
+            <h3 className="text-white font-semibold text-base">Di IA — Assistente Farmaceutica</h3>
+            <p className="text-[#A5FFD6] text-xs mt-0.5">Integrada a todos os modulos · claude-sonnet-4-6</p>
           </div>
         </div>
 
@@ -319,13 +329,13 @@ export default function DiIA() {
             </div>
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="relative mb-5">
+              <div className="relative mb-6">
                 <img
                   src="/di-avatar.png"
                   alt="Di"
-                  className="h-24 w-24 rounded-2xl object-cover object-top border-2 border-[#A5FFD6]/30 shadow-2xl shadow-[#3C3489]/50"
+                  className="h-44 w-44 rounded-3xl object-cover object-top border-2 border-[#A5FFD6]/35 shadow-2xl shadow-[#3C3489]/60"
                 />
-                <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-[#A5FFD6] border-2 border-[#1B1B1E] animate-pulse" />
+                <span className="absolute -bottom-1.5 -right-1.5 h-5 w-5 rounded-full bg-[#A5FFD6] border-2 border-[#1B1B1E] animate-pulse" />
               </div>
               <h3 className="text-white font-semibold text-lg mb-2">Ola, sou a Di IA</h3>
               <p className="text-white/40 max-w-sm text-sm leading-relaxed mb-6">
@@ -362,8 +372,12 @@ export default function DiIA() {
               const parts = parseMessageParts(msg.content);
               return (
                 <div key={idx} className="flex gap-3">
-                  <div className="h-8 w-8 rounded-xl bg-[rgba(63,52,137,0.6)] flex items-center justify-center shrink-0 mt-1">
-                    <Bot className="h-4 w-4 text-[#A5FFD6]" />
+                  <div className="shrink-0 mt-1">
+                    <img
+                      src="/di-avatar.png"
+                      alt="Di"
+                      className="h-10 w-10 rounded-xl object-cover object-top border border-[#A5FFD6]/25 shadow-md shadow-[#3C3489]/30"
+                    />
                   </div>
                   <div className="flex-1 max-w-[88%] space-y-2">
                     {parts.map((part, pi) => {
@@ -384,8 +398,12 @@ export default function DiIA() {
 
           {sendMessage.isPending && (
             <div className="flex gap-3">
-              <div className="h-8 w-8 rounded-xl bg-[rgba(63,52,137,0.6)] flex items-center justify-center">
-                <Bot className="h-4 w-4 text-[#A5FFD6]" />
+              <div className="shrink-0">
+                <img
+                  src="/di-avatar.png"
+                  alt="Di"
+                  className="h-10 w-10 rounded-xl object-cover object-top border border-[#A5FFD6]/25"
+                />
               </div>
               <div className="bg-[rgba(63,52,137,0.3)] border border-[#3C3489]/40 rounded-2xl px-5 py-3">
                 <div className="flex items-center gap-2">
