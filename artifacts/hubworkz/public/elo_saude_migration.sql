@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS elo_saude_importados (
 
 -- 2. Enable RLS
 ALTER TABLE elo_saude_importados ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS service_all ON elo_saude_importados USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS service_all ON elo_saude_importados;
+CREATE POLICY service_all ON elo_saude_importados USING (true) WITH CHECK (true);
 
 -- 3. Seed data (153 rows)
 INSERT INTO elo_saude_importados (descricao, principio_ativo, conservacao, laboratorio, codigo_tuss, ean, valor_contrato, marca_lab, valor) VALUES

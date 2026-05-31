@@ -80,7 +80,8 @@ CREATE TABLE IF NOT EXISTS elo_saude_importados (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 ALTER TABLE elo_saude_importados ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS service_all ON elo_saude_importados
+DROP POLICY IF EXISTS service_all ON elo_saude_importados;
+CREATE POLICY service_all ON elo_saude_importados
   USING (true) WITH CHECK (true);`;
 
 const CONSERVACAO_STYLE: Record<string, string> = {
