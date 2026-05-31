@@ -16,6 +16,7 @@ export default function Configuracoes() {
   const [clinicaCNPJ, setClinicaCNPJ] = useState("");
   const [clinicaEmail, setClinicaEmail] = useState("");
   const [clinicaEndereco, setClinicaEndereco] = useState("");
+  const [clinicaWhatsapp, setClinicaWhatsapp] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -27,6 +28,7 @@ export default function Configuracoes() {
         setClinicaCNPJ(d.cnpj ?? "");
         setClinicaEmail(d.email ?? "");
         setClinicaEndereco(d.endereco ?? "");
+        setClinicaWhatsapp(d.whatsapp_gestor ?? "");
       })
       .catch(() => {
         toast({ title: "Erro ao carregar dados da clínica", variant: "destructive" });
@@ -49,6 +51,7 @@ export default function Configuracoes() {
           cnpj: clinicaCNPJ,
           email: clinicaEmail,
           endereco: clinicaEndereco,
+          whatsapp_gestor: clinicaWhatsapp,
         }),
       });
       if (!res.ok) {
@@ -128,6 +131,17 @@ export default function Configuracoes() {
                 value={clinicaEndereco}
                 onChange={(e) => setClinicaEndereco(e.target.value)}
                 placeholder="Rua, número, bairro, cidade — UF"
+                className="bg-[#0F0F12] border-white/10 text-white"
+              />
+            </div>
+
+            <div>
+              <label className="text-white/60 text-sm block mb-1.5">WhatsApp da Clínica</label>
+              <Input
+                data-testid="input-clinica-whatsapp"
+                value={clinicaWhatsapp}
+                onChange={(e) => setClinicaWhatsapp(e.target.value)}
+                placeholder="(00) 90000-0000"
                 className="bg-[#0F0F12] border-white/10 text-white"
               />
             </div>
