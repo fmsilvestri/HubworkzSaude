@@ -332,7 +332,7 @@ export default function Dashboard() {
       {/* ── Quick access module strip ── */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {[
-          { label: "Cotacoes", href: "/cotacoes", gradient: "linear-gradient(135deg,rgba(245,158,11,0.25),rgba(120,53,15,0.15))", border: "rgba(245,158,11,0.3)", icon: Package, text: "#F59E0B" },
+          { label: "Cotacoes", href: "/cotacao", gradient: "linear-gradient(135deg,rgba(245,158,11,0.25),rgba(120,53,15,0.15))", border: "rgba(245,158,11,0.3)", icon: Package, text: "#F59E0B" },
           { label: "Mandatos", href: "/mandatos", gradient: "linear-gradient(135deg,rgba(59,130,246,0.25),rgba(29,78,216,0.15))", border: "rgba(59,130,246,0.3)", icon: FileText, text: "#3B82F6" },
           { label: "Remessas", href: "/rastreio", gradient: "linear-gradient(135deg,rgba(16,185,129,0.25),rgba(4,120,87,0.15))", border: "rgba(16,185,129,0.3)", icon: Activity, text: "#10B981" },
           { label: "Glosas", href: "/glosas", gradient: "linear-gradient(135deg,rgba(239,68,68,0.25),rgba(185,28,28,0.15))", border: "rgba(239,68,68,0.3)", icon: AlertTriangle, text: "#EF4444" },
