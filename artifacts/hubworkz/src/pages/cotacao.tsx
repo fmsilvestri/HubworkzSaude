@@ -479,8 +479,16 @@ export default function Cotacao() {
     updateCotacao.mutate(
       { id: editItem.id, data: buildPayload(values) },
       {
-        onSuccess: () => {
-          toast({ title: "Cotação atualizada!" });
+        onSuccess: (resp) => {
+          const r = resp as unknown as Record<string, unknown>;
+          if (r["_processo_criado"]) {
+            toast({
+              title: "Cotação aprovada!",
+              description: "Um novo processo foi criado automaticamente para este paciente.",
+            });
+          } else {
+            toast({ title: "Cotação atualizada!" });
+          }
           invalidate();
           setEditItem(null);
         },

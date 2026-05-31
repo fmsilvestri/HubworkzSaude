@@ -71,10 +71,22 @@ router.post("/cotacoes", async (req, res): Promise<void> => {
   }
 });
 
+const DEFAULT_CLINICA = "00000000-0000-0000-0000-000000000001";
+
 router.put("/cotacoes/:id", async (req, res): Promise<void> => {
   try {
     const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
     const payload = pick(req.body as Record<string, unknown>);
+
+    const aprovando = payload["status"] === "aprovada";
+
+    // Fetch current cotação before update (to detect status transition)
+    let cotacaoAntes: Record<string, unknown> | null = null;
+    if (aprovando) {
+      const { data: antes } = await supabase.from("cotacoes").select("*").eq("id", id).single();
+      cotacaoAntes = antes as Record<string, unknown> | null;
+    }
+
     const { data, error } = await supabase
       .from("cotacoes")
       .update(payload)
@@ -82,7 +94,54 @@ router.put("/cotacoes/:id", async (req, res): Promise<void> => {
       .select()
       .single();
     if (error || !data) { res.status(404).json({ error: "Cotacao not found" }); return; }
-    res.json(data);
+
+    const cotacao = data as Record<string, unknown>;
+
+    // Auto-create processo when status transitions to "aprovada"
+    if (aprovando && cotacaoAntes?.["status"] !== "aprovada") {
+      // Resolve paciente_id from previously linked processo
+      let pacienteId: string | null = null;
+      const processoVinculadoId = (cotacao["processo_id"] ?? cotacaoAntes?.["processo_id"]) as string | null;
+      if (processoVinculadoId) {
+        const { data: proc } = await supabase
+          .from("processos")
+          .select("paciente_id")
+          .eq("id", processoVinculadoId)
+          .single();
+        if (proc && (proc as Record<string, unknown>)["paciente_id"]) {
+          pacienteId = (proc as Record<string, unknown>)["paciente_id"] as string;
+        }
+      }
+
+      // Build new processo payload
+      const processoPayload: Record<string, unknown> = {
+        clinica_id: DEFAULT_CLINICA,
+        status: "em_andamento",
+        fase: 1,
+        convenio: cotacao["convenio"] ?? null,
+        medicamento_id: cotacao["medicamento_id"] ?? null,
+        observacoes: `Processo gerado automaticamente pela aprovação da cotação. Medicamento: ${cotacao["medicamento_nome"] ?? "não informado"}. Valor aprovado: ${cotacao["valor_aprovado"] != null ? `R$ ${Number(cotacao["valor_aprovado"]).toFixed(2)}` : "não informado"}.`,
+      };
+      if (pacienteId) processoPayload["paciente_id"] = pacienteId;
+
+      const { data: novoProcesso, error: procError } = await supabase
+        .from("processos")
+        .insert(processoPayload)
+        .select()
+        .single();
+
+      if (!procError && novoProcesso) {
+        const proc = novoProcesso as Record<string, unknown>;
+        // Link the cotação to the new processo
+        await supabase.from("cotacoes").update({ processo_id: proc["id"] }).eq("id", id);
+        res.json({ ...cotacao, processo_id: proc["id"], _processo_criado: proc });
+        return;
+      } else {
+        req.log.error({ err: procError }, "Auto-create processo on cotacao approval failed");
+      }
+    }
+
+    res.json(cotacao);
   } catch (err) {
     req.log.error({ err }, "Failed to update cotacao");
     res.status(500).json({ error: "Failed to update cotacao" });
