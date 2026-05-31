@@ -228,7 +228,8 @@ export default function DiIA() {
   }, [messages]);
 
   const handleNewConversation = async () => {
-    await clearHistory.mutateAsync({ params: { clinica_id: profile?.clinica_id } });
+    const params = profile?.clinica_id ? { clinica_id: profile.clinica_id } : undefined;
+    await clearHistory.mutateAsync({ params });
     setMessages([{ role: "assistant", content: WELCOME_MSG }]);
     queryClient.invalidateQueries({ queryKey: getGetAiHistoryQueryKey() });
   };

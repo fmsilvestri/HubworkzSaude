@@ -213,6 +213,8 @@ router.get("/ai/history", async (req, res): Promise<void> => {
 
 router.delete("/ai/history", async (req, res): Promise<void> => {
   try {
+    // Build a filter — if none provided, delete everything (all di_messages)
+    // Supabase requires at least one filter; use neq on id as a catch-all
     let query = supabase.from("di_messages").delete();
 
     if (req.query["user_id"]) {
@@ -220,9 +222,8 @@ router.delete("/ai/history", async (req, res): Promise<void> => {
     } else if (req.query["clinica_id"]) {
       query = query.eq("clinica_id", String(req.query["clinica_id"]));
     } else {
-      // safety: require at least one filter
-      res.status(400).json({ error: "clinica_id or user_id required" });
-      return;
+      // No filter → delete all rows (use a always-true filter)
+      query = query.neq("id", "00000000-0000-0000-0000-000000000000");
     }
 
     const { error, count } = await query.select();
