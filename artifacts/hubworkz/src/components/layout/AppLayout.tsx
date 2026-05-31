@@ -207,6 +207,32 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-sidebar text-foreground w-64 border-r border-border">
       <div className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
+
+        {/* Di IA card */}
+        <Link href="/di-ia" onClick={() => setIsMobileOpen(false)}>
+          <div
+            className={cn(
+              "relative flex items-center gap-3 rounded-2xl px-3 py-2.5 mb-3 cursor-pointer transition-all duration-200 overflow-hidden border",
+              location === "/di-ia"
+                ? "bg-[rgba(63,52,137,0.5)] border-[#A5FFD6]/30 shadow-lg shadow-[#3C3489]/30"
+                : "bg-[rgba(63,52,137,0.2)] border-[#3C3489]/30 hover:bg-[rgba(63,52,137,0.35)] hover:border-[#A5FFD6]/25"
+            )}
+          >
+            <div className="relative shrink-0">
+              <img
+                src="/di-avatar.png"
+                alt="Di"
+                className="h-14 w-14 rounded-xl object-cover object-top border border-[#A5FFD6]/30 shadow-md shadow-[#3C3489]/40"
+              />
+              <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#A5FFD6] border-2 border-[#1B1B1E] animate-pulse" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-white font-semibold text-sm leading-none mb-1">Di IA</p>
+              <p className="text-[#A5FFD6] text-[11px] leading-none">Assistente Farmaceutica</p>
+            </div>
+          </div>
+        </Link>
+
         <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 px-3">
           Menu Principal
         </div>
