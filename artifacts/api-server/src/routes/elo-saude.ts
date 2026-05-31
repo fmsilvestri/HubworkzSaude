@@ -30,6 +30,39 @@ router.get("/elo-saude", async (req, res): Promise<void> => {
   }
 });
 
+router.post("/elo-saude/bulk", async (req, res): Promise<void> => {
+  try {
+    const rows = req.body as Array<Record<string, unknown>>;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      res.status(400).json({ error: "Body deve ser um array não vazio" });
+      return;
+    }
+    const ALLOWED = ["descricao", "principio_ativo", "conservacao", "laboratorio", "codigo_tuss", "ean", "valor_contrato", "marca_lab", "valor"];
+    const sanitized = rows.map((row) => {
+      const out: Record<string, string> = {};
+      for (const k of ALLOWED) {
+        out[k] = String(row[k] ?? "").trim();
+      }
+      if (!out["descricao"]) out["descricao"] = "(sem descrição)";
+      if (!out["conservacao"]) out["conservacao"] = "AMBIENTE";
+      return out;
+    });
+    // Supabase allows bulk insert in one request
+    const CHUNK = 200;
+    let inserted = 0;
+    for (let i = 0; i < sanitized.length; i += CHUNK) {
+      const chunk = sanitized.slice(i, i + CHUNK);
+      const { error } = await supabase.from(TABLE).insert(chunk);
+      if (error) throw error;
+      inserted += chunk.length;
+    }
+    res.status(201).json({ inserted });
+  } catch (err) {
+    req.log.error({ err }, "Failed to bulk-import elo-saude");
+    res.status(500).json({ error: "Falha na importação em massa" });
+  }
+});
+
 router.post("/elo-saude", async (req, res): Promise<void> => {
   try {
     const { descricao, principio_ativo, conservacao, laboratorio, codigo_tuss, ean, valor_contrato, marca_lab, valor } = req.body as Record<string, string>;

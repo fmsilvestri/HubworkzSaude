@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
+import * as XLSX from "xlsx";
 import {
   useListEloSaude,
   useUpdateEloSaude,
@@ -58,6 +59,8 @@ import {
   Copy,
   Database,
   PackageSearch,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import seedData from "@/data/elosaude.json";
@@ -208,6 +211,7 @@ export default function EloSaude() {
   const [deleteItem, setDeleteItem] = useState<EloSaudeItem | null>(null);
   const [openCreate, setOpenCreate] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const xlsxInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -237,22 +241,58 @@ export default function EloSaude() {
   const totalAmbiente = allItems.filter((d) => d.conservacao === "AMBIENTE").length;
   const comValorUsd = allItems.filter((d) => (d.valor ?? "").includes("USD")).length;
 
-  async function handleSeed() {
+  async function bulkImport(rows: Record<string, string>[]) {
     setSeeding(true);
-    const rows = seedData as { descricao: string; principio_ativo: string; conservacao: string; laboratorio: string; codigo_tuss: string; ean: string; valor_contrato: string; marca_lab: string; valor: string }[];
-    let ok = 0;
-    let fail = 0;
-    for (const row of rows) {
-      try {
-        await createItem.mutateAsync({ data: row });
-        ok++;
-      } catch {
-        fail++;
-      }
+    try {
+      const resp = await fetch("/api/elo-saude/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rows),
+      });
+      const result = await resp.json() as { inserted?: number; error?: string };
+      if (!resp.ok) throw new Error(result.error ?? "Erro desconhecido");
+      invalidate();
+      toast({ title: `${result.inserted ?? rows.length} itens importados com sucesso.` });
+    } catch (err) {
+      toast({ title: `Erro ao importar: ${err instanceof Error ? err.message : String(err)}`, variant: "destructive" });
+    } finally {
+      setSeeding(false);
     }
-    setSeeding(false);
-    invalidate();
-    toast({ title: `${ok} itens importados${fail ? ` (${fail} falhas)` : ""}.` });
+  }
+
+  async function handleSeed() {
+    const rows = seedData as Record<string, string>[];
+    await bulkImport(rows);
+  }
+
+  async function handleXlsxUpload(file: File) {
+    setSeeding(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json<(string | number)[]>(ws, { header: 1, defval: "" });
+      if (raw.length < 2) throw new Error("Planilha sem dados");
+      // Map columns: 0=descricao, 1=principio_ativo, 2=conservacao, 3=laboratorio, 4=codigo_tuss, 5=ean, skip 6, 7=valor_contrato, 8=marca_lab, 9=valor
+      const rows = (raw.slice(1) as (string | number)[][])
+        .filter((r) => String(r[0] ?? "").trim())
+        .map((r) => ({
+          descricao: String(r[0] ?? "").trim(),
+          principio_ativo: String(r[1] ?? "").trim(),
+          conservacao: String(r[2] ?? "AMBIENTE").trim().toUpperCase() || "AMBIENTE",
+          laboratorio: String(r[3] ?? "").trim(),
+          codigo_tuss: String(r[4] ?? "").trim(),
+          ean: String(r[5] ?? "").trim(),
+          valor_contrato: String(r[7] ?? "").trim(),
+          marca_lab: String(r[8] ?? "").trim(),
+          valor: String(r[9] ?? "").trim(),
+        }));
+      setSeeding(false);
+      await bulkImport(rows);
+    } catch (err) {
+      setSeeding(false);
+      toast({ title: `Erro ao ler planilha: ${err instanceof Error ? err.message : String(err)}`, variant: "destructive" });
+    }
   }
 
   function handleEdit(values: FormValues) {
@@ -315,7 +355,7 @@ export default function EloSaude() {
               <Copy className="h-4 w-4" />
             </button>
           </div>
-          <div className="flex items-center gap-3 pt-1">
+          <div className="flex items-center gap-3 pt-1 flex-wrap">
             <a
               href="https://supabase.com/dashboard/project/witvffhvmohpyewzkbgt/sql/new"
               target="_blank"
@@ -331,6 +371,40 @@ export default function EloSaude() {
               Verificar novamente
             </button>
           </div>
+          <div className="border-t border-white/5 pt-4 mt-2">
+            <p className="text-white/40 text-xs mb-3">Após criar a tabela, importe os dados:</p>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => xlsxInputRef.current?.click()}
+                disabled={seeding}
+                variant="outline"
+                className="border-white/10 text-white hover:bg-white/5 gap-2 text-sm"
+              >
+                <Upload className="h-4 w-4" />
+                {seeding ? "Importando..." : "Importar XLSX"}
+              </Button>
+              <Button
+                onClick={handleSeed}
+                disabled={seeding}
+                variant="outline"
+                className="border-white/10 text-white hover:bg-white/5 gap-2 text-sm"
+              >
+                <PackageSearch className="h-4 w-4" />
+                {seeding ? "Importando..." : "Importar 153 itens (planilha salva)"}
+              </Button>
+            </div>
+          </div>
+          <input
+            ref={xlsxInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleXlsxUpload(f);
+              e.target.value = "";
+            }}
+          />
         </div>
       </div>
     );
@@ -347,6 +421,21 @@ export default function EloSaude() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {seeding && (
+            <div className="flex items-center gap-2 text-white/50 text-sm">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Importando...
+            </div>
+          )}
+          <Button
+            onClick={() => xlsxInputRef.current?.click()}
+            disabled={seeding}
+            variant="outline"
+            className="border-white/10 text-white hover:bg-white/5 gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Importar XLSX
+          </Button>
           {allItems.length === 0 && !isLoading && (
             <Button
               onClick={handleSeed}
@@ -355,7 +444,7 @@ export default function EloSaude() {
               className="border-white/10 text-white hover:bg-white/5 gap-2"
             >
               <PackageSearch className="h-4 w-4" />
-              {seeding ? "Importando..." : "Importar 153 itens da planilha"}
+              {seeding ? "Importando..." : "Importar 153 itens (planilha salva)"}
             </Button>
           )}
           <Button
@@ -366,6 +455,17 @@ export default function EloSaude() {
             Novo Item
           </Button>
         </div>
+        <input
+          ref={xlsxInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleXlsxUpload(f);
+            e.target.value = "";
+          }}
+        />
       </div>
 
       {/* Stats */}
