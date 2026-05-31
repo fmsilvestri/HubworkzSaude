@@ -218,7 +218,7 @@ export default function DiIA() {
   useEffect(() => {
     if (history && messages.length === 0) {
       const loaded = history.map((h) => ({ role: h.role as "user" | "assistant", content: h.content }));
-      setMessages(loaded.length > 0 ? loaded : [{ role: "assistant", content: WELCOME_MSG }]);
+      setMessages([{ role: "assistant", content: WELCOME_MSG }, ...loaded]);
     }
   }, [history]);
 

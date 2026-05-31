@@ -24,11 +24,10 @@ export default function DiIA() {
         content: m.content,
         created_at: m.created_at,
       }));
-      setLocalMessages(
-        loaded.length > 0
-          ? loaded
-          : [{ id: "welcome", role: "assistant", content: WELCOME_MSG, created_at: new Date().toISOString() }]
-      );
+      setLocalMessages([
+        { id: "welcome", role: "assistant", content: WELCOME_MSG, created_at: new Date().toISOString() },
+        ...loaded,
+      ]);
     }
   }, [history]);
 
