@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 const router: IRouter = Router();
 
 const CLINICA_ID = "00000000-0000-0000-0000-000000000001";
-const ALLOWED_FIELDS = ["nome", "cnpj", "email", "telefone", "endereco", "whatsapp_gestor"];
+const ALLOWED_FIELDS = ["nome", "cnpj", "email", "telefone", "endereco"];
 
 function pickAllowed(body: Record<string, unknown>) {
   const out: Record<string, unknown> = {};

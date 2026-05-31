@@ -8,7 +8,6 @@ import { useToast } from "@/hooks/use-toast";
 const INTEGRATIONS = [
   { name: "Supabase", desc: "Banco de dados e autenticação", icon: Database, status: "conectado", color: "text-green-400", bg: "bg-green-500/15", border: "border-green-500/20" },
   { name: "Anthropic — Di IA", desc: "Assistente de IA (claude-sonnet-4-5)", icon: Activity, status: "conectado", color: "text-[#A5FFD6]", bg: "bg-[rgba(63,52,137,0.3)]", border: "border-[#3C3489]/40" },
-  { name: "Evolution API (WhatsApp)", desc: "Mensagens automáticas D30", icon: Activity, status: "desconectado", color: "text-red-400", bg: "bg-red-500/15", border: "border-red-500/20" },
 ];
 
 export default function Configuracoes() {
@@ -17,7 +16,6 @@ export default function Configuracoes() {
   const [clinicaCNPJ, setClinicaCNPJ] = useState("");
   const [clinicaEmail, setClinicaEmail] = useState("");
   const [clinicaEndereco, setClinicaEndereco] = useState("");
-  const [clinicaWhatsapp, setClinicaWhatsapp] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -29,7 +27,6 @@ export default function Configuracoes() {
         setClinicaCNPJ(d.cnpj ?? "");
         setClinicaEmail(d.email ?? "");
         setClinicaEndereco(d.endereco ?? "");
-        setClinicaWhatsapp(d.whatsapp_gestor ?? "");
       })
       .catch(() => {
         toast({ title: "Erro ao carregar dados da clínica", variant: "destructive" });
@@ -52,7 +49,6 @@ export default function Configuracoes() {
           cnpj: clinicaCNPJ,
           email: clinicaEmail,
           endereco: clinicaEndereco,
-          whatsapp_gestor: clinicaWhatsapp,
         }),
       });
       if (!res.ok) {
@@ -132,17 +128,6 @@ export default function Configuracoes() {
                 value={clinicaEndereco}
                 onChange={(e) => setClinicaEndereco(e.target.value)}
                 placeholder="Rua, número, bairro, cidade — UF"
-                className="bg-[#0F0F12] border-white/10 text-white"
-              />
-            </div>
-
-            <div>
-              <label className="text-white/60 text-sm block mb-1.5">WhatsApp do Responsável / Gestor</label>
-              <Input
-                data-testid="input-clinica-whatsapp"
-                value={clinicaWhatsapp}
-                onChange={(e) => setClinicaWhatsapp(e.target.value)}
-                placeholder="(00) 90000-0000"
                 className="bg-[#0F0F12] border-white/10 text-white"
               />
             </div>
