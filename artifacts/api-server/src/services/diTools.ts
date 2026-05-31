@@ -38,7 +38,7 @@ export const DI_TOOLS: Tool[] = [
       type: "object",
       properties: {
         search: { type: "string", description: "Busca por nome do paciente" },
-        limit: { type: "number", description: "Máximo de registros (padrão 10)" },
+        limit: { type: "number", description: "Máximo de registros (padrão 15)" },
       },
     },
   },
@@ -110,6 +110,22 @@ export const DI_TOOLS: Tool[] = [
     },
   },
   {
+    name: "get_monitoramentos",
+    description: "Lista registros de monitoramento D30 com paciente, canal, status e data de contato. Use para acompanhamento detalhado de pacientes.",
+    input_schema: {
+      type: "object",
+      properties: {
+        status: {
+          type: "string",
+          enum: ["agendado", "realizado", "nao_realizado", "remarcado"],
+          description: "Filtrar por status do monitoramento",
+        },
+        paciente_id: { type: "string", description: "UUID do paciente para filtrar" },
+        limit: { type: "number", description: "Máximo de registros (padrão 15)" },
+      },
+    },
+  },
+  {
     name: "get_financeiro",
     description: "Resumo financeiro: emitido, pago, aguardando pagamento e glosas. Use para relatórios de faturamento.",
     input_schema: {
@@ -128,11 +144,40 @@ export const DI_TOOLS: Tool[] = [
     },
   },
   {
+    name: "get_comunicados",
+    description: "Lista histórico de comunicados e atendimentos com pacientes por canal (WhatsApp, telefone, email). Use para relatórios de comunicação e histórico de contatos.",
+    input_schema: {
+      type: "object",
+      properties: {
+        paciente_id: { type: "string", description: "UUID do paciente para filtrar comunicados" },
+        tipo: {
+          type: "string",
+          description: "Tipo de comunicado (ex: d30, remessa, mandato)",
+        },
+        limit: { type: "number", description: "Máximo de registros (padrão 15)" },
+      },
+    },
+  },
+  {
     name: "get_dashboard_resumo",
     description: "Resumo completo de todos os módulos em um único card. Use quando o usuário pedir visão geral, resumo do dia, ou panorama do sistema.",
     input_schema: {
       type: "object",
       properties: {},
+    },
+  },
+  {
+    name: "gerar_relatorio_completo",
+    description: "Gera um relatório completo com múltiplos cards coloridos cobrindo todos os módulos solicitados. Use quando o usuário pedir um relatório completo, análise geral ou quiser ver todos os dados integrados.",
+    input_schema: {
+      type: "object",
+      properties: {
+        modulos: {
+          type: "array",
+          items: { type: "string" },
+          description: "Lista de módulos a incluir. Opções: processos, cotacoes, pacientes, medicamentos, distribuidoras, monitoramentos, financeiro, glosas, remessas, comunicados. Se não informado, inclui todos.",
+        },
+      },
     },
   },
   {

@@ -13,6 +13,13 @@ import {
   type ToolCard,
 } from "../services/diService";
 
+// helper to flatten cards from a tool result
+function collectCards(result: { card?: ToolCard; cards?: ToolCard[] }): ToolCard[] {
+  if (result.cards && result.cards.length > 0) return result.cards;
+  if (result.card) return [result.card];
+  return [];
+}
+
 const router: IRouter = Router();
 
 const anthropic = new Anthropic({
@@ -79,8 +86,8 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
     ];
 
     let claudeResp = await anthropic.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 2048,
+      model: "claude-sonnet-4-6",
+      max_tokens: 8192,
       system: systemPrompt,
       messages,
       tools: isPaciente ? [] : DI_TOOLS,
@@ -89,7 +96,7 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
     // 4. Agentic loop — processar tool calls até stop_reason !== 'tool_use'
     const cards: ToolCard[] = [];
     let iteracoes = 0;
-    const MAX_ITER = 5;
+    const MAX_ITER = 8;
 
     while (claudeResp.stop_reason === "tool_use" && iteracoes < MAX_ITER) {
       iteracoes++;
@@ -107,7 +114,7 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
             block.input as Record<string, unknown>,
             clinica_id ?? ""
           );
-          if (result.card) cards.push(result.card);
+          collectCards(result).forEach((c) => cards.push(c));
           return { block, result };
         })
       );
@@ -126,8 +133,8 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
 
       // Próxima chamada
       claudeResp = await anthropic.messages.create({
-        model: "claude-sonnet-4-5",
-        max_tokens: 2048,
+        model: "claude-sonnet-4-6",
+        max_tokens: 8192,
         system: systemPrompt,
         messages,
         tools: DI_TOOLS,

@@ -5,22 +5,25 @@ import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, User, Bot, BarChart2, Users, Pill, Package, FileText, AlertTriangle, DollarSign, Truck, Calendar, Activity, Layers } from "lucide-react";
+import { Send, Loader2, User, Bot, BarChart2, Users, Pill, Package, FileText, AlertTriangle, DollarSign, Truck, Calendar, Activity, Layers, MessageSquare, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Suggestion groups ─────────────────────────────────────────────────────────
 
 const SUGGESTIONS = [
+  { label: "Relatorio completo", msg: "Gere um relatório completo de todos os módulos com cards coloridos" },
   { label: "Panorama do sistema", msg: "Me dê um panorama geral do sistema hoje" },
   { label: "Alertas urgentes", msg: "Quais são os alertas críticos no momento?" },
-  { label: "Processos ativos", msg: "Mostre os processos ativos por fase" },
+  { label: "Processos ativos", msg: "Mostre os processos ativos por fase com análise" },
   { label: "Cotações pendentes", msg: "Liste as cotações pendentes de aprovação" },
+  { label: "Pacientes e mandatos", msg: "Relatório de pacientes com mandatos pendentes" },
+  { label: "Acompanhamento D30", msg: "Relatório de monitoramentos D30 agendados e realizados" },
   { label: "Agenda D30 (30 dias)", msg: "Qual a agenda de monitoramentos D30 dos próximos 30 dias?" },
-  { label: "Financeiro do mês", msg: "Resumo financeiro do mês atual" },
-  { label: "Glosas abertas", msg: "Relatório de glosas abertas com valores" },
+  { label: "Financeiro do mês", msg: "Resumo financeiro do mês atual com análise" },
+  { label: "Glosas abertas", msg: "Relatório de glosas abertas com valores e prazos" },
   { label: "Remessas em trânsito", msg: "Status das remessas em trânsito" },
-  { label: "Pacientes e mandatos", msg: "Mostre os pacientes com mandatos pendentes" },
-  { label: "Medicamentos cadastrados", msg: "Liste os medicamentos cadastrados" },
+  { label: "Comunicados recentes", msg: "Histórico de comunicados e atendimentos com pacientes" },
+  { label: "Medicamentos cadastrados", msg: "Liste os medicamentos oncológicos cadastrados" },
   { label: "Distribuidoras ativas", msg: "Quais distribuidoras parceiras temos?" },
 ];
 
@@ -273,6 +276,8 @@ export default function DiIA() {
               { icon: DollarSign, label: "Financeiro" },
               { icon: AlertTriangle, label: "Glosas" },
               { icon: Calendar, label: "D30" },
+              { icon: ClipboardList, label: "Monitoramentos" },
+              { icon: MessageSquare, label: "Comunicados" },
               { icon: BarChart2, label: "Dashboard" },
             ].map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-1 bg-white/5 border border-white/8 rounded-md px-1.5 py-1">
@@ -282,7 +287,7 @@ export default function DiIA() {
             ))}
           </div>
           <div className="bg-[rgba(63,52,137,0.3)] border border-[#3C3489]/40 rounded-xl p-3 mt-2">
-            <p className="text-[#A5FFD6] text-xs font-semibold mb-0.5">claude-sonnet-4-5</p>
+            <p className="text-[#A5FFD6] text-xs font-semibold mb-0.5">claude-sonnet-4-6</p>
             <p className="text-white/40 text-xs">Especialista em intermediacao farmaceutica oncologica</p>
           </div>
         </div>
@@ -302,7 +307,7 @@ export default function DiIA() {
           </div>
           <div>
             <h3 className="text-white font-semibold text-sm">Di IA — Assistente Farmaceutico</h3>
-            <p className="text-[#A5FFD6] text-xs">Integrada a todos os modulos · claude-sonnet-4-5</p>
+            <p className="text-[#A5FFD6] text-xs">Integrada a todos os modulos · claude-sonnet-4-6</p>
           </div>
         </div>
 

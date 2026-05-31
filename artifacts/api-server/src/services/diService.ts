@@ -42,6 +42,12 @@ export interface ToolCard {
   data: Record<string, unknown>;
 }
 
+export interface ToolResult {
+  text: string;
+  card?: ToolCard;
+  cards?: ToolCard[];
+}
+
 // ─── Context builders ─────────────────────────────────────────────────────────
 
 export async function buildGestorCtx(clinica_id: string): Promise<GestorCtx> {
@@ -169,44 +175,49 @@ DADOS DO SISTEMA (tempo real):
 • Faturamento do mês: R$ ${ctx.faturamento} | Glosas abertas: ${ctx.glosas}
 • Distribuidoras ativas: ${ctx.distribuidoras}
 
-MÓDULOS QUE VOCÊ CONHECE:
-1. Processos — pipeline de importação (4 fases)
-2. Cotações — solicitações e aprovações de cotação
-3. Pacientes — cadastro, mandatos e D30
-4. Medicamentos — catálogo de medicamentos importados
-5. Mandatos — ordens judiciais de fornecimento
-6. Distribuidoras — parceiros logísticos
-7. Glosas — contestações de pagamento
-8. Rastreio/Remessas — logística e entregas
-9. Faturamento — notas fiscais e recebimentos
-10. Monitoramento D30 — acompanhamento terapêutico
-11. Comunicação — mensagens e histórico de contatos
-12. Dashboard — visão geral do sistema
+MÓDULOS INTEGRADOS (você tem acesso completo a todos):
+1. Processos — pipeline de importação em 4 fases (cotação → logística → monitoramento → faturamento)
+2. Cotações — solicitações, aprovações e valores de cotação
+3. Pacientes — cadastro completo, diagnósticos, mandatos e convênios
+4. Medicamentos — catálogo de medicamentos oncológicos importados
+5. Mandatos — ordens judiciais de fornecimento de medicamentos
+6. Distribuidoras — parceiros logísticos internacionais
+7. Glosas — contestações e recursos de pagamento
+8. Remessas / Rastreio — logística e status de entregas
+9. Faturamento — notas fiscais e recebimentos (tabela notas_fiscais)
+10. Monitoramento D30 — acompanhamento terapêutico periódico de cada paciente
+11. Comunicados — histórico de atendimentos e comunicações por canal (WhatsApp, telefone, email)
+12. Dashboard — visão panorâmica consolidada de todos os módulos
 
-FERRAMENTAS DISPONÍVEIS:
-- get_processos(status?, limit?) — processos por fase
+FERRAMENTAS DISPONÍVEIS (use sempre que o usuário pedir dados, listas ou análises):
+- get_processos(status?, limit?) — processos por fase/status
 - get_cotacoes(status?, limit?) — cotações e aprovações
 - get_pacientes(search?, limit?) — pacientes cadastrados
 - get_medicamentos(search?, limit?) — catálogo de medicamentos
 - get_mandatos(status?, limit?) — mandatos judiciais
 - get_distribuidoras() — distribuidoras parceiras
-- get_glosas(status?, limit?) — glosas detalhadas
+- get_glosas(status?, limit?) — glosas detalhadas com valores
 - get_alertas() — urgências críticas (glosas, D30, mandatos)
-- get_d30_agenda(dias?) — agenda de monitoramentos
-- get_financeiro(mes?) — resumo financeiro
-- get_remessas() — status de entregas
+- get_d30_agenda(dias?) — agenda de monitoramentos D30
+- get_monitoramentos(status?, paciente_id?, limit?) — acompanhamento D30 detalhado por paciente
+- get_financeiro(mes?) — resumo financeiro do mês
+- get_remessas() — status de entregas e rastreio
+- get_comunicados(paciente_id?, tipo?, limit?) — histórico de comunicados e atendimentos
 - get_dashboard_resumo() — panorama completo de todos os módulos
-- gerar_wa_d30(paciente_id, observacoes?) — mensagem WA para D30
-- gerar_wa_remessa(paciente_id, evento) — mensagem WA de entrega
+- gerar_relatorio_completo(modulos?) — relatório multi-card cobrindo todos os módulos
+- gerar_wa_d30(paciente_id, observacoes?) — mensagem para monitoramento D30
+- gerar_wa_remessa(paciente_id, evento) — mensagem de notificação de entrega
 
 REGRAS DE RESPOSTA:
-1. Para relatórios, listas e resumos: USE SEMPRE as ferramentas para buscar dados reais. Nunca invente dados.
-2. Retorne os dados das ferramentas no formato JSON: { "type": "card", "title": "...", "color": "orange|mint|blue|purple|red|green", "data": {...} }
-3. Você pode retornar MÚLTIPLOS cards seguidos, um por linha, cada um como JSON separado.
-4. Para perguntas simples e conversas: responda em texto normal, direto e objetivo.
-5. Para mensagens WA geradas: retorne o texto formatado sem JSON.
-6. Idioma: sempre português brasileiro.
-7. Seja conciso — máximo 3 parágrafos de texto entre cards.`;
+1. Para qualquer pedido de dados, listas ou análises: USE SEMPRE as ferramentas. Nunca invente ou estime dados.
+2. Para relatórios e resumos visuais: use gerar_relatorio_completo ou chame múltiplas ferramentas em sequência para gerar vários cards coloridos.
+3. Para análise de um módulo específico: chame a ferramenta correspondente e analise os dados retornados.
+4. Após receber dados das ferramentas, escreva uma análise concisa em português antes ou depois dos cards.
+5. Para perguntas simples e conversas: responda em texto direto e objetivo.
+6. Para mensagens de comunicação geradas: retorne o texto formatado sem JSON.
+7. Idioma: sempre português brasileiro.
+8. Seja analítico — identifique tendências, pontos de atenção e recomendações baseadas nos dados reais.
+9. Máximo 4 parágrafos de texto entre cards.`;
 }
 
 export function buildSystemPromptPaciente(ctx: PacienteCtx): string {
@@ -237,7 +248,7 @@ export async function executeTool(
   name: string,
   input: ToolInput,
   clinica_id: string
-): Promise<{ text: string; card?: ToolCard }> {
+): Promise<ToolResult> {
   try {
     switch (name) {
       case "get_processos": {
@@ -289,7 +300,7 @@ export async function executeTool(
           .from("pacientes")
           .select("id, nome, convenio, mandato_status, diagnostico, created_at")
           .order("created_at", { ascending: false })
-          .limit(Number(input.limit ?? 10));
+          .limit(Number(input.limit ?? 15));
         if (input.search) query = query.ilike("nome", `%${String(input.search)}%`);
         const { data } = await query;
         const rows = data ?? [];
@@ -431,6 +442,33 @@ export async function executeTool(
         return { text: JSON.stringify(card), card };
       }
 
+      case "get_monitoramentos": {
+        let query = supabase
+          .from("monitoramentos")
+          .select("id, data_contato, status, canal, observacoes, pacientes(nome, telefone)")
+          .order("data_contato", { ascending: false })
+          .limit(Number(input.limit ?? 15));
+        if (input.status) query = query.eq("status", input.status as string);
+        if (input.paciente_id) query = query.eq("paciente_id", input.paciente_id as string);
+        const { data } = await query;
+        const rows = data ?? [];
+        const realizados = rows.filter((r) => (r as Record<string, unknown>)["status"] === "realizado").length;
+        const agendados = rows.filter((r) => (r as Record<string, unknown>)["status"] === "agendado").length;
+        const card: ToolCard = {
+          type: "card",
+          title: "Monitoramentos D30",
+          color: "mint",
+          data: {
+            monitoramentos: rows,
+            total: rows.length,
+            realizados,
+            agendados,
+            nao_realizados: rows.filter((r) => (r as Record<string, unknown>)["status"] === "nao_realizado").length,
+          },
+        };
+        return { text: JSON.stringify(card), card };
+      }
+
       case "get_financeiro": {
         const mes = (input.mes as string) ?? new Date().toISOString().slice(0, 7);
         const [nfs, glosas] = await Promise.all([
@@ -473,6 +511,43 @@ export async function executeTool(
             em_transito: remessas.filter((r) => r["status"] === "transito"),
             entregues: remessas.filter((r) => r["status"] === "entregue"),
             total: remessas.length,
+          },
+        };
+        return { text: JSON.stringify(card), card };
+      }
+
+      case "get_comunicados": {
+        let query = supabase
+          .from("historico_atendimentos")
+          .select("id, tipo, tipo_label, mensagem, canal, created_at, pacientes(nome)")
+          .order("created_at", { ascending: false })
+          .limit(Number(input.limit ?? 15));
+        if (input.paciente_id) query = query.eq("paciente_id", input.paciente_id as string);
+        if (input.tipo) query = query.eq("tipo", input.tipo as string);
+        const { data, error } = await query;
+        if (error && (error.code === "PGRST205" || error.message?.toLowerCase().includes("historico_atendimentos"))) {
+          const card: ToolCard = {
+            type: "card",
+            title: "Comunicados",
+            color: "blue",
+            data: { comunicados: [], total: 0, info: "Tabela de comunicados ainda nao inicializada" },
+          };
+          return { text: JSON.stringify(card), card };
+        }
+        const rows = (data ?? []) as Array<Record<string, unknown>>;
+        const porCanal: Record<string, number> = {};
+        for (const r of rows) {
+          const canal = String(r["canal"] ?? "outro");
+          porCanal[canal] = (porCanal[canal] ?? 0) + 1;
+        }
+        const card: ToolCard = {
+          type: "card",
+          title: "Comunicados e Atendimentos",
+          color: "blue",
+          data: {
+            comunicados: rows,
+            total: rows.length,
+            por_canal: porCanal,
           },
         };
         return { text: JSON.stringify(card), card };
@@ -529,6 +604,161 @@ export async function executeTool(
           },
         };
         return { text: JSON.stringify(card), card };
+      }
+
+      case "gerar_relatorio_completo": {
+        const modulosReq = (input.modulos as string[] | undefined) ?? [
+          "processos", "cotacoes", "pacientes", "medicamentos",
+          "distribuidoras", "monitoramentos", "financeiro", "glosas", "remessas", "comunicados",
+        ];
+
+        const agora = new Date();
+        const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
+        const semanaFim = new Date(agora.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+        const cards: ToolCard[] = [];
+
+        const [proc, pac, cot, fat, glo, med, dist, mon, rem, com] = await Promise.all([
+          modulosReq.includes("processos") ? supabase.from("processos").select("id, status, fase, created_at, pacientes(nome)").order("created_at", { ascending: false }).limit(10) : Promise.resolve({ data: null }),
+          modulosReq.includes("pacientes") ? supabase.from("pacientes").select("id, nome, convenio, mandato_status, diagnostico").order("created_at", { ascending: false }).limit(10) : Promise.resolve({ data: null }),
+          modulosReq.includes("cotacoes") ? supabase.from("cotacoes").select("id, status, nome_paciente, medicamento_nome, valor_aprovado, created_at").order("created_at", { ascending: false }).limit(10) : Promise.resolve({ data: null }),
+          modulosReq.includes("financeiro") ? supabase.from("notas_fiscais").select("valor, nf_status").gte("data_emissao", `${mesAtual}-01`) : Promise.resolve({ data: null }),
+          modulosReq.includes("glosas") ? supabase.from("glosas").select("id, valor, status, prazo_recurso, pacientes(nome)").order("created_at", { ascending: false }).limit(10) : Promise.resolve({ data: null }),
+          modulosReq.includes("medicamentos") ? supabase.from("medicamentos").select("id, nome, principio_ativo, concentracao, apresentacao").order("nome").limit(10) : Promise.resolve({ data: null }),
+          modulosReq.includes("distribuidoras") ? supabase.from("distribuidoras").select("id, nome, pais_origem, ativo").order("nome") : Promise.resolve({ data: null }),
+          modulosReq.includes("monitoramentos") ? supabase.from("monitoramentos").select("id, data_contato, status, canal, pacientes(nome)").gte("data_contato", agora.toISOString()).lte("data_contato", semanaFim).order("data_contato") : Promise.resolve({ data: null }),
+          modulosReq.includes("remessas") ? supabase.from("notas_fiscais").select("id, numero_nf, nf_status, codigo_rastreio, pacientes(nome)").order("created_at", { ascending: false }).limit(10) : Promise.resolve({ data: null }),
+          modulosReq.includes("comunicados") ? supabase.from("historico_atendimentos").select("id, tipo_label, canal, created_at, pacientes(nome)").order("created_at", { ascending: false }).limit(10) : Promise.resolve({ data: null }),
+        ]);
+
+        if (modulosReq.includes("processos") && proc.data) {
+          const rows = proc.data as Array<Record<string, unknown>>;
+          cards.push({
+            type: "card", title: "Processos", color: "orange",
+            data: {
+              total: rows.length,
+              cotacao: rows.filter((r) => r["status"] === "cotacao").length,
+              logistica: rows.filter((r) => r["status"] === "logistica").length,
+              monitoramento: rows.filter((r) => r["status"] === "monitoramento").length,
+              faturamento: rows.filter((r) => r["status"] === "faturamento").length,
+              processos: rows.slice(0, 6),
+            },
+          });
+        }
+
+        if (modulosReq.includes("pacientes") && pac.data) {
+          const rows = pac.data as Array<Record<string, unknown>>;
+          cards.push({
+            type: "card", title: "Pacientes", color: "mint",
+            data: {
+              total: rows.length,
+              mandatos_pendentes: rows.filter((r) => r["mandato_status"] === "pendente").length,
+              pacientes: rows.slice(0, 6),
+            },
+          });
+        }
+
+        if (modulosReq.includes("cotacoes") && cot.data) {
+          const rows = cot.data as Array<Record<string, unknown>>;
+          cards.push({
+            type: "card", title: "Cotações", color: "blue",
+            data: {
+              total: rows.length,
+              pendentes: rows.filter((r) => r["status"] === "pendente").length,
+              aprovadas: rows.filter((r) => r["status"] === "aprovada").length,
+              cotacoes: rows.slice(0, 6),
+            },
+          });
+        }
+
+        if (modulosReq.includes("financeiro") && fat.data) {
+          const nfsData = fat.data as Array<Record<string, unknown>>;
+          const emitido = nfsData.reduce((s, n) => s + Number(n["valor"] ?? 0), 0);
+          const pago = nfsData.filter((n) => n["nf_status"] === "paga").reduce((s, n) => s + Number(n["valor"] ?? 0), 0);
+          const glosasData = (glo.data ?? []) as Array<Record<string, unknown>>;
+          const totalGlosas = glosasData.reduce((s, g) => s + Number(g["valor"] ?? 0), 0);
+          cards.push({
+            type: "card", title: `Financeiro — ${mesAtual}`, color: "green",
+            data: {
+              emitido: `R$ ${emitido.toFixed(2)}`,
+              pago: `R$ ${pago.toFixed(2)}`,
+              aguardando: `R$ ${(emitido - pago).toFixed(2)}`,
+              glosas_mes: `R$ ${totalGlosas.toFixed(2)}`,
+            },
+          });
+        }
+
+        if (modulosReq.includes("glosas") && glo.data) {
+          const rows = glo.data as Array<Record<string, unknown>>;
+          const totalValor = rows.reduce((s, g) => s + Number(g["valor"] ?? 0), 0);
+          cards.push({
+            type: "card", title: "Glosas", color: "red",
+            data: {
+              total: rows.length,
+              valor_total: `R$ ${totalValor.toFixed(2)}`,
+              abertas: rows.filter((g) => g["status"] === "aberta").length,
+              em_analise: rows.filter((g) => g["status"] === "em_analise").length,
+              glosas: rows.slice(0, 5),
+            },
+          });
+        }
+
+        if (modulosReq.includes("medicamentos") && med.data) {
+          const rows = med.data as Array<Record<string, unknown>>;
+          cards.push({
+            type: "card", title: "Medicamentos", color: "purple",
+            data: { total: rows.length, medicamentos: rows },
+          });
+        }
+
+        if (modulosReq.includes("distribuidoras") && dist.data) {
+          const rows = dist.data as Array<Record<string, unknown>>;
+          cards.push({
+            type: "card", title: "Distribuidoras", color: "green",
+            data: {
+              total: rows.length,
+              ativas: rows.filter((r) => r["ativo"] === true).length,
+              distribuidoras: rows,
+            },
+          });
+        }
+
+        if (modulosReq.includes("monitoramentos") && mon.data) {
+          const rows = mon.data as Array<Record<string, unknown>>;
+          cards.push({
+            type: "card", title: "Monitoramentos D30 — Esta Semana", color: "mint",
+            data: { total: rows.length, agenda: rows },
+          });
+        }
+
+        if (modulosReq.includes("remessas") && rem.data) {
+          const rows = rem.data as Array<Record<string, unknown>>;
+          cards.push({
+            type: "card", title: "Remessas", color: "blue",
+            data: {
+              total: rows.length,
+              em_transito: rows.filter((r) => r["nf_status"] === "transito").length,
+              entregues: rows.filter((r) => r["nf_status"] === "entregue").length,
+              remessas: rows.slice(0, 6),
+            },
+          });
+        }
+
+        if (modulosReq.includes("comunicados") && com.data) {
+          const rows = com.data as Array<Record<string, unknown>>;
+          const porCanal: Record<string, number> = {};
+          for (const r of rows) {
+            const canal = String(r["canal"] ?? "outro");
+            porCanal[canal] = (porCanal[canal] ?? 0) + 1;
+          }
+          cards.push({
+            type: "card", title: "Comunicados", color: "blue",
+            data: { total: rows.length, por_canal: porCanal, comunicados: rows.slice(0, 6) },
+          });
+        }
+
+        const textoResumo = cards.map((c) => JSON.stringify(c)).join("\n");
+        return { text: textoResumo, cards };
       }
 
       case "gerar_wa_d30": {
