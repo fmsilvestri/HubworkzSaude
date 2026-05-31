@@ -4,6 +4,7 @@ import {
   useCreateCotacao,
   useUpdateCotacao,
   useDeleteCotacao,
+  useCreateProcesso,
   getListCotacoesQueryKey,
   listCotacoes,
   useListPacientes,
@@ -73,6 +74,8 @@ import {
   Users,
   Check,
   Download,
+  GitBranch,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
@@ -358,6 +361,7 @@ export default function Cotacao() {
   const [openDialog, setOpenDialog] = useState(false);
   const [editItem, setEditItem] = useState<Cotacao | null>(null);
   const [deleteItem, setDeleteItem] = useState<Cotacao | null>(null);
+  const [gerandoProcessoId, setGerandoProcessoId] = useState<string | null>(null);
 
   const { data: cotacoes, isLoading } = useListCotacoes({
     status: statusFiltro || undefined,
@@ -365,10 +369,62 @@ export default function Cotacao() {
   const createCotacao = useCreateCotacao();
   const updateCotacao = useUpdateCotacao();
   const deleteCotacao = useDeleteCotacao();
+  const createProcesso = useCreateProcesso();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListCotacoesQueryKey() });
+
+  async function handleGerarProcesso(c: Cotacao) {
+    setGerandoProcessoId(c.id);
+    try {
+      // Resolve paciente_id from an existing linked processo, if any
+      let pacienteId: string | undefined;
+      if (c.processo_id) {
+        const resp = await fetch(`/api/processos/${c.processo_id}`);
+        if (resp.ok) {
+          const proc = await resp.json() as Record<string, unknown>;
+          if (proc["paciente_id"]) pacienteId = proc["paciente_id"] as string;
+        }
+      }
+
+      createProcesso.mutate(
+        {
+          data: {
+            paciente_id: pacienteId,
+            medicamento_id: c.medicamento_id ?? undefined,
+            convenio: c.convenio ?? undefined,
+            status: "em_andamento",
+            fase_atual: 1,
+            observacoes: `Processo gerado manualmente a partir da cotação. Medicamento: ${c.medicamento_nome ?? "não informado"}. Paciente: ${c.nome_paciente ?? "não informado"}. Valor aprovado: ${c.valor_aprovado != null ? `R$ ${Number(c.valor_aprovado).toFixed(2)}` : "não informado"}.`,
+          },
+        },
+        {
+          onSuccess: async (novoProcesso) => {
+            const proc = novoProcesso as unknown as Record<string, unknown>;
+            // Link the new processo back to this cotação
+            await fetch(`/api/cotacoes/${c.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ processo_id: proc["id"] }),
+            });
+            toast({
+              title: "Processo criado com sucesso!",
+              description: `Processo vinculado à cotação de ${c.nome_paciente ?? "paciente"}.`,
+            });
+            invalidate();
+          },
+          onError: () => {
+            toast({ title: "Erro ao gerar processo.", variant: "destructive" });
+          },
+          onSettled: () => setGerandoProcessoId(null),
+        },
+      );
+    } catch {
+      toast({ title: "Erro ao gerar processo.", variant: "destructive" });
+      setGerandoProcessoId(null);
+    }
+  }
 
   // ── Create form ──────────────────────────────────────────────────────
   const form = useForm<FormValues>({
@@ -1167,7 +1223,20 @@ export default function Cotacao() {
                         <p className="text-white/60 text-xs leading-relaxed whitespace-pre-line">{c.marca_laboratorio}</p>
                       </div>
                     )}
-                    <div className="col-span-2 md:col-span-4 flex gap-2 pt-1">
+                    <div className="col-span-2 md:col-span-4 flex flex-wrap gap-2 pt-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleGerarProcesso(c);
+                        }}
+                        disabled={gerandoProcessoId === c.id}
+                        className="flex items-center gap-1.5 text-xs text-[#F56E0F] hover:text-white bg-[#F56E0F]/10 hover:bg-[#F56E0F]/20 border border-[#F56E0F]/25 hover:border-[#F56E0F]/50 rounded-lg px-3 py-1.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {gerandoProcessoId === c.id
+                          ? <Loader2 className="h-3 w-3 animate-spin" />
+                          : <GitBranch className="h-3 w-3" />}
+                        {gerandoProcessoId === c.id ? "Gerando..." : "Gerar Processo"}
+                      </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); openEdit(c); }}
                         className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white border border-white/10 hover:border-white/30 rounded-lg px-3 py-1.5 transition-colors"
