@@ -612,23 +612,26 @@ export default function EloSaude() {
                   )}
                 </div>
                 {/* Ações */}
-                {!tableNotFound && (
-                  <div className="w-16 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => setEditItem(item)}
-                      className="text-white/40 hover:text-white transition-colors p-1 rounded"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setDeleteItem(item)}
-                      className="text-red-400/50 hover:text-red-400 transition-colors p-1 rounded"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
-                {tableNotFound && <div className="w-16" />}
+                <div className="w-16 flex items-center justify-end gap-1">
+                  {!tableNotFound ? (
+                    <>
+                      <button
+                        onClick={() => setEditItem(item)}
+                        title="Editar"
+                        className="text-white/25 hover:text-[#F56E0F] hover:bg-[#F56E0F]/10 transition-colors p-1.5 rounded-lg"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteItem(item)}
+                        title="Excluir"
+                        className="text-white/25 hover:text-red-400 hover:bg-red-400/10 transition-colors p-1.5 rounded-lg"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>
