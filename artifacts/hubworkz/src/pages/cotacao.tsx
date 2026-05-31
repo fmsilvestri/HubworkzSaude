@@ -301,6 +301,7 @@ const schema = z.object({
   tipo: z.string().optional(),
   marca_laboratorio: z.string().optional(),
   cotacao_dolar: z.string().optional(),
+  num_caixas: z.string().optional(),
   valor_importado: z.string().optional(),
   frete_imposto: z.string().optional(),
   total: z.string().optional(),
@@ -374,18 +375,21 @@ export default function Cotacao() {
   const watchImportado = form.watch("valor_importado");
   const watchFrete = form.watch("frete_imposto");
   const watchDolar = form.watch("cotacao_dolar");
+  const watchCaixas = form.watch("num_caixas");
 
   useEffect(() => {
     const usd1 = parseFloat((watchImportado ?? "").replace(",", "."));
     const usd2 = parseFloat((watchFrete ?? "").replace(",", "."));
     const taxa = parseFloat((watchDolar ?? "").replace(",", "."));
-    const totalUsd = (isNaN(usd1) ? 0 : usd1) + (isNaN(usd2) ? 0 : usd2);
+    const caixas = parseFloat((watchCaixas ?? "").replace(",", "."));
+    const numCaixas = isNaN(caixas) || caixas <= 0 ? 1 : caixas;
+    const totalUsd = (isNaN(usd1) ? 0 : usd1) * numCaixas + (isNaN(usd2) ? 0 : usd2);
     if (totalUsd > 0 && !isNaN(taxa) && taxa > 0) {
       form.setValue("total", String((totalUsd * taxa).toFixed(2)));
     } else if (totalUsd > 0 && (isNaN(taxa) || taxa === 0)) {
       form.setValue("total", String(totalUsd.toFixed(2)));
     }
-  }, [watchImportado, watchFrete, watchDolar]);
+  }, [watchImportado, watchFrete, watchDolar, watchCaixas]);
 
   // ── Edit form ────────────────────────────────────────────────────────
   const editForm = useForm<FormValues>({
@@ -396,18 +400,21 @@ export default function Cotacao() {
   const watchEditImportado = editForm.watch("valor_importado");
   const watchEditFrete = editForm.watch("frete_imposto");
   const watchEditDolar = editForm.watch("cotacao_dolar");
+  const watchEditCaixas = editForm.watch("num_caixas");
 
   useEffect(() => {
     const usd1 = parseFloat((watchEditImportado ?? "").replace(",", "."));
     const usd2 = parseFloat((watchEditFrete ?? "").replace(",", "."));
     const taxa = parseFloat((watchEditDolar ?? "").replace(",", "."));
-    const totalUsd = (isNaN(usd1) ? 0 : usd1) + (isNaN(usd2) ? 0 : usd2);
+    const caixas = parseFloat((watchEditCaixas ?? "").replace(",", "."));
+    const numCaixas = isNaN(caixas) || caixas <= 0 ? 1 : caixas;
+    const totalUsd = (isNaN(usd1) ? 0 : usd1) * numCaixas + (isNaN(usd2) ? 0 : usd2);
     if (totalUsd > 0 && !isNaN(taxa) && taxa > 0) {
       editForm.setValue("total", String((totalUsd * taxa).toFixed(2)));
     } else if (totalUsd > 0 && (isNaN(taxa) || taxa === 0)) {
       editForm.setValue("total", String(totalUsd.toFixed(2)));
     }
-  }, [watchEditImportado, watchEditFrete, watchEditDolar]);
+  }, [watchEditImportado, watchEditFrete, watchEditDolar, watchEditCaixas]);
 
   function openEdit(c: Cotacao) {
     editForm.reset({
@@ -1136,7 +1143,16 @@ export default function Cotacao() {
                     </FormItem>
                   )} />
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-3">
+                  <FormField control={form.control} name="num_caixas" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white/70">Nº de Caixas</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" min="1" step="1" placeholder="1" className="bg-[#0F0F12] border-white/10 text-white" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                   <FormField control={form.control} name="valor_importado" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-white/70">Valor Importado (USD)</FormLabel>
@@ -1379,7 +1395,12 @@ export default function Cotacao() {
                     </FormItem>
                   )} />
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-3">
+                  <FormField control={editForm.control} name="num_caixas" render={({ field }) => (
+                    <FormItem><FormLabel className="text-white/70">Nº de Caixas</FormLabel>
+                      <FormControl><Input {...field} type="number" min="1" step="1" placeholder="1" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage />
+                    </FormItem>
+                  )} />
                   <FormField control={editForm.control} name="valor_importado" render={({ field }) => (
                     <FormItem><FormLabel className="text-white/70">Valor Importado (USD)</FormLabel>
                       <FormControl><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs pointer-events-none">$</span><Input {...field} type="number" step="0.01" placeholder="0.00" className="bg-[#0F0F12] border-white/10 text-white pl-7" /></div></FormControl><FormMessage />
