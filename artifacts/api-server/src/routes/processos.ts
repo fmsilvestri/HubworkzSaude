@@ -144,20 +144,19 @@ router.delete("/processos/:id", async (req, res): Promise<void> => {
   try {
     const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
 
-    // Cascade: remove all dependent records before deleting the processo
-    // Tables confirmed to have processo_id FK in Supabase:
-    const dependents: Array<{ table: string; label: string }> = [
-      { table: "cotacoes", label: "cotações" },
-      { table: "monitoramentos", label: "monitoramentos" },
-      { table: "notas_fiscais", label: "faturas" },
-    ];
-    for (const { table, label } of dependents) {
-      const { error: depErr } = await supabase.from(table).delete().eq("processo_id", id);
-      if (depErr) {
-        req.log.warn({ err: depErr, table }, `Failed to cascade-delete ${label}`);
-        // Non-fatal: the main delete may still fail with FK error if table is unknown
-      }
-    }
+    // Unlink (nullify processo_id) in related tables — never delete records from other modules.
+    const linkedTables = ["cotacoes", "monitoramentos", "notas_fiscais"] as const;
+    await Promise.all(
+      linkedTables.map(async (table) => {
+        const { error } = await supabase
+          .from(table)
+          .update({ processo_id: null })
+          .eq("processo_id", id);
+        if (error) {
+          req.log.warn({ err: error, table }, `Could not unlink processo_id in ${table}`);
+        }
+      })
+    );
 
     const { error } = await supabase.from("processos").delete().eq("id", id);
     if (error) throw error;
