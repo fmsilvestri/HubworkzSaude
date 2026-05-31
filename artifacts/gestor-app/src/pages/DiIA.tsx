@@ -120,10 +120,10 @@ export default function DiIA() {
               />
             </div>
             <p className="text-sm font-semibold mb-1" style={{ color: "#A5FFD6" }}>
-              Ola! Sou a Di IA
+              Ola, tudo bem?
             </p>
             <p className="text-xs max-w-[260px]" style={{ color: "var(--t-text-5)" }}>
-              Sua assistente especializada em intermediacao farmaceutica oncologica. Como posso ajudar?
+              Sou a Di e estou aqui para auxiliar na gestao e solucoes para a clinica. Como posso ajudar hoje?
             </p>
           </div>
         ) : (

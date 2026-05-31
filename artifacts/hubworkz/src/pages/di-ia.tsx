@@ -337,9 +337,9 @@ export default function DiIA() {
                 />
                 <span className="absolute -bottom-1.5 -right-1.5 h-5 w-5 rounded-full bg-[#A5FFD6] border-2 border-[#1B1B1E] animate-pulse" />
               </div>
-              <h3 className="text-white font-semibold text-lg mb-2">Ola, sou a Di IA</h3>
+              <h3 className="text-white font-semibold text-lg mb-2">Ola, tudo bem?</h3>
               <p className="text-white/40 max-w-sm text-sm leading-relaxed mb-6">
-                Sua assistente integrada a todos os modulos do HubWorkz Saude. Posso gerar relatorios, cards de resumo e analises de qualquer modulo em tempo real.
+                Sou a Di e estou aqui para auxiliar na gestao e solucoes para a clinica. Como posso ajudar hoje?
               </p>
               <div className="flex flex-wrap gap-2 justify-center max-w-lg">
                 {SUGGESTIONS.slice(0, 4).map((s) => (
