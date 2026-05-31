@@ -159,19 +159,16 @@ function gerarMensagem(
       return [
         `Ola, ${nome}! Tudo bem?`,
         ``,
-        `Identificamos pendencias de documentacao no seu processo.`,
+        `Solicito o envio dos seguintes documentos conforme abaixo:`,
         ``,
-        `Para darmos continuidade ao seu atendimento, precisamos dos seguintes documentos:`,
+        `📄 CNH ou RG`,
+        `📄 Comprovante de Endereco ou Declaracao de Endereco em nome do Paciente`,
         ``,
-        `📄 Receita medica atualizada`,
-        `📄 Laudo ou relatorio medico`,
-        `📄 Carteirinha do convenio — ${paciente.convenio ?? "verificar"}`,
-        ``,
-        `Por favor, envie o quanto antes para nao atrasar o processo.`,
+        `Esse procedimento e necessario para que possamos realizar a compra do seu medicamento!`,
         ``,
         `Qualquer duvida, estamos aqui para ajudar!`,
         ``,
-        `*HubWorkz Saude* — ${hoje}`,
+        `*Noova Oncologia* — ${hoje}`,
       ].join("\n");
 
     case "personalizado":
