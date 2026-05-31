@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 
 const router: IRouter = Router();
 
-const ALLOWED_FIELDS = ["nome", "cnpj", "responsavel", "email", "telefone", "tipo", "status"];
+const ALLOWED_FIELDS = ["nome", "cnpj", "uf", "contato", "telefone", "email", "prazo_pagamento", "prazo_entrega", "afe_status", "especialidade", "avaliacao", "ativo", "observacoes"];
 
 function pickAllowed(body: Record<string, unknown>) {
   const out: Record<string, unknown> = {};
@@ -28,6 +28,8 @@ router.get("/distribuidoras", async (_req, res): Promise<void> => {
   }
 });
 
+const DEFAULT_CLINICA_ID = "00000000-0000-0000-0000-000000000001";
+
 router.post("/distribuidoras", async (req, res): Promise<void> => {
   try {
     const payload = pickAllowed(req.body as Record<string, unknown>);
@@ -35,6 +37,9 @@ router.post("/distribuidoras", async (req, res): Promise<void> => {
       res.status(400).json({ error: "Campo 'nome' é obrigatório" });
       return;
     }
+    payload["clinica_id"] = DEFAULT_CLINICA_ID;
+    // cnpj is NOT NULL in DB — ensure it always has a value
+    if (!payload["cnpj"]) payload["cnpj"] = "";
     const { data, error } = await supabase
       .from("distribuidoras")
       .insert(payload)

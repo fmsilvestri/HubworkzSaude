@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
@@ -27,7 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Truck, Plus, Phone, Mail, Building2, Pencil, Trash2 } from "lucide-react";
+import { Truck, Plus, Phone, Mail, MapPin, Pencil, Trash2, Clock, Star, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const FIELD = "bg-[#0F0F12] border-white/10 text-white placeholder:text-white/30";
@@ -35,35 +36,48 @@ const FIELD = "bg-[#0F0F12] border-white/10 text-white placeholder:text-white/30
 const schema = z.object({
   nome: z.string().min(2, "Nome obrigatório"),
   cnpj: z.string().optional(),
-  responsavel: z.string().optional(),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  uf: z.string().optional(),
+  contato: z.string().optional(),
   telefone: z.string().optional(),
-  tipo: z.string().optional(),
-  status: z.string().optional(),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  prazo_pagamento: z.coerce.number().int().optional(),
+  prazo_entrega: z.coerce.number().int().optional(),
+  afe_status: z.string().optional(),
+  especialidade: z.string().optional(),
+  observacoes: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 type Distribuidora = {
   id: string;
+  clinica_id?: string | null;
   nome: string;
   cnpj?: string | null;
-  responsavel?: string | null;
-  email?: string | null;
+  uf?: string | null;
+  contato?: string | null;
   telefone?: string | null;
-  tipo?: string | null;
-  status?: string | null;
+  email?: string | null;
+  prazo_pagamento?: number | null;
+  prazo_entrega?: number | null;
+  afe_status?: string | null;
+  especialidade?: string | null;
+  avaliacao?: number | null;
+  ativo?: boolean | null;
+  observacoes?: string | null;
   created_at: string;
 };
 
 const DEFAULT_VALUES: FormValues = {
-  nome: "", cnpj: "", responsavel: "", email: "", telefone: "", tipo: "", status: "",
+  nome: "", cnpj: "", uf: "", contato: "", telefone: "", email: "",
+  prazo_pagamento: undefined, prazo_entrega: undefined,
+  afe_status: "", especialidade: "", observacoes: "",
 };
 
-function statusColor(status: string | null | undefined) {
-  if (status === "ativo" || status === "qualificada") return "bg-green-500/15 text-green-400 border-green-500/20";
+function afeColor(status: string | null | undefined) {
+  if (status === "regular") return "bg-green-500/15 text-green-400 border-green-500/20";
   if (status === "pendente") return "bg-yellow-500/15 text-yellow-400 border-yellow-500/20";
-  if (status === "inativo") return "bg-red-500/15 text-red-400 border-red-500/20";
+  if (status === "irregular" || status === "vencida") return "bg-red-500/15 text-red-400 border-red-500/20";
   return "bg-white/10 text-white/50 border-white/10";
 }
 
@@ -82,11 +96,16 @@ function DistribuidoraForm({
       <FormField control={control} name="nome" render={({ field }) => (
         <FormItem><FormLabel className="text-white/70">Razão Social *</FormLabel><FormControl><Input {...field} className={FIELD} /></FormControl><FormMessage /></FormItem>
       )} />
-      <FormField control={control} name="cnpj" render={({ field }) => (
-        <FormItem><FormLabel className="text-white/70">CNPJ</FormLabel><FormControl><Input {...field} placeholder="00.000.000/0000-00" className={FIELD} /></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="responsavel" render={({ field }) => (
-        <FormItem><FormLabel className="text-white/70">Responsável</FormLabel><FormControl><Input {...field} className={FIELD} /></FormControl><FormMessage /></FormItem>
+      <div className="grid grid-cols-2 gap-3">
+        <FormField control={control} name="cnpj" render={({ field }) => (
+          <FormItem><FormLabel className="text-white/70">CNPJ</FormLabel><FormControl><Input {...field} placeholder="00.000.000/0000-00" className={FIELD} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="uf" render={({ field }) => (
+          <FormItem><FormLabel className="text-white/70">UF</FormLabel><FormControl><Input {...field} placeholder="SP" maxLength={2} className={FIELD} /></FormControl><FormMessage /></FormItem>
+        )} />
+      </div>
+      <FormField control={control} name="contato" render={({ field }) => (
+        <FormItem><FormLabel className="text-white/70">Contato / Responsável</FormLabel><FormControl><Input {...field} className={FIELD} /></FormControl><FormMessage /></FormItem>
       )} />
       <div className="grid grid-cols-2 gap-3">
         <FormField control={control} name="email" render={({ field }) => (
@@ -97,13 +116,24 @@ function DistribuidoraForm({
         )} />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <FormField control={control} name="tipo" render={({ field }) => (
-          <FormItem><FormLabel className="text-white/70">Tipo</FormLabel><FormControl><Input {...field} placeholder="Nacional / Importadora" className={FIELD} /></FormControl><FormMessage /></FormItem>
+        <FormField control={control} name="prazo_pagamento" render={({ field }) => (
+          <FormItem><FormLabel className="text-white/70">Prazo Pagamento (dias)</FormLabel><FormControl><Input {...field} type="number" min="0" placeholder="30" className={FIELD} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="status" render={({ field }) => (
-          <FormItem><FormLabel className="text-white/70">Status</FormLabel><FormControl><Input {...field} placeholder="ativo / pendente" className={FIELD} /></FormControl><FormMessage /></FormItem>
+        <FormField control={control} name="prazo_entrega" render={({ field }) => (
+          <FormItem><FormLabel className="text-white/70">Prazo Entrega (dias)</FormLabel><FormControl><Input {...field} type="number" min="0" placeholder="7" className={FIELD} /></FormControl><FormMessage /></FormItem>
         )} />
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <FormField control={control} name="especialidade" render={({ field }) => (
+          <FormItem><FormLabel className="text-white/70">Especialidade</FormLabel><FormControl><Input {...field} placeholder="Oncológico" className={FIELD} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="afe_status" render={({ field }) => (
+          <FormItem><FormLabel className="text-white/70">AFE Status</FormLabel><FormControl><Input {...field} placeholder="regular / pendente" className={FIELD} /></FormControl><FormMessage /></FormItem>
+        )} />
+      </div>
+      <FormField control={control} name="observacoes" render={({ field }) => (
+        <FormItem><FormLabel className="text-white/70">Observações</FormLabel><FormControl><Textarea {...field} rows={3} className={FIELD + " resize-none"} /></FormControl><FormMessage /></FormItem>
+      )} />
       <Button type="submit" className="w-full bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white" disabled={isPending}>
         {isPending ? "Salvando..." : submitLabel}
       </Button>
@@ -142,11 +172,15 @@ export default function Distribuidoras() {
     editForm.reset({
       nome: d.nome ?? "",
       cnpj: d.cnpj ?? "",
-      responsavel: d.responsavel ?? "",
+      uf: d.uf ?? "",
+      contato: d.contato ?? "",
       email: d.email ?? "",
       telefone: d.telefone ?? "",
-      tipo: d.tipo ?? "",
-      status: d.status ?? "",
+      prazo_pagamento: d.prazo_pagamento ?? undefined,
+      prazo_entrega: d.prazo_entrega ?? undefined,
+      afe_status: d.afe_status ?? "",
+      especialidade: d.especialidade ?? "",
+      observacoes: d.observacoes ?? "",
     });
   }
 
@@ -203,7 +237,7 @@ export default function Distribuidoras() {
               <Plus className="h-4 w-4" /> Nova Distribuidora
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[480px] sm:max-w-[480px]">
+          <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[480px] sm:max-w-[480px] overflow-y-auto">
             <SheetHeader className="mb-6">
               <SheetTitle className="text-white">Cadastrar Distribuidora</SheetTitle>
             </SheetHeader>
@@ -241,9 +275,11 @@ export default function Distribuidoras() {
                   <Truck className="h-5 w-5 text-[#F56E0F]" />
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Badge className={cn("text-xs border", statusColor(d.status))}>
-                    {d.status ?? "pendente"}
-                  </Badge>
+                  {d.afe_status && (
+                    <Badge className={cn("text-xs border", afeColor(d.afe_status))}>
+                      AFE: {d.afe_status}
+                    </Badge>
+                  )}
                   {/* Ações hover */}
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
@@ -265,17 +301,22 @@ export default function Distribuidoras() {
               </div>
 
               <h3 className="text-white font-semibold">{d.nome}</h3>
-              {d.cnpj && <p className="text-white/40 text-xs mt-1">{d.cnpj}</p>}
+              {d.cnpj && <p className="text-white/40 text-xs mt-0.5">{d.cnpj}</p>}
 
               <div className="mt-3 space-y-1.5">
-                {d.responsavel && (
+                {d.uf && (
                   <div className="flex items-center gap-2 text-xs text-white/40">
-                    <Building2 className="h-3 w-3 shrink-0" /><span>{d.responsavel}</span>
+                    <MapPin className="h-3 w-3 shrink-0" /><span>{d.uf}</span>
+                  </div>
+                )}
+                {d.contato && (
+                  <div className="flex items-center gap-2 text-xs text-white/40">
+                    <Truck className="h-3 w-3 shrink-0" /><span>{d.contato}</span>
                   </div>
                 )}
                 {d.email && (
                   <div className="flex items-center gap-2 text-xs text-white/40">
-                    <Mail className="h-3 w-3 shrink-0" /><span>{d.email}</span>
+                    <Mail className="h-3 w-3 shrink-0" /><span className="truncate">{d.email}</span>
                   </div>
                 )}
                 {d.telefone && (
@@ -283,9 +324,26 @@ export default function Distribuidoras() {
                     <Phone className="h-3 w-3 shrink-0" /><span>{d.telefone}</span>
                   </div>
                 )}
+                {(d.prazo_pagamento != null || d.prazo_entrega != null) && (
+                  <div className="flex items-center gap-3 text-xs text-white/40">
+                    <Clock className="h-3 w-3 shrink-0" />
+                    {d.prazo_pagamento != null && <span>Pgto: {d.prazo_pagamento}d</span>}
+                    {d.prazo_entrega != null && <span>Entrega: {d.prazo_entrega}d</span>}
+                  </div>
+                )}
+                {d.avaliacao != null && (
+                  <div className="flex items-center gap-2 text-xs text-white/40">
+                    <Star className="h-3 w-3 shrink-0 text-yellow-400" /><span>{d.avaliacao}/5</span>
+                  </div>
+                )}
+                {d.observacoes && (
+                  <div className="flex items-start gap-2 text-xs text-white/40">
+                    <FileText className="h-3 w-3 shrink-0 mt-0.5" /><span className="line-clamp-2">{d.observacoes}</span>
+                  </div>
+                )}
               </div>
-              {d.tipo && (
-                <Badge className="mt-3 bg-blue-500/15 text-blue-400 border-blue-500/20 text-xs">{d.tipo}</Badge>
+              {d.especialidade && (
+                <Badge className="mt-3 bg-blue-500/15 text-blue-400 border-blue-500/20 text-xs">{d.especialidade}</Badge>
               )}
             </div>
           ))}
@@ -294,7 +352,7 @@ export default function Distribuidoras() {
 
       {/* Sheet de edição */}
       <Sheet open={!!editItem} onOpenChange={(o) => { if (!o) setEditItem(null); }}>
-        <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[480px] sm:max-w-[480px]">
+        <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[480px] sm:max-w-[480px] overflow-y-auto">
           <SheetHeader className="mb-6">
             <SheetTitle className="text-white">Editar Distribuidora</SheetTitle>
           </SheetHeader>
