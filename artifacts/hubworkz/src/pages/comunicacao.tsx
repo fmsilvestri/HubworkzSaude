@@ -1,11 +1,15 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useListPacientes, useListMedicamentos, useListProcessos } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, Copy, ExternalLink, RefreshCw, Phone, Search, X, ChevronDown } from "lucide-react";
+import {
+  MessageSquare, Copy, ExternalLink, RefreshCw, Phone, Search, X, ChevronDown,
+  Clock, CheckCircle2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Template = {
@@ -70,6 +74,16 @@ type Processo = {
   status?: string | null;
   fase?: string | null;
   medicamento?: string | null;
+};
+
+type HistoricoItem = {
+  id: string;
+  paciente_id: string;
+  tipo: string;
+  tipo_label: string;
+  mensagem: string;
+  canal: string;
+  created_at: string;
 };
 
 function gerarMensagem(
@@ -198,6 +212,10 @@ function iniciais(nome: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function canalLabel(canal: string) {
+  return canal === "whatsapp" ? "WhatsApp" : canal === "copiado" ? "Copiado" : canal;
+}
+
 export default function Comunicacao() {
   const [pacienteId, setPacienteId] = useState<string>("");
   const [templateId, setTemplateId] = useState<string>("");
@@ -205,6 +223,8 @@ export default function Comunicacao() {
   const [mensagem, setMensagem] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [busca, setBusca] = useState("");
+  const [historico, setHistorico] = useState<HistoricoItem[]>([]);
+  const [loadingHistorico, setLoadingHistorico] = useState(false);
   const { toast } = useToast();
 
   const { data: pacientes } = useListPacientes();
@@ -241,6 +261,41 @@ export default function Comunicacao() {
     [processos, pacienteId],
   );
 
+  // Carregar histórico ao selecionar paciente
+  useEffect(() => {
+    if (!pacienteId) { setHistorico([]); return; }
+    setLoadingHistorico(true);
+    fetch(`/api/historico-atendimentos?paciente_id=${pacienteId}`)
+      .then((r) => r.ok ? r.json() as Promise<HistoricoItem[]> : [])
+      .then((data) => setHistorico(Array.isArray(data) ? data : []))
+      .catch(() => setHistorico([]))
+      .finally(() => setLoadingHistorico(false));
+  }, [pacienteId]);
+
+  async function registrarHistorico(canal: "copiado" | "whatsapp") {
+    if (!paciente || !templateId || !mensagem) return;
+    const tpl = TEMPLATES.find((t) => t.id === templateId);
+    try {
+      await fetch("/api/historico-atendimentos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paciente_id: pacienteId,
+          tipo: templateId,
+          tipo_label: tpl?.label ?? templateId,
+          mensagem,
+          canal,
+        }),
+      });
+      // Refresh history
+      const updated = await fetch(`/api/historico-atendimentos?paciente_id=${pacienteId}`)
+        .then((r) => r.ok ? r.json() as Promise<HistoricoItem[]> : []);
+      setHistorico(Array.isArray(updated) ? updated : []);
+    } catch {
+      // silently ignore — history is secondary to the main action
+    }
+  }
+
   function gerar() {
     if (!paciente || !templateId) return;
     const msg = gerarMensagem(templateId, paciente, medicamentoPaciente, processoPaciente, customText);
@@ -248,8 +303,9 @@ export default function Comunicacao() {
   }
 
   function copiar() {
-    navigator.clipboard.writeText(mensagem).then(() => {
+    navigator.clipboard.writeText(mensagem).then(async () => {
       toast({ title: "Mensagem copiada para a area de transferencia." });
+      await registrarHistorico("copiado");
     });
   }
 
@@ -261,6 +317,8 @@ export default function Comunicacao() {
     const tel = formatarTelefone(paciente.telefone);
     const url = `https://wa.me/55${tel}?text=${encodeURIComponent(mensagem)}`;
     window.open(url, "_blank");
+    void registrarHistorico("whatsapp");
+    toast({ title: "Comunicado registrado no historico do paciente." });
   }
 
   const templateAtual = TEMPLATES.find((t) => t.id === templateId);
@@ -275,11 +333,10 @@ export default function Comunicacao() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Coluna esquerda — seleção */}
         <div className="space-y-5">
-          {/* Selecionar paciente — picker colorido */}
+          {/* Selecionar paciente */}
           <div className="bg-[#1B1B1E] border border-white/10 rounded-[14px] p-5 space-y-3">
             <p className="text-white/50 text-xs uppercase tracking-wider font-medium">1. Selecione o Paciente</p>
 
-            {/* Trigger / selecionado */}
             {paciente ? (
               (() => {
                 const pal = paletteFor(paciente.nome);
@@ -324,7 +381,6 @@ export default function Comunicacao() {
               </button>
             )}
 
-            {/* Dropdown expandido */}
             {pickerOpen && !paciente && (
               <div className="space-y-2">
                 <div className="relative">
@@ -337,7 +393,6 @@ export default function Comunicacao() {
                     className="pl-8 h-9 bg-[#0F0F12] border-white/10 text-white text-sm placeholder:text-white/25"
                   />
                 </div>
-
                 <div className="max-h-64 overflow-y-auto space-y-1.5 pr-0.5">
                   {pacientesFiltrados.length === 0 ? (
                     <p className="text-white/25 text-sm text-center py-6">Nenhum paciente encontrado</p>
@@ -378,7 +433,6 @@ export default function Comunicacao() {
               </div>
             )}
 
-            {/* Detalhes extra do selecionado */}
             {paciente?.diagnostico && (
               <p className="text-white/30 text-xs px-1">
                 {paciente.diagnostico}{paciente.cid ? ` — CID ${paciente.cid}` : ""}
@@ -411,7 +465,6 @@ export default function Comunicacao() {
             </div>
           </div>
 
-          {/* Campo livre para personalizado */}
           {templateId === "personalizado" && (
             <div className="bg-[#1B1B1E] border border-white/10 rounded-[14px] p-5 space-y-3">
               <p className="text-white/50 text-xs uppercase tracking-wider font-medium">Sua mensagem</p>
@@ -434,7 +487,7 @@ export default function Comunicacao() {
           </Button>
         </div>
 
-        {/* Coluna direita — preview e ações */}
+        {/* Coluna direita — preview, ações e histórico */}
         <div className="space-y-4">
           <div className="bg-[#1B1B1E] border border-white/10 rounded-[14px] p-5 space-y-4">
             <div className="flex items-center justify-between">
@@ -487,6 +540,62 @@ export default function Comunicacao() {
             )}
           </div>
 
+          {/* Histórico de envios do paciente selecionado */}
+          {pacienteId && (
+            <div className="bg-[#1B1B1E] border border-white/10 rounded-[14px] p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-white/50 text-xs uppercase tracking-wider font-medium">Historico de Envios</p>
+                {historico.length > 0 && (
+                  <span className="text-white/30 text-xs">{historico.length} registro{historico.length !== 1 ? "s" : ""}</span>
+                )}
+              </div>
+
+              {loadingHistorico ? (
+                <div className="space-y-2">
+                  {[1, 2].map((i) => <Skeleton key={i} className="h-14 bg-white/5 rounded-xl" />)}
+                </div>
+              ) : historico.length === 0 ? (
+                <div className="py-6 text-center">
+                  <Clock className="h-7 w-7 text-white/15 mx-auto mb-2" />
+                  <p className="text-white/25 text-xs">Nenhum comunicado enviado ainda</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-0.5">
+                  {historico.slice(0, 20).map((h) => {
+                    const tpl = TEMPLATES.find((t) => t.id === h.tipo);
+                    return (
+                      <div key={h.id} className="bg-[#0F0F12] rounded-xl border border-white/5 px-3 py-2.5">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-[#A5FFD6] shrink-0" />
+                            <span className="text-white/70 text-xs font-medium">{h.tipo_label}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <Badge className={cn(
+                              "text-[10px] border px-1.5 py-0",
+                              h.canal === "whatsapp"
+                                ? "bg-green-500/15 text-green-400 border-green-500/20"
+                                : "bg-blue-500/15 text-blue-400 border-blue-500/20",
+                            )}>
+                              {canalLabel(h.canal)}
+                            </Badge>
+                            {tpl && <Badge className={cn("text-[10px] border px-1.5 py-0", tpl.cor)}>{tpl.id === "personalizado" ? "livre" : "auto"}</Badge>}
+                          </div>
+                        </div>
+                        <p className="text-white/25 text-[10px]">
+                          {new Date(h.created_at).toLocaleString("pt-BR", {
+                            day: "2-digit", month: "short", year: "numeric",
+                            hour: "2-digit", minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Dica de uso */}
           <div className="bg-[#1B1B1E] border border-white/10 rounded-[14px] p-4 space-y-2">
             <p className="text-white/50 text-xs uppercase tracking-wider font-medium">Como funciona</p>
@@ -494,7 +603,7 @@ export default function Comunicacao() {
               <li>1. Selecione o paciente e o modelo desejado</li>
               <li>2. A mensagem e gerada automaticamente com os dados do cadastro</li>
               <li>3. Copie ou abra diretamente no WhatsApp do paciente</li>
-              <li>4. Para personalizar, escolha o modelo "Mensagem Personalizada"</li>
+              <li>4. Cada envio e registrado automaticamente no historico do paciente</li>
             </ul>
           </div>
         </div>

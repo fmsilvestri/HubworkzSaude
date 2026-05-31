@@ -27,7 +27,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Users, Plus, FileCheck, Pencil, Trash2, FileText, ExternalLink, Upload, Loader2 } from "lucide-react";
+import { Search, Users, Plus, FileCheck, Pencil, Trash2, FileText, ExternalLink, Upload, Loader2, History, Download, CheckCircle2, MessageSquare } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+type HistoricoItem = {
+  id: string;
+  paciente_id: string;
+  tipo: string;
+  tipo_label: string;
+  mensagem: string;
+  canal: string;
+  created_at: string;
+};
 
 const FIELD = "bg-[#0F0F12] border-white/10 text-white placeholder:text-white/30";
 
@@ -170,7 +182,128 @@ export default function Pacientes() {
   const [editItem, setEditItem] = useState<Paciente | null>(null);
   const [deleteItem, setDeleteItem] = useState<Paciente | null>(null);
   const [uploadingMandato, setUploadingMandato] = useState(false);
+  const [histPaciente, setHistPaciente] = useState<Paciente | null>(null);
+  const [historico, setHistorico] = useState<HistoricoItem[]>([]);
+  const [loadingHist, setLoadingHist] = useState(false);
   const mandatoPdfRef = useRef<HTMLInputElement>(null);
+
+  async function abrirHistorico(p: Paciente) {
+    setHistPaciente(p);
+    setHistorico([]);
+    setLoadingHist(true);
+    try {
+      const data = await fetch(`/api/historico-atendimentos?paciente_id=${p.id}`)
+        .then((r) => r.ok ? r.json() as Promise<HistoricoItem[]> : []);
+      setHistorico(Array.isArray(data) ? data : []);
+    } catch {
+      setHistorico([]);
+    } finally {
+      setLoadingHist(false);
+    }
+  }
+
+  function gerarPdfHistorico() {
+    if (!histPaciente) return;
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const largura = doc.internal.pageSize.getWidth();
+    const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+
+    // Header
+    doc.setFillColor(15, 15, 18);
+    doc.rect(0, 0, largura, 40, "F");
+    doc.setTextColor(245, 110, 15);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("HubWorkz Saude", 14, 15);
+    doc.setTextColor(180, 180, 180);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text("Relatorio de Historico de Atendimento", 14, 22);
+    doc.text(`Gerado em: ${hoje}`, 14, 28);
+
+    // Dados do paciente
+    doc.setFillColor(27, 27, 30);
+    doc.rect(0, 40, largura, 38, "F");
+    doc.setTextColor(245, 110, 15);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("Dados do Paciente", 14, 52);
+    doc.setTextColor(220, 220, 220);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+
+    const info: [string, string][] = [
+      ["Nome", histPaciente.nome],
+      ["CPF", histPaciente.cpf ?? "—"],
+      ["Convenio", histPaciente.convenio ?? "—"],
+      ["Diagnostico", histPaciente.diagnostico ?? "—"],
+      ["CID", histPaciente.cid ?? "—"],
+      ["Telefone", histPaciente.telefone ?? "—"],
+    ];
+
+    let x = 14;
+    let y = 59;
+    for (const [label, value] of info) {
+      doc.setTextColor(150, 150, 150);
+      doc.text(`${label}:`, x, y);
+      doc.setTextColor(220, 220, 220);
+      doc.text(value, x + 28, y);
+      x += 65;
+      if (x > 150) { x = 14; y += 6; }
+    }
+
+    // Tabela de histórico
+    const rows = historico.map((h) => [
+      new Date(h.created_at).toLocaleString("pt-BR", {
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      }),
+      h.tipo_label,
+      h.canal === "whatsapp" ? "WhatsApp" : h.canal === "copiado" ? "Copiado" : h.canal,
+      h.mensagem.length > 120 ? h.mensagem.slice(0, 117) + "..." : h.mensagem,
+    ]);
+
+    autoTable(doc, {
+      startY: 82,
+      head: [["Data/Hora", "Tipo de Comunicado", "Canal", "Mensagem"]],
+      body: rows.length > 0 ? rows : [["—", "Nenhum comunicado registrado", "—", "—"]],
+      headStyles: {
+        fillColor: [245, 110, 15],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 8,
+      },
+      bodyStyles: {
+        fontSize: 7.5,
+        textColor: [60, 60, 60],
+        fillColor: [255, 255, 255],
+      },
+      alternateRowStyles: { fillColor: [248, 248, 248] },
+      columnStyles: {
+        0: { cellWidth: 32 },
+        1: { cellWidth: 42 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: "auto" },
+      },
+      margin: { left: 14, right: 14 },
+      styles: { overflow: "linebreak", lineColor: [220, 220, 220], lineWidth: 0.1 },
+    });
+
+    // Footer
+    const pageCount = (doc as unknown as { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(160, 160, 160);
+      doc.text(
+        `HubWorkz Saude — Relatorio Confidencial — Pagina ${i} de ${pageCount}`,
+        largura / 2, 290, { align: "center" },
+      );
+    }
+
+    const nome = histPaciente.nome.replace(/\s+/g, "_").toLowerCase();
+    doc.save(`historico_atendimento_${nome}_${new Date().toISOString().slice(0, 10)}.pdf`);
+  }
 
   const { data: pacientes, isLoading } = useListPacientes({ search: search || undefined });
   const createPaciente = useCreatePaciente();
@@ -307,7 +440,7 @@ export default function Pacientes() {
           <span className="w-40">Convênio</span>
           <span className="w-24 text-center">CID</span>
           <span className="w-24 text-center">Mandato</span>
-          <span className="w-20 text-center">Ações</span>
+          <span className="w-28 text-center">Ações</span>
         </div>
 
         {isLoading ? (
@@ -348,7 +481,14 @@ export default function Pacientes() {
                   {p.mandato_ativo ? "Ativo" : "Pendente"}
                 </Badge>
               </div>
-              <div className="w-20 flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="w-28 flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => void abrirHistorico(p)}
+                  className="h-7 w-7 rounded-lg bg-[#A5FFD6]/10 hover:bg-[#A5FFD6]/20 flex items-center justify-center transition-colors"
+                  title="Histórico de atendimento"
+                >
+                  <History className="h-3.5 w-3.5 text-[#A5FFD6]" />
+                </button>
                 <button
                   onClick={() => openEdit(p)}
                   className="h-7 w-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
@@ -431,6 +571,106 @@ export default function Pacientes() {
               <p className="text-green-400 text-xs flex items-center gap-1.5">
                 <FileCheck className="h-3 w-3" /> Mandato ativo
               </p>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Sheet — Histórico de atendimentos */}
+      <Sheet open={!!histPaciente} onOpenChange={(o) => { if (!o) { setHistPaciente(null); setHistorico([]); } }}>
+        <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[520px] sm:max-w-[520px] flex flex-col overflow-hidden">
+          <SheetHeader className="mb-4 shrink-0">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <SheetTitle className="text-white">Historico de Atendimento</SheetTitle>
+                {histPaciente && (
+                  <p className="text-white/50 text-sm mt-0.5">{histPaciente.nome}</p>
+                )}
+              </div>
+              <Button
+                onClick={gerarPdfHistorico}
+                disabled={!histPaciente}
+                className="bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white gap-2 shrink-0"
+                size="sm"
+              >
+                <Download className="h-4 w-4" />
+                Exportar PDF
+              </Button>
+            </div>
+          </SheetHeader>
+
+          {/* Dados do paciente */}
+          {histPaciente && (
+            <div className="bg-[#0F0F12] rounded-xl border border-white/5 px-4 py-3 mb-4 shrink-0">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
+                {[
+                  ["Convenio", histPaciente.convenio ?? "—"],
+                  ["CID", histPaciente.cid ?? "—"],
+                  ["Diagnostico", histPaciente.diagnostico ?? "—"],
+                  ["Telefone", histPaciente.telefone ?? "—"],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex gap-1.5">
+                    <span className="text-white/30">{label}:</span>
+                    <span className="text-white/60 truncate">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Lista de histórico */}
+          <div className="flex-1 overflow-y-auto">
+            {loadingHist ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 bg-white/5 rounded-xl" />)}
+              </div>
+            ) : historico.length === 0 ? (
+              <div className="py-20 text-center">
+                <MessageSquare className="h-10 w-10 text-white/10 mx-auto mb-3" />
+                <p className="text-white/25 text-sm">Nenhum comunicado registrado para este paciente</p>
+                <p className="text-white/15 text-xs mt-1">Os envios feitos na tela de Comunicacao aparecerao aqui</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {historico.map((h, idx) => (
+                  <div
+                    key={h.id}
+                    className="bg-[#0F0F12] rounded-xl border border-white/5 p-4 relative"
+                  >
+                    {/* Timeline dot */}
+                    {idx < historico.length - 1 && (
+                      <div className="absolute left-[19px] top-full h-3 w-0.5 bg-white/5" />
+                    )}
+                    <div className="flex items-start gap-3">
+                      <div className="h-6 w-6 rounded-full bg-[#A5FFD6]/15 border border-[#A5FFD6]/20 flex items-center justify-center shrink-0 mt-0.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-[#A5FFD6]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <p className="text-white/80 text-sm font-medium">{h.tipo_label}</p>
+                          <Badge className={h.canal === "whatsapp"
+                            ? "bg-green-500/15 text-green-400 border-green-500/20 text-[10px] px-1.5 py-0 border"
+                            : "bg-blue-500/15 text-blue-400 border-blue-500/20 text-[10px] px-1.5 py-0 border"
+                          }>
+                            {h.canal === "whatsapp" ? "WhatsApp" : "Copiado"}
+                          </Badge>
+                        </div>
+                        <p className="text-white/25 text-[10px] mb-2">
+                          {new Date(h.created_at).toLocaleString("pt-BR", {
+                            weekday: "short", day: "2-digit", month: "short",
+                            year: "numeric", hour: "2-digit", minute: "2-digit",
+                          })}
+                        </p>
+                        <div className="bg-[#1B1B1E] rounded-lg border border-white/5 p-2.5">
+                          <pre className="text-white/40 text-[10px] whitespace-pre-wrap font-sans leading-relaxed max-h-24 overflow-hidden">
+                            {h.mensagem}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </SheetContent>
