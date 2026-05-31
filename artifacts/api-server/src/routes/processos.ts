@@ -147,8 +147,15 @@ router.delete("/processos/:id", async (req, res): Promise<void> => {
     if (error) throw error;
     res.status(204).send();
   } catch (err) {
+    const pgErr = err as { code?: string };
+    if (pgErr?.code === "23503") {
+      res.status(409).json({
+        error: "Este processo possui registros vinculados (cotações, glosas ou faturas) e não pode ser excluído. Remova os registros relacionados antes.",
+      });
+      return;
+    }
     req.log.error({ err }, "Failed to delete processo");
-    res.status(500).json({ error: "Failed to delete processo" });
+    res.status(500).json({ error: "Erro ao excluir processo." });
   }
 });
 

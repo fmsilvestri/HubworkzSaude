@@ -360,7 +360,10 @@ export default function Processos() {
         invalidate();
         setDeleteItem(null);
       },
-      onError: () => toast({ title: "Erro ao excluir processo.", variant: "destructive" }),
+      onError: (err) => {
+        const msg = (err as { data?: { error?: string } })?.data?.error;
+        toast({ title: msg ?? "Erro ao excluir processo.", variant: "destructive" });
+      },
     });
   }
 
