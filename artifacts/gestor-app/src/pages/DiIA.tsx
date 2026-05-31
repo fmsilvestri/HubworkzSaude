@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useGetAiHistory, useSendAiMessage } from "@workspace/api-client-react";
-import { Send, Sparkles, Loader2 } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 
 export default function DiIA() {
   const [input, setInput] = useState("");
@@ -74,18 +74,24 @@ export default function DiIA() {
         className="flex items-center gap-3 px-4 pt-12 pb-4 shrink-0"
         style={{ borderBottom: "1px solid var(--t-border)", background: "var(--t-bg)" }}
       >
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-          style={{ background: "var(--t-mint-bg)" }}
-        >
-          <Sparkles size={17} style={{ color: "#A5FFD6" }} />
+        <div className="relative shrink-0">
+          <img
+            src="/di-avatar.png"
+            alt="Di"
+            className="w-11 h-11 rounded-xl object-cover object-top"
+            style={{ border: "1.5px solid rgba(165,255,214,0.35)", boxShadow: "0 4px 14px rgba(60,52,137,0.45)" }}
+          />
+          <span
+            className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full animate-pulse"
+            style={{ background: "#A5FFD6", border: "2px solid var(--t-bg)" }}
+          />
         </div>
         <div>
           <p className="text-sm font-bold" style={{ color: "#A5FFD6" }}>
             Di IA
           </p>
           <p className="text-[11px]" style={{ color: "var(--t-text-5)" }}>
-            Assistente farmacêutico oncológico
+            Assistente farmaceutica oncologica
           </p>
         </div>
       </div>
@@ -98,17 +104,26 @@ export default function DiIA() {
           </div>
         ) : localMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-              style={{ background: "var(--t-mint-bg)" }}
-            >
-              <Sparkles size={26} style={{ color: "#A5FFD6" }} />
+            <div className="relative mb-5">
+              <img
+                src="/di-avatar.png"
+                alt="Di"
+                className="w-28 h-28 rounded-3xl object-cover object-top"
+                style={{
+                  border: "2px solid rgba(165,255,214,0.35)",
+                  boxShadow: "0 8px 32px rgba(60,52,137,0.55)",
+                }}
+              />
+              <span
+                className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full animate-pulse"
+                style={{ background: "#A5FFD6", border: "2px solid var(--t-bg)" }}
+              />
             </div>
             <p className="text-sm font-semibold mb-1" style={{ color: "#A5FFD6" }}>
-              Olá! Sou a Di IA
+              Ola! Sou a Di IA
             </p>
             <p className="text-xs max-w-[260px]" style={{ color: "var(--t-text-5)" }}>
-              Sua assistente especializada em intermediação farmacêutica oncológica. Como posso ajudar?
+              Sua assistente especializada em intermediacao farmaceutica oncologica. Como posso ajudar?
             </p>
           </div>
         ) : (
@@ -121,12 +136,15 @@ export default function DiIA() {
               ) : (
                 <div key={m.id} className="flex justify-start">
                   <div className="flex gap-2 items-end">
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mb-0.5"
-                      style={{ background: "var(--t-mint-bg)" }}
-                    >
-                      <Sparkles size={12} style={{ color: "#A5FFD6" }} />
-                    </div>
+                    <img
+                      src="/di-avatar.png"
+                      alt="Di"
+                      className="w-7 h-7 rounded-lg object-cover object-top shrink-0 mb-0.5"
+                      style={{
+                        border: "1px solid rgba(165,255,214,0.25)",
+                        boxShadow: "0 2px 8px rgba(60,52,137,0.4)",
+                      }}
+                    />
                     <div className="chat-bubble-ai">{m.content}</div>
                   </div>
                 </div>
@@ -135,12 +153,15 @@ export default function DiIA() {
             {sendMessage.isPending && (
               <div className="flex justify-start">
                 <div className="flex gap-2 items-end">
-                  <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mb-0.5"
-                    style={{ background: "var(--t-mint-bg)" }}
-                  >
-                    <Sparkles size={12} style={{ color: "#A5FFD6" }} />
-                  </div>
+                  <img
+                    src="/di-avatar.png"
+                    alt="Di"
+                    className="w-7 h-7 rounded-lg object-cover object-top shrink-0 mb-0.5"
+                    style={{
+                      border: "1px solid rgba(165,255,214,0.25)",
+                      boxShadow: "0 2px 8px rgba(60,52,137,0.4)",
+                    }}
+                  />
                   <div className="chat-bubble-ai flex items-center gap-1.5" style={{ paddingTop: 12, paddingBottom: 12 }}>
                     <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "#A5FFD6", animationDelay: "0ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "#A5FFD6", animationDelay: "150ms" }} />
