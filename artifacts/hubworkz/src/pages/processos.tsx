@@ -40,16 +40,47 @@ import { cn } from "@/lib/utils";
 const FIELD = "bg-[#0F0F12] border-white/10 text-white placeholder:text-white/30";
 
 const STATUS_COLORS: Record<string, string> = {
-  solicitado:    "bg-purple-500/15 text-purple-400 border-purple-500/20",
-  cotacao:       "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
-  aprovado:      "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
-  em_andamento:  "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  ativo:         "bg-green-500/15 text-green-400 border-green-500/20",
-  pendente:      "bg-orange-500/15 text-orange-400 border-orange-500/20",
-  concluido:     "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-  cancelado:     "bg-red-500/15 text-red-400 border-red-500/20",
-  importado:     "bg-gray-500/15 text-gray-400 border-gray-500/20",
+  solicitado:    "bg-purple-500/20 text-purple-300 border-purple-500/40",
+  cotacao:       "bg-yellow-500/20 text-yellow-300 border-yellow-500/40",
+  aprovado:      "bg-cyan-500/20 text-cyan-300 border-cyan-500/40",
+  em_andamento:  "bg-blue-500/20 text-blue-300 border-blue-500/40",
+  ativo:         "bg-green-500/20 text-green-300 border-green-500/40",
+  pendente:      "bg-orange-500/20 text-orange-300 border-orange-500/40",
+  concluido:     "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+  cancelado:     "bg-red-500/20 text-red-300 border-red-500/40",
+  importado:     "bg-gray-500/20 text-gray-300 border-gray-500/40",
 };
+
+const STATUS_ACCENT: Record<string, string> = {
+  solicitado:   "bg-purple-500",
+  cotacao:      "bg-yellow-500",
+  aprovado:     "bg-cyan-500",
+  em_andamento: "bg-blue-500",
+  ativo:        "bg-green-500",
+  pendente:     "bg-orange-500",
+  concluido:    "bg-emerald-500",
+  cancelado:    "bg-red-500",
+  importado:    "bg-gray-500",
+};
+
+const STATUS_GLOW: Record<string, string> = {
+  solicitado:   "shadow-[0_2px_16px_rgba(168,85,247,0.18)]",
+  cotacao:      "shadow-[0_2px_16px_rgba(234,179,8,0.18)]",
+  aprovado:     "shadow-[0_2px_16px_rgba(34,211,238,0.18)]",
+  em_andamento: "shadow-[0_2px_16px_rgba(59,130,246,0.18)]",
+  ativo:        "shadow-[0_2px_16px_rgba(34,197,94,0.18)]",
+  pendente:     "shadow-[0_2px_16px_rgba(249,115,22,0.18)]",
+  concluido:    "shadow-[0_2px_16px_rgba(52,211,153,0.18)]",
+  cancelado:    "shadow-[0_2px_16px_rgba(239,68,68,0.18)]",
+  importado:    "shadow-[0_2px_16px_rgba(156,163,175,0.18)]",
+};
+
+const FASE_COLORS = [
+  { ring: "#F56E0F", glow: "rgba(245,110,15,0.55)", done: "#F56E0F", text: "#fff" },
+  { ring: "#3B82F6", glow: "rgba(59,130,246,0.55)", done: "#3B82F6", text: "#fff" },
+  { ring: "#A855F7", glow: "rgba(168,85,247,0.55)", done: "#A855F7", text: "#fff" },
+  { ring: "#10B981", glow: "rgba(16,185,129,0.55)", done: "#10B981", text: "#fff" },
+];
 
 const FASES = [
   { n: 1, label: "Solicitação e Cotação" },
@@ -58,24 +89,72 @@ const FASES = [
   { n: 4, label: "Faturamento" },
 ];
 
+function InitialsAvatar({ name, color }: { name: string; color: string }) {
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
+  return (
+    <div
+      className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+      style={{ background: color, boxShadow: `0 2px 10px ${color}66` }}
+    >
+      {initials || "?"}
+    </div>
+  );
+}
+
+const AVATAR_COLORS = [
+  "#F56E0F", "#3B82F6", "#A855F7", "#10B981", "#EC4899", "#14B8A6", "#F59E0B", "#6366F1",
+];
+
+function nameColor(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
 function FaseStepper({ atual }: { atual: number }) {
   return (
-    <div className="flex items-center gap-1">
-      {FASES.map((f, i) => (
-        <div key={f.n} className="flex items-center">
-          <div className={cn(
-            "h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold",
-            f.n < atual ? "bg-[#F56E0F] text-white" :
-            f.n === atual ? "bg-[#F56E0F]/30 text-[#F56E0F] border border-[#F56E0F]" :
-            "bg-white/10 text-white/30"
-          )}>
-            {f.n < atual ? <CheckCircle2 className="h-3.5 w-3.5" /> : f.n}
+    <div className="flex items-center gap-0.5">
+      {FASES.map((f, i) => {
+        const fc = FASE_COLORS[i];
+        const done = f.n < atual;
+        const active = f.n === atual;
+        return (
+          <div key={f.n} className="flex items-center">
+            <div
+              className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200"
+              style={
+                done
+                  ? { background: fc.done, boxShadow: `0 0 10px ${fc.glow}`, color: fc.text }
+                  : active
+                  ? {
+                      background: `${fc.done}22`,
+                      border: `2px solid ${fc.done}`,
+                      boxShadow: `0 0 12px ${fc.glow}, inset 0 0 8px ${fc.done}22`,
+                      color: fc.done,
+                    }
+                  : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.25)" }
+              }
+            >
+              {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : f.n}
+            </div>
+            {i < FASES.length - 1 && (
+              <div
+                className="h-px w-3"
+                style={{
+                  background: done
+                    ? `linear-gradient(90deg, ${fc.done}, ${FASE_COLORS[i + 1].done}44)`
+                    : "rgba(255,255,255,0.08)",
+                }}
+              />
+            )}
           </div>
-          {i < FASES.length - 1 && (
-            <div className={cn("h-px w-4", f.n < atual ? "bg-[#F56E0F]" : "bg-white/10")} />
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -389,12 +468,23 @@ export default function Processos() {
           <p className="text-white/50 text-sm mt-1">Gerencie o fluxo completo de 4 fases</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {(faseStats ?? []).map((f) => (
-            <div key={f.fase} className="bg-[#1B1B1E] border border-white/10 rounded-xl px-4 py-2 text-center">
-              <p className="text-white font-bold text-sm">{f.count}</p>
-              <p className="text-white/40 text-xs">{f.fase}</p>
-            </div>
-          ))}
+          {(faseStats ?? []).map((f, i) => {
+            const fc = FASE_COLORS[i] ?? FASE_COLORS[0];
+            return (
+              <div
+                key={f.fase}
+                className="border rounded-xl px-4 py-2.5 text-center min-w-[68px]"
+                style={{
+                  background: `linear-gradient(135deg, ${fc.done}18, ${fc.done}08)`,
+                  borderColor: `${fc.done}40`,
+                  boxShadow: `0 4px 20px ${fc.glow.replace("0.55","0.14")}`,
+                }}
+              >
+                <p className="font-bold text-base" style={{ color: fc.done }}>{f.count}</p>
+                <p className="text-white/50 text-xs">{f.fase}</p>
+              </div>
+            );
+          })}
           <Sheet open={openNew} onOpenChange={setOpenNew}>
             <SheetTrigger asChild>
               <Button
@@ -469,85 +559,131 @@ export default function Processos() {
         </Select>
       </div>
 
-      {/* Tabela */}
-      <div className="bg-[#1B1B1E] border border-white/10 rounded-[14px] overflow-hidden">
-        <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto_auto] text-xs text-white/40 uppercase tracking-wider px-5 py-3 border-b border-white/5">
+      {/* Lista de processos */}
+      <div className="space-y-2">
+        {/* Header da lista */}
+        <div className="grid grid-cols-[1fr_180px_160px_170px_130px_90px_80px] text-[11px] text-white/30 uppercase tracking-widest px-5 py-2">
           <span>Processo</span>
-          <span className="w-40">Paciente</span>
-          <span className="w-36">Medicamento</span>
-          <span className="w-32 text-center">Fase</span>
-          <span className="w-28 text-center">Status</span>
-          <span className="w-28 text-center">Criado em</span>
-          <span className="w-20 text-center">Ações</span>
+          <span>Paciente</span>
+          <span>Medicamento</span>
+          <span className="text-center">Fase</span>
+          <span className="text-center">Status</span>
+          <span className="text-center">Criado em</span>
+          <span className="text-center">Ações</span>
         </div>
+
         {isLoading ? (
-          <div className="p-4 space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-14 bg-white/5" />)}
+          <div className="space-y-2">
+            {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-[72px] bg-white/5 rounded-2xl" />)}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center">
+          <div className="py-16 text-center bg-[#1B1B1E] border border-white/5 rounded-2xl">
             <FileText className="h-10 w-10 text-white/20 mx-auto mb-3" />
             <p className="text-white/30">
               {search ? "Nenhum processo encontrado" : "Nenhum processo cadastrado"}
             </p>
           </div>
         ) : (
-          filtered.map((p) => (
-            <div
-              key={p.id}
-              data-testid={`row-processo-${p.id}`}
-              className="grid grid-cols-[1fr_auto_auto_auto_auto_auto_auto] items-center px-5 py-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group"
-            >
+          filtered.map((p) => {
+            const accentClass = STATUS_ACCENT[p.status] ?? "bg-white/20";
+            const glowClass   = STATUS_GLOW[p.status]   ?? "";
+            const pacNome     = p.paciente_id ? (pacienteMap[p.paciente_id] ?? null) : null;
+            const medNome     = p.medicamento_id ? (medMap[p.medicamento_id] ?? null) : null;
+            const avatarColor = pacNome ? nameColor(pacNome) : "#555";
+
+            return (
               <div
-                className="cursor-pointer"
-                onClick={() => setSelectedId(p.id)}
+                key={p.id}
+                data-testid={`row-processo-${p.id}`}
+                className={cn(
+                  "relative grid grid-cols-[1fr_180px_160px_170px_130px_90px_80px] items-center",
+                  "bg-[#1B1B1E] border border-white/8 rounded-2xl px-5 py-4",
+                  "hover:-translate-y-px hover:border-white/15 transition-all duration-200 group overflow-hidden",
+                  glowClass,
+                )}
               >
-                <p className="text-white font-medium text-sm">
-                  {p.numero_protocolo ?? `#${p.id.slice(0, 8)}`}
-                </p>
-                <p className="text-white/40 text-xs mt-0.5">
-                  {p.convenio ? `Convênio: ${p.convenio}` : `ID: ${p.id.slice(0, 8)}...`}
-                </p>
+                {/* Accent bar */}
+                <div className={cn("absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full", accentClass)} />
+
+                {/* Processo / protocolo */}
+                <div className="cursor-pointer pl-2" onClick={() => setSelectedId(p.id)}>
+                  <p className="text-white font-semibold text-sm leading-tight">
+                    {p.numero_protocolo ?? `#${p.id.slice(0, 8)}`}
+                  </p>
+                  <p className="text-white/35 text-xs mt-0.5 flex items-center gap-1">
+                    <ChevronRight className="h-3 w-3" />
+                    {p.convenio ? p.convenio : `ID: ${p.id.slice(0, 8)}`}
+                  </p>
+                </div>
+
+                {/* Paciente com avatar */}
+                <div className="flex items-center gap-2">
+                  {pacNome ? (
+                    <>
+                      <InitialsAvatar name={pacNome} color={avatarColor} />
+                      <span className="text-white/80 text-sm leading-tight truncate max-w-[120px]">{pacNome}</span>
+                    </>
+                  ) : (
+                    <span className="text-white/25 text-sm">—</span>
+                  )}
+                </div>
+
+                {/* Medicamento como pílula */}
+                <div>
+                  {medNome ? (
+                    <span
+                      className="inline-block text-xs px-2.5 py-1 rounded-full font-medium truncate max-w-[148px]"
+                      style={{
+                        background: "rgba(163,91,255,0.15)",
+                        color: "#C084FC",
+                        border: "1px solid rgba(163,91,255,0.3)",
+                      }}
+                    >
+                      {medNome}
+                    </span>
+                  ) : (
+                    <span className="text-white/25 text-sm">—</span>
+                  )}
+                </div>
+
+                {/* Fase stepper */}
+                <div className="flex justify-center">
+                  <FaseStepper atual={p.fase_atual} />
+                </div>
+
+                {/* Status badge */}
+                <div className="flex justify-center">
+                  <Badge className={cn("text-xs border font-medium", STATUS_COLORS[p.status] ?? "bg-white/10 text-white/60")}>
+                    <span className={cn("h-1.5 w-1.5 rounded-full mr-1.5 inline-block", STATUS_ACCENT[p.status] ?? "bg-white/40")} />
+                    {p.status.replace("_", " ")}
+                  </Badge>
+                </div>
+
+                {/* Data */}
+                <span className="text-center text-white/35 text-xs">
+                  {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                </span>
+
+                {/* Ações */}
+                <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openEdit(p); }}
+                    className="h-7 w-7 rounded-lg bg-white/5 hover:bg-white/12 flex items-center justify-center transition-colors"
+                    title="Editar"
+                  >
+                    <Pencil className="h-3.5 w-3.5 text-white/50" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDeleteItem(p); }}
+                    className="h-7 w-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-colors"
+                    title="Excluir"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                  </button>
+                </div>
               </div>
-              <div className="w-40">
-                <p className="text-white/70 text-sm">
-                  {p.paciente_id ? (pacienteMap[p.paciente_id] ?? "—") : "—"}
-                </p>
-              </div>
-              <div className="w-36">
-                <p className="text-white/70 text-sm truncate">
-                  {p.medicamento_id ? (medMap[p.medicamento_id] ?? "—") : "—"}
-                </p>
-              </div>
-              <div className="w-32 flex justify-center">
-                <FaseStepper atual={p.fase_atual} />
-              </div>
-              <div className="w-28 flex justify-center">
-                <Badge className={cn("text-xs border", STATUS_COLORS[p.status] ?? "bg-white/10 text-white/60")}>
-                  {p.status}
-                </Badge>
-              </div>
-              <span className="w-28 text-center text-white/40 text-xs">
-                {new Date(p.created_at).toLocaleDateString("pt-BR")}
-              </span>
-              <div className="w-20 flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={(e) => { e.stopPropagation(); openEdit(p); }}
-                  className="h-7 w-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-                  title="Editar"
-                >
-                  <Pencil className="h-3.5 w-3.5 text-white/60" />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setDeleteItem(p); }}
-                  className="h-7 w-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-colors"
-                  title="Excluir"
-                >
-                  <Trash2 className="h-3.5 w-3.5 text-red-400" />
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
