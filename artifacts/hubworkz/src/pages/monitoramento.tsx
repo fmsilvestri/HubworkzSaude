@@ -256,9 +256,9 @@ export default function Monitoramento() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Monitoramento D30</h1>
+          <h1 className="text-2xl font-bold text-white">Acompanhamento Pacientes</h1>
           <p className="text-white/50 text-sm mt-1">
-            Acompanhamento mensal de pacientes via contato clínico
+            Monitoramento D30 — contato clínico mensal
           </p>
         </div>
         <div className="flex items-center gap-3">

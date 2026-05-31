@@ -94,7 +94,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/monitoramento",
-    label: "Monitoramento",
+    label: "Acompanhamento Pacientes",
     icon: CalendarDays,
     gradient: "linear-gradient(135deg, #0ea5e9 0%, #0879b7 100%)",
     glow: "rgba(14,165,233,0.45)",
