@@ -234,7 +234,11 @@ export default function Pacientes() {
         invalidate();
         setDeleteItem(null);
       },
-      onError: () => toast({ title: "Erro ao excluir paciente.", variant: "destructive" }),
+      onError: (err) => {
+        const apiData = (err as { data?: { error?: string } })?.data;
+        const msg = apiData?.error ?? "Erro ao excluir paciente.";
+        toast({ title: msg, variant: "destructive" });
+      },
     });
   }
 

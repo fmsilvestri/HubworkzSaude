@@ -100,6 +100,13 @@ router.delete("/pacientes/:id", async (req, res): Promise<void> => {
     if (error) throw error;
     res.status(204).send();
   } catch (err) {
+    const pgErr = err as { code?: string };
+    if (pgErr?.code === "23503") {
+      res.status(409).json({
+        error: "Paciente possui registros vinculados (notas fiscais, processos ou cotações) e não pode ser excluído.",
+      });
+      return;
+    }
     req.log.error({ err }, "Failed to delete paciente");
     res.status(500).json({ error: "Failed to delete paciente" });
   }
