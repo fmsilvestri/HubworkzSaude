@@ -20,9 +20,9 @@ router.get("/elo-saude", async (req, res): Promise<void> => {
     if (error) throw error;
     res.json(data);
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("PGRST")) {
-      res.status(503).json({ error: "TABLE_NOT_FOUND", message: msg });
+    const pgErr = err as { code?: string; message?: string };
+    if (pgErr?.code === "PGRST205" || pgErr?.message?.includes("schema cache")) {
+      res.status(503).json({ error: "TABLE_NOT_FOUND", message: pgErr?.message ?? "" });
       return;
     }
     req.log.error({ err }, "Failed to list elo-saude");
@@ -58,6 +58,11 @@ router.post("/elo-saude/bulk", async (req, res): Promise<void> => {
     }
     res.status(201).json({ inserted });
   } catch (err) {
+    const pgErr = err as { code?: string; message?: string };
+    if (pgErr?.code === "PGRST205" || pgErr?.message?.includes("schema cache")) {
+      res.status(503).json({ error: "TABLE_NOT_FOUND", message: "A tabela não existe. Crie-a no Supabase SQL Editor antes de importar." });
+      return;
+    }
     req.log.error({ err }, "Failed to bulk-import elo-saude");
     res.status(500).json({ error: "Falha na importação em massa" });
   }

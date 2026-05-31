@@ -227,19 +227,61 @@ export default function EloSaude() {
   const deleteItemMutation = useDeleteEloSaude();
   const createItem = useCreateEloSaude();
 
-  const tableNotFound = (error as { message?: string } | null)?.message?.includes("TABLE_NOT_FOUND")
-    || (items === undefined && error !== null && String(error).includes("503"));
+  const tableNotFound =
+    (error as { status?: number } | null)?.status === 503 ||
+    (error as { message?: string } | null)?.message?.includes("TABLE_NOT_FOUND") ||
+    (items === undefined && error !== null && String(error).includes("503"));
 
   const allItems = items ?? [];
 
+  // Preview items built from local JSON when the DB table doesn't exist yet
+  const previewAllItems = useMemo((): EloSaudeItem[] => {
+    if (!tableNotFound) return [];
+    return (seedData as Record<string, string>[]).map((row, i) => ({
+      id: `preview-${i}`,
+      descricao: row.descricao ?? "",
+      principio_ativo: row.principio_ativo ?? "",
+      conservacao: row.conservacao ?? "AMBIENTE",
+      laboratorio: row.laboratorio ?? "",
+      codigo_tuss: row.codigo_tuss ?? "",
+      ean: row.ean ?? "",
+      valor_contrato: row.valor_contrato ?? "",
+      marca_lab: row.marca_lab ?? "",
+      valor: row.valor ?? "",
+      created_at: "",
+    }));
+  }, [tableNotFound]);
+
+  const previewFiltered = useMemo((): EloSaudeItem[] => {
+    let result = previewAllItems;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter((i) =>
+        i.descricao?.toLowerCase().includes(q) ||
+        i.principio_ativo?.toLowerCase().includes(q) ||
+        i.laboratorio?.toLowerCase().includes(q) ||
+        i.codigo_tuss?.toLowerCase().includes(q) ||
+        i.ean?.toLowerCase().includes(q)
+      );
+    }
+    if (conservFiltro !== "__all__") result = result.filter((i) => i.conservacao === conservFiltro);
+    if (labFiltro !== "__all__") result = result.filter((i) => i.laboratorio === labFiltro);
+    return result;
+  }, [previewAllItems, search, conservFiltro, labFiltro]);
+
+  // Source items for stats and lab list (unfiltered)
+  const sourceItems = tableNotFound ? previewAllItems : allItems;
+  // Display items (filtered in preview mode, server-filtered otherwise)
+  const displayItems = tableNotFound ? previewFiltered : allItems;
+
   const labs = useMemo(
-    () => Array.from(new Set(allItems.map((d) => d.laboratorio ?? "").filter(Boolean))).sort(),
-    [allItems],
+    () => Array.from(new Set(sourceItems.map((d) => d.laboratorio ?? "").filter(Boolean))).sort(),
+    [sourceItems],
   );
 
-  const totalRefrigerado = allItems.filter((d) => d.conservacao === "REFRIGERADO").length;
-  const totalAmbiente = allItems.filter((d) => d.conservacao === "AMBIENTE").length;
-  const comValorUsd = allItems.filter((d) => (d.valor ?? "").includes("USD")).length;
+  const totalRefrigerado = sourceItems.filter((d) => d.conservacao === "REFRIGERADO").length;
+  const totalAmbiente = sourceItems.filter((d) => d.conservacao === "AMBIENTE").length;
+  const comValorUsd = sourceItems.filter((d) => (d.valor ?? "").includes("USD")).length;
 
   async function bulkImport(rows: Record<string, string>[]) {
     setSeeding(true);
@@ -327,89 +369,6 @@ export default function EloSaude() {
     );
   }
 
-  if (tableNotFound) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Elo Saude Importados</h1>
-          <p className="text-white/50 text-sm mt-1">Tabela de medicamentos importados — contrato Elo Saude</p>
-        </div>
-        <div className="bg-[#1B1B1E] border border-yellow-500/20 rounded-[14px] p-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-yellow-500/15 flex items-center justify-center">
-              <Database className="h-5 w-5 text-yellow-400" />
-            </div>
-            <div>
-              <p className="text-white font-semibold">Configuração necessária</p>
-              <p className="text-white/40 text-xs">A tabela ainda não existe no Supabase. Execute o SQL abaixo no SQL Editor do seu projeto.</p>
-            </div>
-          </div>
-          <div className="bg-[#0F0F12] rounded-xl border border-white/5 p-4 relative">
-            <pre className="text-white/70 text-xs leading-relaxed whitespace-pre-wrap font-mono overflow-x-auto">
-              {SETUP_SQL}
-            </pre>
-            <button
-              onClick={() => { navigator.clipboard.writeText(SETUP_SQL); toast({ title: "SQL copiado!" }); }}
-              className="absolute top-3 right-3 text-white/30 hover:text-white/70 transition-colors"
-            >
-              <Copy className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="flex items-center gap-3 pt-1 flex-wrap">
-            <a
-              href="https://supabase.com/dashboard/project/witvffhvmohpyewzkbgt/sql/new"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white text-sm px-4 py-2 rounded-xl transition-colors"
-            >
-              Abrir SQL Editor do Supabase
-            </a>
-            <button
-              onClick={invalidate}
-              className="text-white/40 hover:text-white text-sm transition-colors"
-            >
-              Verificar novamente
-            </button>
-          </div>
-          <div className="border-t border-white/5 pt-4 mt-2">
-            <p className="text-white/40 text-xs mb-3">Após criar a tabela, importe os dados:</p>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => xlsxInputRef.current?.click()}
-                disabled={seeding}
-                variant="outline"
-                className="border-white/10 text-white hover:bg-white/5 gap-2 text-sm"
-              >
-                <Upload className="h-4 w-4" />
-                {seeding ? "Importando..." : "Importar XLSX"}
-              </Button>
-              <Button
-                onClick={handleSeed}
-                disabled={seeding}
-                variant="outline"
-                className="border-white/10 text-white hover:bg-white/5 gap-2 text-sm"
-              >
-                <PackageSearch className="h-4 w-4" />
-                {seeding ? "Importando..." : "Importar 153 itens (planilha salva)"}
-              </Button>
-            </div>
-          </div>
-          <input
-            ref={xlsxInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleXlsxUpload(f);
-              e.target.value = "";
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -417,7 +376,7 @@ export default function EloSaude() {
           <h1 className="text-2xl font-bold text-white">Elo Saude Importados</h1>
           <p className="text-white/50 text-sm mt-1">
             Tabela de medicamentos importados — contrato Elo Saude
-            {allItems.length > 0 && ` (${allItems.length} itens)`}
+            {sourceItems.length > 0 && ` (${sourceItems.length} itens${tableNotFound ? " — pré-visualização" : ""})`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -468,11 +427,63 @@ export default function EloSaude() {
         />
       </div>
 
+      {/* Setup banner — shown when DB table doesn't exist yet */}
+      {tableNotFound && (
+        <div className="bg-[#1B1B1E] border border-yellow-500/20 rounded-[14px] p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="h-8 w-8 rounded-lg bg-yellow-500/15 flex items-center justify-center shrink-0 mt-0.5">
+              <Database className="h-4 w-4 text-yellow-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-semibold text-sm">Tabela nao existe no Supabase — dados em pré-visualização</p>
+              <p className="text-white/40 text-xs mt-0.5">Execute o SQL abaixo no SQL Editor, depois importe os dados. A busca e filtros funcionam normalmente enquanto isso.</p>
+            </div>
+          </div>
+          <div className="bg-[#0F0F12] rounded-xl border border-white/5 p-3 relative">
+            <pre className="text-white/60 text-[11px] leading-relaxed whitespace-pre-wrap font-mono overflow-x-auto pr-8">
+              {SETUP_SQL}
+            </pre>
+            <button
+              onClick={() => { navigator.clipboard.writeText(SETUP_SQL); toast({ title: "SQL copiado!" }); }}
+              className="absolute top-2 right-2 text-white/30 hover:text-white/70 transition-colors"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <a
+              href="https://supabase.com/dashboard/project/witvffhvmohpyewzkbgt/sql/new"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white text-xs px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Abrir SQL Editor do Supabase
+            </a>
+            <Button
+              onClick={handleSeed}
+              disabled={seeding}
+              size="sm"
+              variant="outline"
+              className="border-white/10 text-white hover:bg-white/5 gap-1.5 text-xs h-7"
+            >
+              <PackageSearch className="h-3 w-3" />
+              {seeding ? "Importando..." : "Importar 153 itens após criar tabela"}
+            </Button>
+            <button
+              onClick={invalidate}
+              className="text-white/30 hover:text-white text-xs transition-colors"
+            >
+              Verificar novamente
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
-      {allItems.length > 0 && (
+      {sourceItems.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: "Total de Itens", value: allItems.length, color: "text-white" },
+            { label: "Total de Itens", value: sourceItems.length, color: "text-white" },
             { label: "Temperatura Ambiente", value: totalAmbiente, color: "text-blue-400" },
             { label: "Refrigerados", value: totalRefrigerado, color: "text-cyan-400" },
             { label: "Com Valor USD", value: comValorUsd, color: "text-[#F56E0F]" },
@@ -533,15 +544,15 @@ export default function EloSaude() {
           <span className="w-16" />
         </div>
 
-        {isLoading ? (
+        {isLoading && !tableNotFound ? (
           <div className="p-4 space-y-2">
             {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12 bg-white/5" />)}
           </div>
-        ) : allItems.length === 0 ? (
+        ) : displayItems.length === 0 ? (
           <div className="py-16 text-center">
             <PackageSearch className="h-10 w-10 text-white/20 mx-auto mb-3" />
             <p className="text-white/30">Nenhum item encontrado</p>
-            {!search && labFiltro === "__all__" && conservFiltro === "__all__" && (
+            {!search && labFiltro === "__all__" && conservFiltro === "__all__" && !tableNotFound && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -555,7 +566,7 @@ export default function EloSaude() {
           </div>
         ) : (
           <div className="divide-y divide-white/5">
-            {allItems.map((item) => (
+            {displayItems.map((item) => (
               <div
                 key={item.id}
                 className="grid grid-cols-[2fr_1.5fr_auto_1fr_auto_auto_1fr_1fr_auto] gap-0 items-start px-4 py-3 hover:bg-white/5 transition-colors group"
@@ -597,20 +608,23 @@ export default function EloSaude() {
                   )}
                 </div>
                 {/* Ações */}
-                <div className="w-16 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => setEditItem(item)}
-                    className="text-white/40 hover:text-white transition-colors p-1 rounded"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteItem(item)}
-                    className="text-red-400/50 hover:text-red-400 transition-colors p-1 rounded"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                {!tableNotFound && (
+                  <div className="w-16 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => setEditItem(item)}
+                      className="text-white/40 hover:text-white transition-colors p-1 rounded"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteItem(item)}
+                      className="text-red-400/50 hover:text-red-400 transition-colors p-1 rounded"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+                {tableNotFound && <div className="w-16" />}
               </div>
             ))}
           </div>
