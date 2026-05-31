@@ -7,6 +7,8 @@ export default function DiIA() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const WELCOME_MSG = "Olá, tudo bem? Sou a Di e estou aqui para auxiliar na gestão e soluções para a clínica. Como posso ajudar hoje?";
+
   const { data: history, isLoading: historyLoading, refetch } = useGetAiHistory({ limit: 40 });
   const sendMessage = useSendAiMessage();
 
@@ -16,13 +18,16 @@ export default function DiIA() {
 
   useEffect(() => {
     if (history) {
+      const loaded = history.map((m) => ({
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        content: m.content,
+        created_at: m.created_at,
+      }));
       setLocalMessages(
-        history.map((m) => ({
-          id: m.id,
-          role: m.role as "user" | "assistant",
-          content: m.content,
-          created_at: m.created_at,
-        }))
+        loaded.length > 0
+          ? loaded
+          : [{ id: "welcome", role: "assistant", content: WELCOME_MSG, created_at: new Date().toISOString() }]
       );
     }
   }, [history]);

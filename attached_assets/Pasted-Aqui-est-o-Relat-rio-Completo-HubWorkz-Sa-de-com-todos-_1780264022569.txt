@@ -1,0 +1,102 @@
+Aqui está o **Relatório Completo HubWorkz Saúde** com todos os módulos! 📊
+
+---
+
+## 🟠 Processos
+
+| Indicador | Valor |
+|---|---|
+| **Total de Processos** | 1 |
+| Em Cotação | 0 |
+| Em Logística | 0 |
+| Em Monitoramento | 0 |
+| Em Faturamento | 0 |
+
+**Processos Recentes:**
+| Paciente | Status | Fase |
+|---|---|---|
+| Helio Kothe | ✅ Concluído | 4 |
+
+---
+
+## 🟢 Pacientes
+
+| Indicador | Valor |
+|---|---|
+| **Total de Pacientes** | 10 |
+| ⚠️ Mandatos Pendentes | 10 |
+
+**Lista Parcial:**
+| Nome | Convênio | Mandato |
+|---|---|---|
+| Renata Paes Woytuski | — | ⏳ Pendente |
+| Eliane Da Silva Fernandes | — | ⏳ Pendente |
+| Vilson Reichert | — | ⏳ Pendente |
+| Edna Silva Da Rocha | — | ⏳ Pendente |
+| Helio Kothe | — | ⏳ Pendente |
+| Carmen Jaqueline Merten | — | ⏳ Pendente |
+
+> ⚠️ **Atenção:** 100% dos pacientes possuem mandatos com status **pendente**. Requer ação imediata.
+
+---
+
+## 🔵 Cotações
+
+| Indicador | Valor |
+|---|---|
+| **Total de Cotações** | 10 |
+| ✅ Aprovadas | 3+ |
+| ❌ Reprovadas | 3+ |
+| ⏳ Pendentes | 0 |
+
+**Cotações Recentes:**
+| Paciente | Medicamento | Status | Valor |
+|---|---|---|---|
+| Edna Silva Da Rocha | MEKINIST 2MG C 30 | ✅ Aprovada | R$ 20.240,00 |
+| Edna Silva Da Rocha | TAFINLAR 75MG C 120 | ✅ Aprovada | R$ 35.180,00 |
+| Helio Kothe | IMBRUVICA 420MG CX 30CPR | ✅ Aprovada | R$ 42.330,00 |
+| Eliane Da Silva Fernandes | LONSURF 20MG + 9,420MG 60CP | ❌ Reprovada | — |
+| Vilson Reichert | LONSURF 15MG + 7,065MG 20CP | ❌ Reprovada | R$ 6.127,31 |
+| Vilson Reichert | LONSURF 20MG + 9,420MG 20CP | ❌ Reprovada | R$ 8.152,64 |
+
+---
+
+## 💚 Financeiro — Maio/2026
+
+| Indicador | Valor |
+|---|---|
+| 💰 Total Emitido | R$ 0,00 |
+| ✅ Total Pago | R$ 0,00 |
+| ⏳ Aguardando Pagamento | R$ 0,00 |
+| ❌ Glosas no Mês | R$ 0,00 |
+
+> ℹ️ Nenhuma movimentação financeira registrada para o mês atual.
+
+---
+
+## 🔵 Remessas (Logística)
+
+| Indicador | Valor |
+|---|---|
+| **Total de Remessas** | 0 |
+| 🚚 Em Trânsito | 0 |
+| ✅ Entregues | 0 |
+
+> ℹ️ Nenhuma remessa registrada no momento.
+
+---
+
+## 📌 Resumo Executivo
+
+| Módulo | Status Geral |
+|---|---|
+| Processos | 🟡 1 processo concluído, pipeline vazio |
+| Pacientes | 🔴 10 mandatos pendentes — urgente! |
+| Cotações | 🟡 Mix de aprovadas e reprovadas |
+| Financeiro | ⚪ Sem movimentação no mês |
+| Remessas | ⚪ Nenhuma remessa ativa |
+
+---
+**Gerado por Di — HubWorkz Saúde** | 📅 Maio/2026
+
+Deseja detalhar algum módulo específico ou tomar alguma ação? 😊

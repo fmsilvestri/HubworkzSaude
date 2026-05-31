@@ -202,6 +202,8 @@ export default function DiIA() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
+  const WELCOME_MSG = "Olá, tudo bem? Sou a Di e estou aqui para auxiliar na gestão e soluções para a clínica. Como posso ajudar hoje?";
+
   const { data: history, isLoading: historyLoading } = useGetAiHistory({
     clinica_id: profile?.clinica_id ?? undefined,
     limit: 30,
@@ -209,7 +211,8 @@ export default function DiIA() {
 
   useEffect(() => {
     if (history && messages.length === 0) {
-      setMessages(history.map((h) => ({ role: h.role as "user" | "assistant", content: h.content })));
+      const loaded = history.map((h) => ({ role: h.role as "user" | "assistant", content: h.content }));
+      setMessages(loaded.length > 0 ? loaded : [{ role: "assistant", content: WELCOME_MSG }]);
     }
   }, [history]);
 
