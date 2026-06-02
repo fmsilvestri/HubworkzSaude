@@ -181,6 +181,8 @@ export const ListPacientesResponseItem = zod.object({
   "endereco": zod.string().nullish(),
   "mandato_pdf_url": zod.string().nullish(),
   "mandato_ativo": zod.boolean().optional(),
+  "processo_fase": zod.number().nullish().describe('Current process phase (1-4) for this patient, null if no process'),
+  "processo_status": zod.string().nullish().describe('Current process status for this patient, null if no process'),
   "created_at": zod.string()
 })
 export const ListPacientesResponse = zod.array(ListPacientesResponseItem)
@@ -225,6 +227,8 @@ export const GetPacienteResponse = zod.object({
   "endereco": zod.string().nullish(),
   "mandato_pdf_url": zod.string().nullish(),
   "mandato_ativo": zod.boolean().optional(),
+  "processo_fase": zod.number().nullish().describe('Current process phase (1-4) for this patient, null if no process'),
+  "processo_status": zod.string().nullish().describe('Current process status for this patient, null if no process'),
   "created_at": zod.string()
 })
 
@@ -262,6 +266,8 @@ export const UpdatePacienteResponse = zod.object({
   "endereco": zod.string().nullish(),
   "mandato_pdf_url": zod.string().nullish(),
   "mandato_ativo": zod.boolean().optional(),
+  "processo_fase": zod.number().nullish().describe('Current process phase (1-4) for this patient, null if no process'),
+  "processo_status": zod.string().nullish().describe('Current process status for this patient, null if no process'),
   "created_at": zod.string()
 })
 

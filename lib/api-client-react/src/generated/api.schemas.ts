@@ -103,6 +103,16 @@ export interface Paciente {
   /** @nullable */
   mandato_pdf_url?: string | null;
   mandato_ativo?: boolean;
+  /**
+     * Current process phase (1-4) for this patient, null if no process
+     * @nullable
+     */
+  processo_fase?: number | null;
+  /**
+     * Current process status for this patient, null if no process
+     * @nullable
+     */
+  processo_status?: string | null;
   created_at: string;
 }
 

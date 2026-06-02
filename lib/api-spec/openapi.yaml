@@ -1218,6 +1218,12 @@ components:
           type: ["string", "null"]
         mandato_ativo:
           type: boolean
+        processo_fase:
+          type: ["integer", "null"]
+          description: Current process phase (1-4) for this patient, null if no process
+        processo_status:
+          type: ["string", "null"]
+          description: Current process status for this patient, null if no process
         created_at:
           type: string
 

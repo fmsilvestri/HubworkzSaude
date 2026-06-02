@@ -72,8 +72,22 @@ type Paciente = {
   cid?: string | null;
   mandato_pdf_url?: string | null;
   mandato_ativo?: boolean | null;
+  processo_fase?: number | null;
+  processo_status?: string | null;
   created_at: string;
 };
+
+function getProcessoBadge(fase: number | null | undefined, status: string | null | undefined) {
+  if (!fase) return null;
+  if (status === "concluido") return { label: "Concluido", bg: "bg-emerald-500/15", text: "text-emerald-400", border: "border-emerald-500/25" };
+  const map: Record<number, { label: string; bg: string; text: string; border: string }> = {
+    1: { label: "Cotacao", bg: "bg-blue-500/15", text: "text-blue-400", border: "border-blue-500/25" },
+    2: { label: "Logistica", bg: "bg-amber-500/15", text: "text-amber-400", border: "border-amber-500/25" },
+    3: { label: "Monitoramento", bg: "bg-purple-500/15", text: "text-purple-400", border: "border-purple-500/25" },
+    4: { label: "Faturamento", bg: "bg-green-500/15", text: "text-green-400", border: "border-green-500/25" },
+  };
+  return map[fase] ?? null;
+}
 
 const DEFAULT: FormValues = {
   nome: "", cpf: "", data_nascimento: "", email: "", telefone: "",
@@ -496,13 +510,25 @@ export default function Pacientes() {
                         {p.cpf ? `CPF: ${p.cpf}` : (p.email ?? p.telefone ?? "—")}
                       </p>
                     </div>
-                    <Badge className={p.mandato_ativo
-                      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20 text-[10px] shrink-0"
-                      : "bg-yellow-500/15 text-yellow-400 border-yellow-500/20 text-[10px] shrink-0"
-                    }>
-                      <FileCheck className="h-2.5 w-2.5 mr-1" />
-                      {p.mandato_ativo ? "Mandato Ativo" : "Pendente"}
-                    </Badge>
+                    {(() => {
+                      const pb = getProcessoBadge(p.processo_fase, p.processo_status);
+                      if (pb) {
+                        return (
+                          <Badge className={`${pb.bg} ${pb.text} ${pb.border} text-[10px] shrink-0`}>
+                            {pb.label}
+                          </Badge>
+                        );
+                      }
+                      return (
+                        <Badge className={p.mandato_ativo
+                          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20 text-[10px] shrink-0"
+                          : "bg-yellow-500/15 text-yellow-400 border-yellow-500/20 text-[10px] shrink-0"
+                        }>
+                          <FileCheck className="h-2.5 w-2.5 mr-1" />
+                          {p.mandato_ativo ? "Mandato Ativo" : "Pendente"}
+                        </Badge>
+                      );
+                    })()}
                   </div>
 
                   {/* Info grid */}

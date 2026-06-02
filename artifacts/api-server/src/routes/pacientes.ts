@@ -33,13 +33,31 @@ router.get("/pacientes", async (req, res): Promise<void> => {
   try {
     let query = supabase
       .from("pacientes")
-      .select("*")
+      .select("*, processos(fase, status, updated_at)")
       .order("created_at", { ascending: false });
     if (req.query["clinica_id"]) query = query.eq("clinica_id", String(req.query["clinica_id"]));
     if (req.query["search"]) query = query.ilike("nome", `%${String(req.query["search"])}%`);
     const { data, error } = await query;
     if (error) throw error;
-    res.json(data ?? []);
+
+    // For each patient, pick the most relevant processo (active first, then latest)
+    const result = (data ?? []).map((p: Record<string, unknown>) => {
+      const procs = (p["processos"] as Array<{ fase: number; status: string; updated_at: string }> | null) ?? [];
+      // prefer non-concluded, highest fase; fall back to most recent
+      const active = procs.filter((pr) => pr.status !== "concluido");
+      const pick = active.length > 0
+        ? active.sort((a, b) => b.fase - a.fase)[0]
+        : procs.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0];
+
+      const { processos: _, ...rest } = p;
+      return {
+        ...rest,
+        processo_fase: pick ? pick.fase : null,
+        processo_status: pick ? pick.status : null,
+      };
+    });
+
+    res.json(result);
   } catch (err) {
     req.log.error({ err }, "Failed to list pacientes");
     res.status(500).json({ error: "Failed to fetch pacientes" });
