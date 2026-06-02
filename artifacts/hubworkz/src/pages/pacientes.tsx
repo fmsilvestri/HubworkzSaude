@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   useListPacientes,
   useCreatePaciente,
@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Users, Plus, FileCheck, Pencil, Trash2, FileText, ExternalLink, Upload, Loader2, History, Download, CheckCircle2, MessageSquare, ArrowUpAZ, ArrowDownAZ } from "lucide-react";
+import { Search, Users, Plus, FileCheck, Pencil, Trash2, FileText, ExternalLink, Upload, Loader2, History, Download, CheckCircle2, MessageSquare, ArrowUpAZ, ArrowDownAZ, Pill, CalendarDays, Package } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -39,6 +39,23 @@ type HistoricoItem = {
   mensagem: string;
   canal: string;
   created_at: string;
+};
+
+type DispensacaoItem = {
+  id: string;
+  paciente_id: string;
+  medicamento_id?: string | null;
+  medicamento_nome: string;
+  data_retirada?: string | null;
+  lote?: string | null;
+  validade?: string | null;
+  created_at: string;
+};
+
+type MedicamentoOption = {
+  id: string;
+  nome: string;
+  apresentacao?: string | null;
 };
 
 const FIELD = "bg-[#0F0F12] border-white/10 text-white placeholder:text-white/30";
@@ -412,6 +429,80 @@ export default function Pacientes() {
   const raw = (pacientes as Paciente[] ?? []);
   const list = sortAZ ? [...raw].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")) : raw;
 
+  // ── Dispensação de medicamentos ──────────────────────────────────────────────
+  const [dispPaciente, setDispPaciente] = useState<Paciente | null>(null);
+  const [dispList, setDispList] = useState<DispensacaoItem[]>([]);
+  const [loadingDisp, setLoadingDisp] = useState(false);
+  const [dispSubmitting, setDispSubmitting] = useState(false);
+  const [medicamentosOpts, setMedicamentosOpts] = useState<MedicamentoOption[]>([]);
+  const [dispForm, setDispForm] = useState({
+    medicamento_id: "",
+    medicamento_nome: "",
+    data_retirada: "",
+    lote: "",
+    validade: "",
+  });
+  const [medSearch, setMedSearch] = useState("");
+
+  useEffect(() => {
+    fetch("/api/medicamentos?limit=200")
+      .then((r) => r.ok ? r.json() as Promise<MedicamentoOption[]> : [])
+      .then((data) => setMedicamentosOpts(Array.isArray(data) ? data : []))
+      .catch(() => setMedicamentosOpts([]));
+  }, []);
+
+  async function abrirDispensacao(p: Paciente) {
+    setDispPaciente(p);
+    setDispList([]);
+    setDispForm({ medicamento_id: "", medicamento_nome: "", data_retirada: "", lote: "", validade: "" });
+    setMedSearch("");
+    setLoadingDisp(true);
+    try {
+      const data = await fetch(`/api/dispensacoes?paciente_id=${p.id}`)
+        .then((r) => r.ok ? r.json() as Promise<DispensacaoItem[]> : []);
+      setDispList(Array.isArray(data) ? data : []);
+    } catch { setDispList([]); }
+    finally { setLoadingDisp(false); }
+  }
+
+  async function handleDispSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!dispPaciente || !dispForm.medicamento_nome) return;
+    setDispSubmitting(true);
+    try {
+      const resp = await fetch("/api/dispensacoes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paciente_id: dispPaciente.id,
+          medicamento_id: dispForm.medicamento_id || undefined,
+          medicamento_nome: dispForm.medicamento_nome,
+          data_retirada: dispForm.data_retirada || undefined,
+          lote: dispForm.lote || undefined,
+          validade: dispForm.validade || undefined,
+        }),
+      });
+      if (resp.ok) {
+        const novo = await resp.json() as DispensacaoItem;
+        setDispList((prev) => [novo, ...prev]);
+        setDispForm({ medicamento_id: "", medicamento_nome: "", data_retirada: "", lote: "", validade: "" });
+        setMedSearch("");
+        toast({ title: "Dispensacao registrada com sucesso." });
+      } else {
+        const err = await resp.json() as { error?: string };
+        toast({ title: err.error ?? "Erro ao registrar dispensacao.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Erro ao registrar dispensacao.", variant: "destructive" });
+    } finally {
+      setDispSubmitting(false);
+    }
+  }
+
+  const medFiltrados = medicamentosOpts.filter((m) =>
+    !medSearch || m.nome.toLowerCase().includes(medSearch.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -588,6 +679,14 @@ export default function Pacientes() {
                       title="Histórico"
                     >
                       <History className="h-3.5 w-3.5" /> Historico
+                    </button>
+                    <button
+                      onClick={() => void abrirDispensacao(p)}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[#F56E0F]/20"
+                      style={{ background: "rgba(245,110,15,0.08)", border: "1px solid rgba(245,110,15,0.20)" }}
+                      title="Dispensacao de Medicamento"
+                    >
+                      <Pill className="h-3.5 w-3.5 text-[#F56E0F]" />
                     </button>
                     <button
                       onClick={() => openEdit(p)}
@@ -769,6 +868,160 @@ export default function Pacientes() {
                           <pre className="text-white/40 text-[10px] whitespace-pre-wrap font-sans leading-relaxed max-h-24 overflow-hidden">
                             {h.mensagem}
                           </pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Sheet — Dispensação de Medicamentos */}
+      <Sheet open={!!dispPaciente} onOpenChange={(o) => { if (!o) setDispPaciente(null); }}>
+        <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[540px] sm:max-w-[540px] flex flex-col overflow-hidden">
+          <SheetHeader className="mb-4 shrink-0">
+            <div className="flex items-start gap-3">
+              <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(245,110,15,0.12)", border: "1px solid rgba(245,110,15,0.25)" }}>
+                <Pill className="h-4.5 w-4.5 text-[#F56E0F]" style={{ height: "1.125rem", width: "1.125rem" }} />
+              </div>
+              <div>
+                <SheetTitle className="text-white">Dispensacao de Medicamento</SheetTitle>
+                {dispPaciente && <p className="text-white/50 text-sm mt-0.5">{dispPaciente.nome}</p>}
+              </div>
+            </div>
+          </SheetHeader>
+
+          {/* Formulário de nova dispensação */}
+          <form onSubmit={(e) => void handleDispSubmit(e)} className="space-y-4 shrink-0 pb-4 border-b border-white/10">
+            {/* Seletor de medicamento */}
+            <div className="space-y-1.5">
+              <label className="text-white/70 text-sm font-medium">Medicamento *</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30 pointer-events-none" />
+                <Input
+                  value={medSearch || dispForm.medicamento_nome}
+                  onChange={(e) => {
+                    setMedSearch(e.target.value);
+                    setDispForm((f) => ({ ...f, medicamento_nome: e.target.value, medicamento_id: "" }));
+                  }}
+                  placeholder="Buscar medicamento..."
+                  className={`${FIELD} pl-9`}
+                />
+              </div>
+              {medSearch && medFiltrados.length > 0 && (
+                <div className="rounded-xl border border-white/10 bg-[#0F0F12] max-h-44 overflow-y-auto">
+                  {medFiltrados.slice(0, 12).map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => {
+                        setDispForm((f) => ({ ...f, medicamento_nome: m.nome, medicamento_id: m.id }));
+                        setMedSearch("");
+                      }}
+                      className="w-full text-left px-3 py-2.5 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+                    >
+                      <p className="text-white text-xs font-medium truncate">{m.nome}</p>
+                      {m.apresentacao && <p className="text-white/35 text-[10px] truncate">{m.apresentacao}</p>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Data de retirada + Lote + Validade */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-white/70 text-sm font-medium flex items-center gap-1.5">
+                  <CalendarDays className="h-3.5 w-3.5 text-white/40" /> Data Retirada
+                </label>
+                <Input
+                  type="date"
+                  value={dispForm.data_retirada}
+                  onChange={(e) => setDispForm((f) => ({ ...f, data_retirada: e.target.value }))}
+                  className={FIELD}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-white/70 text-sm font-medium flex items-center gap-1.5">
+                  <Package className="h-3.5 w-3.5 text-white/40" /> Lote
+                </label>
+                <Input
+                  value={dispForm.lote}
+                  onChange={(e) => setDispForm((f) => ({ ...f, lote: e.target.value }))}
+                  placeholder="Ex: L2024-001"
+                  className={FIELD}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-white/70 text-sm font-medium flex items-center gap-1.5">
+                  <CalendarDays className="h-3.5 w-3.5 text-white/40" /> Validade
+                </label>
+                <Input
+                  type="date"
+                  value={dispForm.validade}
+                  onChange={(e) => setDispForm((f) => ({ ...f, validade: e.target.value }))}
+                  className={FIELD}
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={dispSubmitting || !dispForm.medicamento_nome}
+              className="w-full bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white gap-2"
+            >
+              {dispSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pill className="h-4 w-4" />}
+              {dispSubmitting ? "Registrando..." : "Registrar Dispensacao"}
+            </Button>
+          </form>
+
+          {/* Histórico de dispensações */}
+          <div className="flex-1 overflow-y-auto pt-4">
+            <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">Historico de Dispensacoes</p>
+            {loadingDisp ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 bg-white/5 rounded-xl" />)}
+              </div>
+            ) : dispList.length === 0 ? (
+              <div className="py-12 text-center">
+                <Pill className="h-9 w-9 text-white/10 mx-auto mb-3" />
+                <p className="text-white/25 text-sm">Nenhuma dispensacao registrada</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dispList.map((d) => (
+                  <div key={d.id} className="bg-[#0F0F12] rounded-xl border border-white/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(245,110,15,0.10)", border: "1px solid rgba(245,110,15,0.20)" }}>
+                        <Pill className="h-4 w-4 text-[#F56E0F]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{d.medicamento_nome}</p>
+                        <p className="text-white/30 text-[10px] mb-2">
+                          {new Date(d.created_at).toLocaleString("pt-BR", {
+                            day: "2-digit", month: "short", year: "numeric",
+                            hour: "2-digit", minute: "2-digit",
+                          })}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {d.data_retirada && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/15">
+                              Retirada: {new Date(d.data_retirada + "T12:00:00").toLocaleDateString("pt-BR")}
+                            </span>
+                          )}
+                          {d.lote && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-white/50 border border-white/10 font-mono">
+                              Lote: {d.lote}
+                            </span>
+                          )}
+                          {d.validade && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/15">
+                              Val: {new Date(d.validade + "T12:00:00").toLocaleDateString("pt-BR")}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
