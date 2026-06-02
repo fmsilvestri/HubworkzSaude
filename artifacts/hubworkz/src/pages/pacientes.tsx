@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Users, Plus, FileCheck, Pencil, Trash2, FileText, ExternalLink, Upload, Loader2, History, Download, CheckCircle2, MessageSquare, ArrowUpAZ, ArrowDownAZ, Pill, CalendarDays, Package } from "lucide-react";
+import { Search, Users, Plus, FileCheck, Pencil, Trash2, FileText, ExternalLink, Upload, Loader2, History, Download, CheckCircle2, MessageSquare, ArrowUpAZ, ArrowDownAZ, Pill, CalendarDays, Package, FolderOpen, ImageIcon, X, Eye } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -56,6 +56,14 @@ type MedicamentoOption = {
   id: string;
   nome: string;
   apresentacao?: string | null;
+};
+
+type DocumentoItem = {
+  name: string;
+  url: string;
+  size?: number;
+  mimetype?: string;
+  created_at?: string;
 };
 
 const FIELD = "bg-[#0F0F12] border-white/10 text-white placeholder:text-white/30";
@@ -503,6 +511,88 @@ export default function Pacientes() {
     !medSearch || m.nome.toLowerCase().includes(medSearch.toLowerCase())
   );
 
+  // ── Documentos (imagens + PDFs) ──────────────────────────────────────────────
+  const [docPaciente, setDocPaciente] = useState<Paciente | null>(null);
+  const [docList, setDocList] = useState<DocumentoItem[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [deletingDoc, setDeletingDoc] = useState<string | null>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
+
+  async function abrirDocumentos(p: Paciente) {
+    setDocPaciente(p);
+    setDocList([]);
+    setLoadingDocs(true);
+    try {
+      const data = await fetch(`/api/pacientes/${p.id}/documentos`)
+        .then((r) => r.ok ? r.json() as Promise<DocumentoItem[]> : []);
+      setDocList(Array.isArray(data) ? data : []);
+    } catch { setDocList([]); }
+    finally { setLoadingDocs(false); }
+  }
+
+  async function handleDocUpload(files: FileList | null) {
+    if (!files || files.length === 0 || !docPaciente) return;
+    setUploadingDoc(true);
+    const uploaded: DocumentoItem[] = [];
+    for (const file of Array.from(files)) {
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const resp = await fetch(`/api/pacientes/${docPaciente.id}/documentos/upload`, {
+          method: "POST",
+          body: fd,
+        });
+        if (resp.ok) {
+          const doc = await resp.json() as DocumentoItem;
+          uploaded.push(doc);
+        } else {
+          const err = await resp.json() as { error?: string };
+          toast({ title: err.error ?? "Erro ao enviar arquivo.", variant: "destructive" });
+        }
+      } catch {
+        toast({ title: "Erro ao enviar arquivo.", variant: "destructive" });
+      }
+    }
+    if (uploaded.length > 0) {
+      setDocList((prev) => [...uploaded, ...prev]);
+      toast({ title: `${uploaded.length} arquivo${uploaded.length > 1 ? "s enviados" : " enviado"} com sucesso.` });
+    }
+    setUploadingDoc(false);
+    if (docInputRef.current) docInputRef.current.value = "";
+  }
+
+  async function handleDocDelete(filename: string) {
+    if (!docPaciente) return;
+    setDeletingDoc(filename);
+    try {
+      const resp = await fetch(`/api/pacientes/${docPaciente.id}/documentos/${encodeURIComponent(filename)}`, {
+        method: "DELETE",
+      });
+      if (resp.ok) {
+        setDocList((prev) => prev.filter((d) => d.name !== filename));
+        toast({ title: "Documento excluído." });
+      } else {
+        toast({ title: "Erro ao excluir documento.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Erro ao excluir documento.", variant: "destructive" });
+    } finally {
+      setDeletingDoc(null);
+    }
+  }
+
+  function formatBytes(bytes?: number) {
+    if (!bytes) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1048576).toFixed(1)} MB`;
+  }
+
+  function isImage(mimetype?: string) {
+    return mimetype?.startsWith("image/") ?? false;
+  }
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -679,6 +769,14 @@ export default function Pacientes() {
                       title="Histórico"
                     >
                       <History className="h-3.5 w-3.5" /> Historico
+                    </button>
+                    <button
+                      onClick={() => void abrirDocumentos(p)}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors hover:bg-blue-500/20"
+                      style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.20)" }}
+                      title="Documentos"
+                    >
+                      <FolderOpen className="h-3.5 w-3.5 text-blue-400" />
                     </button>
                     <button
                       onClick={() => void abrirDispensacao(p)}
@@ -873,6 +971,154 @@ export default function Pacientes() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Hidden file input for doc uploads */}
+      <input
+        ref={docInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+        multiple
+        className="hidden"
+        onChange={(e) => { void handleDocUpload(e.target.files); }}
+      />
+
+      {/* Sheet — Documentos */}
+      <Sheet open={!!docPaciente} onOpenChange={(o) => { if (!o) { setDocPaciente(null); setDocList([]); } }}>
+        <SheetContent side="right" className="bg-[#1B1B1E] border-l border-white/10 text-white w-[560px] sm:max-w-[560px] flex flex-col overflow-hidden">
+          <SheetHeader className="mb-4 shrink-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)" }}>
+                  <FolderOpen className="h-[1.1rem] w-[1.1rem] text-blue-400" />
+                </div>
+                <div>
+                  <SheetTitle className="text-white">Documentos</SheetTitle>
+                  {docPaciente && <p className="text-white/50 text-sm mt-0.5">{docPaciente.nome}</p>}
+                </div>
+              </div>
+              <Button
+                onClick={() => docInputRef.current?.click()}
+                disabled={uploadingDoc}
+                className="bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white gap-2 shrink-0"
+                size="sm"
+              >
+                {uploadingDoc
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : <Upload className="h-4 w-4" />
+                }
+                {uploadingDoc ? "Enviando..." : "Enviar Arquivo"}
+              </Button>
+            </div>
+          </SheetHeader>
+
+          {/* Drop zone */}
+          <button
+            onClick={() => docInputRef.current?.click()}
+            disabled={uploadingDoc}
+            className="shrink-0 w-full h-24 rounded-xl border border-dashed border-white/15 hover:border-blue-400/50 flex flex-col items-center justify-center gap-2 transition-colors text-white/30 hover:text-white/50 mb-4"
+          >
+            {uploadingDoc ? (
+              <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+            ) : (
+              <>
+                <Upload className="h-6 w-6" />
+                <span className="text-xs">Clique ou arraste imagens/PDFs aqui</span>
+                <span className="text-[10px] text-white/20">JPG, PNG, WebP, GIF, PDF — max 20 MB por arquivo</span>
+              </>
+            )}
+          </button>
+
+          {/* Document list */}
+          <div className="flex-1 overflow-y-auto">
+            {loadingDocs ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 bg-white/5 rounded-xl" />)}
+              </div>
+            ) : docList.length === 0 ? (
+              <div className="py-12 text-center">
+                <FolderOpen className="h-10 w-10 text-white/10 mx-auto mb-3" />
+                <p className="text-white/25 text-sm">Nenhum documento enviado</p>
+                <p className="text-white/15 text-xs mt-1">Envie imagens ou PDFs do paciente</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {docList.map((doc) => {
+                  const img = isImage(doc.mimetype);
+                  const displayName = doc.name.replace(/^\d+_/, "").slice(0, 60);
+                  return (
+                    <div
+                      key={doc.name}
+                      className="group flex items-center gap-3 bg-[#0F0F12] rounded-xl border border-white/5 p-3 hover:border-white/10 transition-colors"
+                    >
+                      {/* Thumbnail or icon */}
+                      {img ? (
+                        <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0 border border-white/10 bg-white/5">
+                          <img
+                            src={doc.url}
+                            alt={displayName}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-12 w-12 rounded-lg flex items-center justify-center shrink-0"
+                          style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.18)" }}>
+                          <FileText className="h-5 w-5 text-red-400" />
+                        </div>
+                      )}
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white/80 text-xs font-medium truncate">{displayName}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-white/30 text-[10px]">
+                            {img ? "Imagem" : "PDF"}
+                          </span>
+                          {doc.size && (
+                            <span className="text-white/20 text-[10px]">{formatBytes(doc.size)}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="h-7 w-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
+                          title="Visualizar"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-white/40" />
+                        </a>
+                        <a
+                          href={doc.url}
+                          download={displayName}
+                          className="h-7 w-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
+                          title="Baixar"
+                        >
+                          <Download className="h-3.5 w-3.5 text-white/40" />
+                        </a>
+                        <button
+                          onClick={() => void handleDocDelete(doc.name)}
+                          disabled={deletingDoc === doc.name}
+                          className="h-7 w-7 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/20"
+                          title="Excluir"
+                        >
+                          {deletingDoc === doc.name
+                            ? <Loader2 className="h-3.5 w-3.5 text-red-400 animate-spin" />
+                            : <X className="h-3.5 w-3.5 text-red-400" />
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

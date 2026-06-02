@@ -158,6 +158,93 @@ router.delete("/pacientes/:id", async (req, res): Promise<void> => {
   }
 });
 
+// ── Documentos (imagens + PDFs) ──────────────────────────────────────────────
+
+const uploadDoc = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ok = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"].includes(file.mimetype);
+    cb(null, ok);
+  },
+});
+
+router.get("/pacientes/:id/documentos", async (req, res): Promise<void> => {
+  try {
+    const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
+    const { data, error } = await supabase.storage
+      .from("pacientes-documentos")
+      .list(`${id}/documentos`, { sortBy: { column: "created_at", order: "desc" } });
+    if (error) { res.status(500).json({ error: error.message }); return; }
+    const files = (data ?? []).map((f) => {
+      const { data: urlData } = supabase.storage
+        .from("pacientes-documentos")
+        .getPublicUrl(`${id}/documentos/${f.name}`);
+      return {
+        name: f.name,
+        url: urlData.publicUrl,
+        size: f.metadata?.["size"] as number | undefined,
+        mimetype: f.metadata?.["mimetype"] as string | undefined,
+        created_at: f.created_at,
+      };
+    });
+    res.json(files);
+  } catch (err) {
+    req.log.error({ err }, "Failed to list documentos");
+    res.status(500).json({ error: "Failed to list documentos" });
+  }
+});
+
+router.post(
+  "/pacientes/:id/documentos/upload",
+  uploadDoc.single("file"),
+  async (req, res): Promise<void> => {
+    try {
+      const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
+      const file = req.file;
+      if (!file) { res.status(400).json({ error: "Nenhum arquivo enviado." }); return; }
+
+      const safeBase = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
+      const storagePath = `${id}/documentos/${Date.now()}_${safeBase}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("pacientes-documentos")
+        .upload(storagePath, file.buffer, { contentType: file.mimetype, upsert: false });
+      if (upErr) throw upErr;
+
+      const { data: urlData } = supabase.storage
+        .from("pacientes-documentos")
+        .getPublicUrl(storagePath);
+
+      res.status(201).json({
+        name: `${Date.now()}_${safeBase}`,
+        url: urlData.publicUrl,
+        size: file.size,
+        mimetype: file.mimetype,
+      });
+    } catch (err) {
+      req.log.error({ err }, "Failed to upload documento");
+      const msg = (err as { message?: string })?.message ?? "Falha ao fazer upload";
+      res.status(500).json({ error: msg });
+    }
+  }
+);
+
+router.delete("/pacientes/:id/documentos/:filename", async (req, res): Promise<void> => {
+  try {
+    const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
+    const filename = Array.isArray(req.params["filename"]) ? req.params["filename"][0] : req.params["filename"];
+    const { error } = await supabase.storage
+      .from("pacientes-documentos")
+      .remove([`${id}/documentos/${filename}`]);
+    if (error) { res.status(500).json({ error: error.message }); return; }
+    res.status(204).send();
+  } catch (err) {
+    req.log.error({ err }, "Failed to delete documento");
+    res.status(500).json({ error: "Failed to delete documento" });
+  }
+});
+
 router.post(
   "/pacientes/:id/mandato-upload",
   upload.single("file"),
