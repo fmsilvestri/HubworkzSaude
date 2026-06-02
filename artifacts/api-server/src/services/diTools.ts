@@ -201,6 +201,101 @@ export const DI_TOOLS: Tool[] = [
       },
     },
   },
+  // ── WRITE TOOLS ──────────────────────────────────────────────────────────────
+  {
+    name: "criar_paciente",
+    description: "Cria um novo paciente no sistema. Use quando o usuário pedir para cadastrar, registrar ou adicionar um paciente.",
+    input_schema: {
+      type: "object",
+      properties: {
+        nome: { type: "string", description: "Nome completo do paciente (obrigatório)" },
+        cpf: { type: "string", description: "CPF do paciente" },
+        telefone: { type: "string", description: "Telefone de contato" },
+        email: { type: "string", description: "E-mail" },
+        convenio: { type: "string", description: "Convênio de saúde" },
+        diagnostico: { type: "string", description: "Diagnóstico oncológico" },
+        cid: { type: "string", description: "Código CID do diagnóstico" },
+        data_nascimento: { type: "string", description: "Data de nascimento (YYYY-MM-DD)" },
+      },
+      required: ["nome"],
+    },
+  },
+  {
+    name: "criar_cotacao",
+    description: "Cria uma nova cotação no sistema com status pendente. Use quando o usuário pedir para abrir, criar ou registrar uma cotação de medicamento.",
+    input_schema: {
+      type: "object",
+      properties: {
+        nome_paciente: { type: "string", description: "Nome do paciente" },
+        paciente_id: { type: "string", description: "UUID do paciente (se conhecido)" },
+        medicamento_nome: { type: "string", description: "Nome do medicamento (obrigatório)" },
+        convenio: { type: "string", description: "Convênio responsável" },
+        quantidade: { type: "number", description: "Quantidade solicitada" },
+        observacoes: { type: "string", description: "Observações adicionais" },
+      },
+      required: ["medicamento_nome"],
+    },
+  },
+  {
+    name: "atualizar_processo",
+    description: "Atualiza o status ou fase de um processo existente. Use quando o usuário pedir para avançar, atualizar ou mudar o status de um processo.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "UUID do processo (obrigatório)" },
+        status: {
+          type: "string",
+          enum: ["solicitado", "em_andamento", "cotacao", "logistica", "monitoramento", "faturamento", "concluido", "cancelado"],
+          description: "Novo status do processo",
+        },
+        fase: { type: "number", enum: [1, 2, 3, 4], description: "Nova fase (1=Cotação, 2=Logística, 3=Monitoramento, 4=Faturamento)" },
+        numero_protocolo: { type: "string", description: "Número de protocolo" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "atualizar_cotacao",
+    description: "Atualiza dados de uma cotação existente (status, valores, convênio). Use quando o usuário pedir para aprovar, recusar ou editar uma cotação.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "UUID da cotação (obrigatório)" },
+        status: {
+          type: "string",
+          enum: ["pendente", "enviada", "aprovada", "recusada"],
+          description: "Novo status da cotação",
+        },
+        valor_aprovado: { type: "number", description: "Valor aprovado em R$" },
+        valor_noova: { type: "number", description: "Valor Noova em R$" },
+        convenio: { type: "string", description: "Convênio responsável" },
+        observacoes: { type: "string", description: "Observações adicionais" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "registrar_comunicado",
+    description: "Registra um comunicado ou observação no histórico de atendimento de um paciente. Use para anotar contatos, observações clínicas ou registros de comunicação.",
+    input_schema: {
+      type: "object",
+      properties: {
+        paciente_id: { type: "string", description: "UUID do paciente (obrigatório)" },
+        mensagem: { type: "string", description: "Texto do comunicado ou observação (obrigatório)" },
+        canal: {
+          type: "string",
+          enum: ["telefone", "email", "whatsapp", "presencial", "interno"],
+          description: "Canal de comunicação (padrão: interno)",
+        },
+        tipo: {
+          type: "string",
+          enum: ["d30", "remessa", "mandato", "observacao", "retorno", "agendamento"],
+          description: "Tipo de comunicado (padrão: observacao)",
+        },
+      },
+      required: ["paciente_id", "mensagem"],
+    },
+  },
   {
     name: "gerar_wa_d30",
     description: "Gera mensagem WhatsApp personalizada para monitoramento D30",

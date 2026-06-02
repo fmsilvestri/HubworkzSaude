@@ -189,26 +189,35 @@ MÓDULOS INTEGRADOS (você tem acesso completo a todos):
 11. Comunicados — histórico de atendimentos e comunicações por canal (WhatsApp, telefone, email)
 12. Dashboard — visão panorâmica consolidada de todos os módulos
 
-FERRAMENTAS DISPONÍVEIS (use sempre que o usuário pedir dados, listas ou análises):
+FERRAMENTAS DISPONÍVEIS — LEITURA (use para consultas, listas e análises):
 - get_processos(status?, limit?) — processos por fase/status
 - get_cotacoes(status?, limit?) — cotações e aprovações
 - get_pacientes(search?, limit?) — pacientes cadastrados
 - get_medicamentos(search?, limit?) — catálogo completo com estoque, validade, valor, modo de uso e conservação
-- get_medicamento_detalhe(nome) — ficha completa de um medicamento específico (lote, registro, orientações, estoque atual)
-- get_estoque_baixo(limite?) — medicamentos com estoque abaixo do limite crítico (padrão 5 unid.)
+- get_medicamento_detalhe(nome) — ficha completa de um medicamento específico
+- get_estoque_baixo(limite?) — medicamentos com estoque abaixo do limite crítico
 - get_mandatos(status?, limit?) — mandatos judiciais
 - get_distribuidoras() — distribuidoras parceiras
 - get_glosas(status?, limit?) — glosas detalhadas com valores
 - get_alertas() — urgências críticas (glosas, D30, mandatos)
 - get_d30_agenda(dias?) — agenda de monitoramentos D30
-- get_monitoramentos(status?, paciente_id?, limit?) — acompanhamento D30 detalhado por paciente
+- get_monitoramentos(status?, paciente_id?, limit?) — acompanhamento D30 detalhado
 - get_financeiro(mes?) — resumo financeiro do mês
 - get_remessas() — status de entregas e rastreio
-- get_comunicados(paciente_id?, tipo?, limit?) — histórico de comunicados e atendimentos
+- get_comunicados(paciente_id?, tipo?, limit?) — histórico de comunicados
 - get_dashboard_resumo() — panorama completo de todos os módulos
 - gerar_relatorio_completo(modulos?) — relatório multi-card cobrindo todos os módulos
 - gerar_wa_d30(paciente_id, observacoes?) — mensagem para monitoramento D30
 - gerar_wa_remessa(paciente_id, evento) — mensagem de notificação de entrega
+
+FERRAMENTAS DISPONÍVEIS — ESCRITA (use para criar ou atualizar registros no banco):
+- criar_paciente(nome, cpf?, telefone?, email?, convenio?, diagnostico?, cid?, data_nascimento?) — cadastra novo paciente no sistema
+- criar_cotacao(nome_paciente, medicamento_nome, paciente_id?, convenio?, quantidade?, observacoes?) — abre nova cotação com status pendente
+- atualizar_processo(id, status?, fase?, numero_protocolo?) — atualiza fase ou status de um processo existente
+- atualizar_cotacao(id, status?, valor_aprovado?, valor_noova?, convenio?, observacoes?) — edita ou aprova/recusa uma cotação
+- registrar_comunicado(paciente_id, mensagem, canal?, tipo?) — registra comunicado no histórico do paciente
+
+REGRA PARA ESCRITA: Antes de usar qualquer ferramenta de escrita, confirme os dados com o usuário em uma frase clara. Após gravar, exiba o card de confirmação sem texto adicional.
 
 REGRAS DE RESPOSTA — OBRIGATÓRIAS:
 1. USE SEMPRE as ferramentas para qualquer dado. NUNCA invente, estime ou reproduza dados.
@@ -856,6 +865,159 @@ export async function executeTool(
           entregue: `Olá, ${nome}! Confirmamos que seu ${med} foi entregue. Lembre-se de armazená-lo corretamente. Qualquer dúvida sobre como usar ou conservar, estamos à disposição!`,
         };
         return { text: msgs[input.evento as string] ?? "Evento não reconhecido." };
+      }
+
+      // ── WRITE TOOLS ────────────────────────────────────────────────────────────
+
+      case "criar_paciente": {
+        const payload: Record<string, unknown> = {
+          nome: String(input.nome ?? ""),
+          clinica_id: clinica_id || "00000000-0000-0000-0000-000000000001",
+        };
+        if (input.cpf) payload["cpf"] = input.cpf;
+        if (input.telefone) payload["telefone"] = input.telefone;
+        if (input.email) payload["email"] = input.email;
+        if (input.convenio) payload["convenio"] = input.convenio;
+        if (input.diagnostico) payload["diagnostico"] = input.diagnostico;
+        if (input.cid) payload["cid"] = input.cid;
+        if (input.data_nascimento) payload["data_nascimento"] = input.data_nascimento;
+        if (!payload["nome"]) return { text: "Nome do paciente é obrigatório." };
+        const { data, error } = await supabase.from("pacientes").insert(payload).select().single();
+        if (error) {
+          logger.error({ error }, "Di: criar_paciente failed");
+          return { text: `Erro ao criar paciente: ${error.message}` };
+        }
+        const p = data as Record<string, unknown>;
+        const card: ToolCard = {
+          type: "card",
+          title: "Paciente Criado",
+          color: "mint",
+          data: { id: p["id"], nome: p["nome"], convenio: p["convenio"] ?? "—", diagnostico: p["diagnostico"] ?? "—" },
+        };
+        return { text: JSON.stringify(card), card };
+      }
+
+      case "criar_cotacao": {
+        if (!input.nome_paciente && !input.paciente_id) return { text: "Informe o nome do paciente ou o ID para criar a cotação." };
+        if (!input.medicamento_nome) return { text: "Nome do medicamento é obrigatório." };
+        const payload: Record<string, unknown> = {
+          nome_paciente: String(input.nome_paciente ?? ""),
+          medicamento_nome: String(input.medicamento_nome ?? ""),
+          status: "pendente",
+          clinica_id: clinica_id || "00000000-0000-0000-0000-000000000001",
+        };
+        if (input.paciente_id) payload["paciente_id"] = input.paciente_id;
+        if (input.convenio) payload["convenio"] = input.convenio;
+        if (input.quantidade) payload["quantidade"] = input.quantidade;
+        if (input.observacoes) payload["observacoes"] = input.observacoes;
+        const { data, error } = await supabase.from("cotacoes").insert(payload).select().single();
+        if (error) {
+          logger.error({ error }, "Di: criar_cotacao failed");
+          return { text: `Erro ao criar cotação: ${error.message}` };
+        }
+        const c = data as Record<string, unknown>;
+        const card: ToolCard = {
+          type: "card",
+          title: "Cotacao Criada",
+          color: "blue",
+          data: {
+            id: c["id"],
+            nome_paciente: c["nome_paciente"],
+            medicamento_nome: c["medicamento_nome"],
+            status: "pendente",
+            convenio: c["convenio"] ?? "—",
+          },
+        };
+        return { text: JSON.stringify(card), card };
+      }
+
+      case "atualizar_processo": {
+        if (!input.id) return { text: "ID do processo é obrigatório." };
+        const updates: Record<string, unknown> = {};
+        if (input.status) updates["status"] = input.status;
+        if (input.fase) updates["fase"] = input.fase;
+        if (input.numero_protocolo) updates["numero_protocolo"] = input.numero_protocolo;
+        if (Object.keys(updates).length === 0) return { text: "Informe ao menos um campo para atualizar (status, fase ou numero_protocolo)." };
+        const { data, error } = await supabase.from("processos").update(updates).eq("id", String(input.id)).select().single();
+        if (error) {
+          logger.error({ error }, "Di: atualizar_processo failed");
+          return { text: `Erro ao atualizar processo: ${error.message}` };
+        }
+        const p = data as Record<string, unknown>;
+        const card: ToolCard = {
+          type: "card",
+          title: "Processo Atualizado",
+          color: "orange",
+          data: {
+            id: p["id"],
+            status: p["status"],
+            fase: p["fase"],
+            numero_protocolo: p["numero_protocolo"] ?? "—",
+          },
+        };
+        return { text: JSON.stringify(card), card };
+      }
+
+      case "registrar_comunicado": {
+        if (!input.paciente_id) return { text: "ID do paciente é obrigatório para registrar comunicado." };
+        if (!input.mensagem) return { text: "Mensagem é obrigatória." };
+        const canal = String(input.canal ?? "interno");
+        const tipo = String(input.tipo ?? "observacao");
+        const payload: Record<string, unknown> = {
+          paciente_id: input.paciente_id,
+          mensagem: String(input.mensagem),
+          canal,
+          tipo,
+          tipo_label: tipo.replace(/_/g, " "),
+          clinica_id: clinica_id || "00000000-0000-0000-0000-000000000001",
+        };
+        const { data, error } = await supabase.from("historico_atendimentos").insert(payload).select().single();
+        if (error) {
+          logger.error({ error }, "Di: registrar_comunicado failed");
+          return { text: `Erro ao registrar comunicado: ${error.message}` };
+        }
+        const row = data as Record<string, unknown>;
+        const card: ToolCard = {
+          type: "card",
+          title: "Comunicado Registrado",
+          color: "blue",
+          data: {
+            id: row["id"],
+            canal,
+            tipo,
+            mensagem: String(input.mensagem).slice(0, 120) + (String(input.mensagem).length > 120 ? "..." : ""),
+          },
+        };
+        return { text: JSON.stringify(card), card };
+      }
+
+      case "atualizar_cotacao": {
+        if (!input.id) return { text: "ID da cotação é obrigatório." };
+        const allowed = ["status", "valor_aprovado", "valor_noova", "valor_brasindice", "convenio", "observacoes"];
+        const updates: Record<string, unknown> = {};
+        for (const k of allowed) {
+          if (input[k] !== undefined && input[k] !== null) updates[k] = input[k];
+        }
+        if (Object.keys(updates).length === 0) return { text: "Informe ao menos um campo para atualizar." };
+        const { data, error } = await supabase.from("cotacoes").update(updates).eq("id", String(input.id)).select().single();
+        if (error) {
+          logger.error({ error }, "Di: atualizar_cotacao failed");
+          return { text: `Erro ao atualizar cotação: ${error.message}` };
+        }
+        const c = data as Record<string, unknown>;
+        const card: ToolCard = {
+          type: "card",
+          title: "Cotacao Atualizada",
+          color: "blue",
+          data: {
+            id: c["id"],
+            nome_paciente: c["nome_paciente"],
+            medicamento_nome: c["medicamento_nome"],
+            status: c["status"],
+            valor_aprovado: c["valor_aprovado"] ? `R$ ${Number(c["valor_aprovado"]).toFixed(2)}` : "—",
+          },
+        };
+        return { text: JSON.stringify(card), card };
       }
 
       default:
