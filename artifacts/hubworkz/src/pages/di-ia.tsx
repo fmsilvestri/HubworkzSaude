@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, User, Bot, BarChart2, Users, Pill, Package, FileText, AlertTriangle, DollarSign, Truck, Calendar, Activity, Layers, MessageSquare, ClipboardList } from "lucide-react";
+import { Send, Loader2, User, Bot, BarChart2, Users, Pill, Package, FileText, AlertTriangle, DollarSign, Truck, Calendar, Activity, Layers, MessageSquare, ClipboardList, Link2, Thermometer, Barcode, FlaskConical, ShoppingCart, Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Suggestion groups ─────────────────────────────────────────────────────────
@@ -107,13 +107,208 @@ interface DiCard {
   data: Record<string, unknown>;
 }
 
+// ── Medication mini-card (matches medicamentos module visual) ─────────────────
+
+type MedRow = {
+  nome?: string;
+  principio_ativo?: string;
+  apresentacao?: string;
+  modo_uso?: string;
+  via_administracao?: string;
+  conservacao?: string;
+  classe?: string;
+  codigo_barras?: string;
+  data_ultima_compra?: string;
+  valor?: string | number;
+  quantidade_estoque?: number;
+  lote?: string;
+  validade?: string;
+  registro?: string;
+};
+
+const CLASSE_COLOR: Record<string, string> = {
+  "hormonioterapia": "bg-blue-500/20 text-blue-300 border-blue-500/30",
+  "quimioterapia":   "bg-orange-500/20 text-orange-300 border-orange-500/30",
+  "imunoterapia":    "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+  "terapia alvo":    "bg-purple-500/20 text-purple-300 border-purple-500/30",
+  "terapia-alvo":    "bg-purple-500/20 text-purple-300 border-purple-500/30",
+  "biológico":       "bg-teal-500/20 text-teal-300 border-teal-500/30",
+  "biologico":       "bg-teal-500/20 text-teal-300 border-teal-500/30",
+  "suporte":         "bg-slate-500/20 text-slate-300 border-slate-500/30",
+};
+
+function classeStyle(classe?: string) {
+  if (!classe) return "bg-white/10 text-white/50 border-white/15";
+  const key = classe.toLowerCase();
+  return CLASSE_COLOR[key] ?? "bg-[#F56E0F]/15 text-[#F56E0F] border-[#F56E0F]/30";
+}
+
+function MedicamentoMiniCard({ med }: { med: MedRow }) {
+  const apresentacao = med.apresentacao ?? "—";
+  const modoUso = med.via_administracao ?? med.modo_uso ?? "—";
+  const conservacao = med.conservacao ?? "—";
+  const temEstoque = typeof med.quantidade_estoque === "number";
+  const estoqueZero = temEstoque && med.quantidade_estoque === 0;
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-[#1B1B1E] p-4 flex flex-col gap-2.5 hover:border-[#F56E0F]/30 transition-colors">
+      {/* Top row: icon + classe badge */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="h-8 w-8 rounded-lg bg-[#F56E0F]/15 flex items-center justify-center shrink-0">
+          <Link2 className="h-3.5 w-3.5 text-[#F56E0F]" />
+        </div>
+        {med.classe && (
+          <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full border capitalize shrink-0", classeStyle(med.classe))}>
+            {med.classe}
+          </span>
+        )}
+      </div>
+
+      {/* Name + princípio ativo */}
+      <div>
+        <p className="text-white font-bold text-sm uppercase leading-tight">{med.nome ?? "—"}</p>
+        {med.principio_ativo && (
+          <p className="text-white/45 text-xs mt-0.5">{med.principio_ativo}</p>
+        )}
+      </div>
+
+      {/* Info rows */}
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <FlaskConical className="h-3 w-3 text-white/30 shrink-0" />
+          <span className="text-white/60 text-xs truncate">{apresentacao}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <User className="h-3 w-3 text-white/30 shrink-0" />
+          <span className="text-white/60 text-xs truncate">{modoUso}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Thermometer className="h-3 w-3 text-white/30 shrink-0" />
+          <span className="text-white/60 text-xs truncate">{conservacao}</span>
+        </div>
+        {med.codigo_barras && (
+          <div className="flex items-center gap-2">
+            <Barcode className="h-3 w-3 text-white/30 shrink-0" />
+            <span className="text-white/40 text-xs truncate">{med.codigo_barras}</span>
+          </div>
+        )}
+        {med.data_ultima_compra && (
+          <div className="flex items-center gap-2">
+            <Calendar className="h-3 w-3 text-white/30 shrink-0" />
+            <span className="text-white/40 text-xs">Ultima compra: {med.data_ultima_compra}</span>
+          </div>
+        )}
+        {med.validade && (
+          <div className="flex items-center gap-2">
+            <Archive className="h-3 w-3 text-white/30 shrink-0" />
+            <span className="text-white/40 text-xs">Validade: {med.validade}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom: valor + estoque */}
+      <div className="flex items-center gap-2 mt-auto pt-1 flex-wrap">
+        {med.valor != null && med.valor !== "—" && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[10px] font-semibold">
+            <DollarSign className="h-2.5 w-2.5" />
+            {typeof med.valor === "number" ? `R$ ${med.valor.toFixed(2)}` : med.valor}
+          </span>
+        )}
+        {temEstoque && (
+          <span className={cn(
+            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium",
+            estoqueZero
+              ? "bg-red-500/15 border-red-500/25 text-red-400"
+              : "bg-white/8 border-white/15 text-white/50"
+          )}>
+            <ShoppingCart className="h-2.5 w-2.5" />
+            {estoqueZero ? "Sem estoque" : `${med.quantidade_estoque} unid.`}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DiCardRenderer({ card }: { card: DiCard }) {
   const color = card.color ?? "purple";
   const palette = COLOR_MAP[color] ?? COLOR_MAP["purple"]!;
   const Icon = CARD_ICONS[color] ?? Activity;
-  const dataEntries = Object.entries(card.data);
 
-  // Separate scalar top-level stats from list/object entries
+  // ── Medication list card (get_medicamentos / gerar_relatorio_completo) ──
+  const medList = (card.data["medicamentos"] ?? card.data["medicamentos_criticos"]) as MedRow[] | undefined;
+  if (Array.isArray(medList) && medList.length > 0 && typeof medList[0] === "object" && "nome" in medList[0]) {
+    // scalar stats to show in header
+    const statsEntries = Object.entries(card.data).filter(([k, v]) =>
+      k !== "medicamentos" && k !== "medicamentos_criticos" && (typeof v === "string" || typeof v === "number")
+    );
+    return (
+      <div className="rounded-2xl border border-[#3C3489]/40 bg-[rgba(63,52,137,0.15)] overflow-hidden my-1">
+        <div className="flex items-center gap-2.5 px-4 py-3 bg-[rgba(63,52,137,0.25)]">
+          <div className="h-7 w-7 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+            <Pill className="h-3.5 w-3.5 text-[#A5FFD6]" />
+          </div>
+          <h4 className="font-semibold text-sm text-[#A5FFD6] flex-1">{card.title}</h4>
+          {statsEntries.map(([k, v]) => (
+            <span key={k} className="text-[10px] bg-white/8 border border-white/10 rounded-lg px-2 py-1 text-white/60">
+              <span className="text-white/35 capitalize">{k.replace(/_/g, " ")}: </span>
+              <span className="text-[#A5FFD6] font-bold">{String(v)}</span>
+            </span>
+          ))}
+        </div>
+        <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {medList.slice(0, 12).map((med, i) => (
+            <MedicamentoMiniCard key={i} med={med} />
+          ))}
+          {medList.length > 12 && (
+            <p className="col-span-full text-center text-white/30 text-xs py-2">+ {medList.length - 12} medicamentos</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Single medication detail card (get_medicamento_detalhe) ──
+  if (card.title.startsWith("Medicamento:") && card.data["nome"]) {
+    const med: MedRow = card.data as unknown as MedRow;
+    return (
+      <div className="rounded-2xl border border-[#3C3489]/40 bg-[rgba(63,52,137,0.15)] overflow-hidden my-1">
+        <div className="flex items-center gap-2.5 px-4 py-3 bg-[rgba(63,52,137,0.25)]">
+          <div className="h-7 w-7 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+            <Pill className="h-3.5 w-3.5 text-[#A5FFD6]" />
+          </div>
+          <h4 className="font-semibold text-sm text-[#A5FFD6]">{card.title}</h4>
+        </div>
+        <div className="p-3">
+          <MedicamentoMiniCard med={med} />
+          {/* Extra detail fields */}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {med.registro && (
+              <div className="bg-white/5 rounded-lg p-2.5 border border-white/8">
+                <p className="text-white/35 text-[10px] uppercase tracking-wider mb-0.5">Registro</p>
+                <p className="text-white/80 text-xs font-medium">{med.registro}</p>
+              </div>
+            )}
+            {med.lote && (
+              <div className="bg-white/5 rounded-lg p-2.5 border border-white/8">
+                <p className="text-white/35 text-[10px] uppercase tracking-wider mb-0.5">Lote</p>
+                <p className="text-white/80 text-xs font-medium">{med.lote}</p>
+              </div>
+            )}
+          </div>
+          {(card.data["orientacoes_uso"] as string | undefined) && (
+            <div className="mt-2 bg-white/5 rounded-lg p-2.5 border border-white/8">
+              <p className="text-white/35 text-[10px] uppercase tracking-wider mb-0.5">Orientacoes de uso</p>
+              <p className="text-white/70 text-xs leading-relaxed">{String(card.data["orientacoes_uso"])}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Default generic card renderer ──
+  const dataEntries = Object.entries(card.data);
   const stats = dataEntries.filter(([, v]) => typeof v === "string" || typeof v === "number");
   const lists = dataEntries.filter(([, v]) => typeof v !== "string" && typeof v !== "number");
 
