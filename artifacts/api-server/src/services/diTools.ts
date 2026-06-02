@@ -44,12 +44,33 @@ export const DI_TOOLS: Tool[] = [
   },
   {
     name: "get_medicamentos",
-    description: "Lista medicamentos cadastrados com detalhes. Use para relatórios de medicamentos, estoque, importações.",
+    description: "Lista medicamentos do catálogo com detalhes completos: princípio ativo, apresentação, modo de uso, conservação, estoque, validade, valor e classe. Use para relatórios de catálogo, análise de estoque, verificação de medicamentos disponíveis.",
     input_schema: {
       type: "object",
       properties: {
         search: { type: "string", description: "Busca por nome ou princípio ativo" },
-        limit: { type: "number", description: "Máximo de registros (padrão 10)" },
+        limit: { type: "number", description: "Máximo de registros (padrão 15)" },
+      },
+    },
+  },
+  {
+    name: "get_medicamento_detalhe",
+    description: "Busca detalhes completos de um medicamento específico pelo nome ou ID: modo de uso, conservação, lote, validade, estoque atual, valor, registro, orientações de uso. Use quando o usuário perguntar sobre um medicamento específico.",
+    input_schema: {
+      type: "object",
+      properties: {
+        nome: { type: "string", description: "Nome (parcial ou completo) do medicamento" },
+        id: { type: "string", description: "UUID do medicamento (opcional, se conhecido)" },
+      },
+    },
+  },
+  {
+    name: "get_estoque_baixo",
+    description: "Lista medicamentos com estoque abaixo de um limite crítico. Use para alertas de reposição, análise de estoque crítico ou quando o usuário perguntar sobre medicamentos em falta.",
+    input_schema: {
+      type: "object",
+      properties: {
+        limite: { type: "number", description: "Quantidade mínima em estoque para considerar crítico (padrão 5 unidades)" },
       },
     },
   },

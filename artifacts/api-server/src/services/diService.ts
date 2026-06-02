@@ -193,7 +193,9 @@ FERRAMENTAS DISPONÍVEIS (use sempre que o usuário pedir dados, listas ou anál
 - get_processos(status?, limit?) — processos por fase/status
 - get_cotacoes(status?, limit?) — cotações e aprovações
 - get_pacientes(search?, limit?) — pacientes cadastrados
-- get_medicamentos(search?, limit?) — catálogo de medicamentos
+- get_medicamentos(search?, limit?) — catálogo completo com estoque, validade, valor, modo de uso e conservação
+- get_medicamento_detalhe(nome) — ficha completa de um medicamento específico (lote, registro, orientações, estoque atual)
+- get_estoque_baixo(limite?) — medicamentos com estoque abaixo do limite crítico (padrão 5 unid.)
 - get_mandatos(status?, limit?) — mandatos judiciais
 - get_distribuidoras() — distribuidoras parceiras
 - get_glosas(status?, limit?) — glosas detalhadas com valores
@@ -319,17 +321,83 @@ export async function executeTool(
       case "get_medicamentos": {
         let query = supabase
           .from("medicamentos")
-          .select("id, nome, principio_ativo, concentracao, apresentacao, via_administracao")
+          .select("id, nome, principio_ativo, concentracao, apresentacao, via_administracao, modo_uso, conservacao, classe, lote, validade, quantidade_estoque, valor, registro")
           .order("nome")
-          .limit(Number(input.limit ?? 10));
-        if (input.search) query = query.ilike("nome", `%${String(input.search)}%`);
+          .limit(Number(input.limit ?? 15));
+        if (input.search) query = query.ilike("nome", `%${String(input.search)}%`).or(`principio_ativo.ilike.%${String(input.search)}%`);
         const { data } = await query;
-        const rows = data ?? [];
+        const rows = (data ?? []) as Array<Record<string, unknown>>;
+        const semEstoque = rows.filter((r) => Number(r["quantidade_estoque"] ?? 0) === 0).length;
+        const estoqueTotal = rows.reduce((s, r) => s + Number(r["quantidade_estoque"] ?? 0), 0);
         const card: ToolCard = {
           type: "card",
-          title: "Medicamentos",
+          title: `Medicamentos${input.search ? ` — "${String(input.search)}"` : ""}`,
           color: "purple",
-          data: { medicamentos: rows, total: rows.length },
+          data: {
+            medicamentos: rows,
+            total: rows.length,
+            sem_estoque: semEstoque,
+            estoque_total_unidades: estoqueTotal,
+          },
+        };
+        return { text: JSON.stringify(card), card };
+      }
+
+      case "get_medicamento_detalhe": {
+        const termoBusca = String(input.nome ?? input.id ?? "");
+        const isUuid = /^[0-9a-f-]{36}$/i.test(termoBusca);
+        let query = supabase
+          .from("medicamentos")
+          .select("id, nome, principio_ativo, concentracao, apresentacao, via_administracao, modo_uso, conservacao, classe, lote, validade, quantidade_estoque, valor, registro, orientacoes_uso, codigo_barras, data_ultima_compra");
+        if (isUuid) query = query.eq("id", termoBusca);
+        else query = query.ilike("nome", `%${termoBusca}%`);
+        const { data } = await query.limit(1);
+        const med = data?.[0] as Record<string, unknown> | undefined;
+        if (!med) return { text: `Medicamento "${termoBusca}" não encontrado no catálogo.` };
+        const card: ToolCard = {
+          type: "card",
+          title: `Medicamento: ${String(med["nome"])}`,
+          color: "purple",
+          data: {
+            nome: med["nome"],
+            principio_ativo: med["principio_ativo"] ?? "—",
+            concentracao: med["concentracao"] ?? "—",
+            apresentacao: med["apresentacao"] ?? "—",
+            via_administracao: med["via_administracao"] ?? "—",
+            modo_uso: med["modo_uso"] ?? "—",
+            conservacao: med["conservacao"] ?? "—",
+            classe: med["classe"] ?? "—",
+            registro: med["registro"] ?? "—",
+            lote: med["lote"] ?? "—",
+            validade: med["validade"] ?? "—",
+            quantidade_estoque: med["quantidade_estoque"] ?? 0,
+            valor: med["valor"] ? `R$ ${Number(med["valor"]).toFixed(2)}` : "—",
+            data_ultima_compra: med["data_ultima_compra"] ?? "—",
+            orientacoes_uso: med["orientacoes_uso"] ?? "—",
+          },
+        };
+        return { text: JSON.stringify(card), card };
+      }
+
+      case "get_estoque_baixo": {
+        const limite = Number(input.limite ?? 5);
+        const { data } = await supabase
+          .from("medicamentos")
+          .select("id, nome, principio_ativo, quantidade_estoque, validade, lote")
+          .lte("quantidade_estoque", limite)
+          .order("quantidade_estoque", { ascending: true });
+        const rows = (data ?? []) as Array<Record<string, unknown>>;
+        const semEstoque = rows.filter((r) => Number(r["quantidade_estoque"] ?? 0) === 0);
+        const card: ToolCard = {
+          type: "card",
+          title: `Estoque Baixo — limite ${limite} unid.`,
+          color: "red",
+          data: {
+            medicamentos_criticos: rows,
+            total_criticos: rows.length,
+            sem_estoque: semEstoque.length,
+            com_estoque_baixo: rows.length - semEstoque.length,
+          },
         };
         return { text: JSON.stringify(card), card };
       }
