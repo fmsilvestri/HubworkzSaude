@@ -1417,7 +1417,7 @@ export default function Cotacao() {
                     </FormItem>
                   )} />
                 </div>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-5 gap-3">
                   <FormField control={form.control} name="num_caixas" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-white/70">Nº de Caixas</FormLabel>
@@ -1470,6 +1470,21 @@ export default function Cotacao() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  {/* 20% fixo sobre o Total Custo */}
+                  <FormItem>
+                    <FormLabel className="text-white/70">
+                      Custo Op. 20% (R$)
+                      <span className="ml-2 text-[10px] text-[#F56E0F]/70 font-normal normal-case tracking-normal">fixo sobre total</span>
+                    </FormLabel>
+                    <div className="flex h-10 w-full rounded-md border border-[#F56E0F]/25 bg-[#0F0F12] px-3 items-center">
+                      <span className="text-[#F56E0F] font-semibold text-sm">
+                        {(() => {
+                          const t = parseFloat((watchTotal ?? "").replace(",", "."));
+                          return isNaN(t) ? "0,00" : (t * 0.2).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        })()}
+                      </span>
+                    </div>
+                  </FormItem>
                 </div>
               </div>
 
@@ -1717,7 +1732,7 @@ export default function Cotacao() {
                     </FormItem>
                   )} />
                 </div>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-5 gap-3">
                   <FormField control={editForm.control} name="num_caixas" render={({ field }) => (
                     <FormItem><FormLabel className="text-white/70">Nº de Caixas</FormLabel>
                       <FormControl><Input {...field} type="number" min="1" step="1" placeholder="1" className="bg-[#0F0F12] border-white/10 text-white" /></FormControl><FormMessage />
@@ -1738,6 +1753,21 @@ export default function Cotacao() {
                       <FormControl><Input {...field} type="number" step="0.01" readOnly className="bg-[#0F0F12] border-white/10 text-[#A5FFD6] font-semibold cursor-default focus-visible:ring-0 focus-visible:ring-offset-0" /></FormControl><FormMessage />
                     </FormItem>
                   )} />
+                  {/* 20% fixo sobre o Total Custo */}
+                  <FormItem>
+                    <FormLabel className="text-white/70">
+                      Custo Op. 20% (R$)
+                      <span className="ml-2 text-[10px] text-[#F56E0F]/70 font-normal normal-case tracking-normal">fixo sobre total</span>
+                    </FormLabel>
+                    <div className="flex h-10 w-full rounded-md border border-[#F56E0F]/25 bg-[#0F0F12] px-3 items-center">
+                      <span className="text-[#F56E0F] font-semibold text-sm">
+                        {(() => {
+                          const t = parseFloat((watchEditTotal ?? "").replace(",", "."));
+                          return isNaN(t) ? "0,00" : (t * 0.2).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        })()}
+                      </span>
+                    </div>
+                  </FormItem>
                 </div>
               </div>
 
