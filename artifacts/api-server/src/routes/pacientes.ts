@@ -6,9 +6,23 @@ const router: IRouter = Router();
 
 const DEFAULT_CLINICA = "00000000-0000-0000-0000-000000000001";
 
-const ALLOWED = [
+// Map frontend field names → Supabase column names
+const FIELD_TO_DB: Record<string, string> = {
+  data_nascimento: "data_nasc",
+  numero_carteirinha: "nr_carteirinha",
+  cid: "cid10",
+};
+
+// Map Supabase column names → frontend field names (reverse)
+const DB_TO_FIELD: Record<string, string> = {
+  data_nasc: "data_nascimento",
+  nr_carteirinha: "numero_carteirinha",
+  cid10: "cid",
+};
+
+const ALLOWED_FRONTEND = [
   "nome", "cpf", "data_nascimento", "email", "telefone",
-  "convenio", "numero_carteirinha", "diagnostico", "cid", "endereco", "mandato_ativo",
+  "convenio", "numero_carteirinha", "diagnostico", "cid", "endereco",
 ];
 
 const upload = multer({
@@ -19,12 +33,27 @@ const upload = multer({
   },
 });
 
-function pick(body: Record<string, unknown>) {
+function toDbPayload(body: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const k of ALLOWED) {
+  for (const k of ALLOWED_FRONTEND) {
     if (Object.prototype.hasOwnProperty.call(body, k) && body[k] !== "" && body[k] != null) {
-      out[k] = body[k];
+      const dbKey = FIELD_TO_DB[k] ?? k;
+      out[dbKey] = body[k];
     }
+  }
+  return out;
+}
+
+function toFrontend(row: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) {
+    const frontKey = DB_TO_FIELD[k] ?? k;
+    out[frontKey] = v;
+  }
+  // normalize mandato_ativo as boolean from mandato_status text field
+  if ("mandato_status" in row) {
+    out["mandato_ativo"] = row["mandato_status"] === "ativo";
+    delete out["mandato_status"];
   }
   return out;
 }
@@ -40,20 +69,18 @@ router.get("/pacientes", async (req, res): Promise<void> => {
     const { data, error } = await query;
     if (error) throw error;
 
-    // For each patient, pick the most relevant processo (active first, then latest)
     const result = (data ?? []).map((p: Record<string, unknown>) => {
       const procs = (p["processos"] as Array<{ fase: number; status: string; updated_at: string }> | null) ?? [];
-      // prefer non-concluded, highest fase; fall back to most recent
       const active = procs.filter((pr) => pr.status !== "concluido");
-      const pick = active.length > 0
+      const best = active.length > 0
         ? active.sort((a, b) => b.fase - a.fase)[0]
         : procs.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0];
 
       const { processos: _, ...rest } = p;
       return {
-        ...rest,
-        processo_fase: pick ? pick.fase : null,
-        processo_status: pick ? pick.status : null,
+        ...toFrontend(rest),
+        processo_fase: best ? best.fase : null,
+        processo_status: best ? best.status : null,
       };
     });
 
@@ -66,7 +93,7 @@ router.get("/pacientes", async (req, res): Promise<void> => {
 
 router.post("/pacientes", async (req, res): Promise<void> => {
   try {
-    const payload = pick(req.body as Record<string, unknown>);
+    const payload = toDbPayload(req.body as Record<string, unknown>);
     payload["clinica_id"] = DEFAULT_CLINICA;
     const { data, error } = await supabase
       .from("pacientes")
@@ -74,10 +101,11 @@ router.post("/pacientes", async (req, res): Promise<void> => {
       .select()
       .single();
     if (error) throw error;
-    res.status(201).json(data);
+    res.status(201).json(toFrontend(data as Record<string, unknown>));
   } catch (err) {
     req.log.error({ err }, "Failed to create paciente");
-    res.status(500).json({ error: "Failed to create paciente" });
+    const msg = (err as { message?: string })?.message ?? "Failed to create paciente";
+    res.status(500).json({ error: msg });
   }
 });
 
@@ -86,7 +114,7 @@ router.get("/pacientes/:id", async (req, res): Promise<void> => {
     const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
     const { data, error } = await supabase.from("pacientes").select("*").eq("id", id).single();
     if (error || !data) { res.status(404).json({ error: "Paciente not found" }); return; }
-    res.json(data);
+    res.json(toFrontend(data as Record<string, unknown>));
   } catch (err) {
     req.log.error({ err }, "Failed to get paciente");
     res.status(500).json({ error: "Failed to fetch paciente" });
@@ -96,7 +124,7 @@ router.get("/pacientes/:id", async (req, res): Promise<void> => {
 router.patch("/pacientes/:id", async (req, res): Promise<void> => {
   try {
     const id = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
-    const payload = pick(req.body as Record<string, unknown>);
+    const payload = toDbPayload(req.body as Record<string, unknown>);
     const { data, error } = await supabase
       .from("pacientes")
       .update(payload)
@@ -104,7 +132,7 @@ router.patch("/pacientes/:id", async (req, res): Promise<void> => {
       .select()
       .single();
     if (error || !data) { res.status(404).json({ error: "Paciente not found" }); return; }
-    res.json(data);
+    res.json(toFrontend(data as Record<string, unknown>));
   } catch (err) {
     req.log.error({ err }, "Failed to update paciente");
     res.status(500).json({ error: "Failed to update paciente" });
@@ -159,7 +187,7 @@ router.post(
 
       const { error: updateErr } = await supabase
         .from("pacientes")
-        .update({ mandato_pdf_url: publicUrl, mandato_ativo: true })
+        .update({ mandato_pdf_url: publicUrl, mandato_status: "ativo" })
         .eq("id", id);
 
       if (updateErr) throw updateErr;
