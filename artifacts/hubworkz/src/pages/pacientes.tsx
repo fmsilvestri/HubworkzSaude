@@ -433,81 +433,146 @@ export default function Pacientes() {
         />
       </div>
 
-      {/* Tabela */}
-      <div className="bg-[#1B1B1E] border border-white/10 rounded-[14px] overflow-hidden">
-        <div className="grid grid-cols-[1fr_auto_auto_auto_auto] text-xs text-white/40 uppercase tracking-wider px-5 py-3 border-b border-white/5">
-          <span>Paciente</span>
-          <span className="w-40">Convênio</span>
-          <span className="w-24 text-center">CID</span>
-          <span className="w-24 text-center">Mandato</span>
-          <span className="w-28 text-center">Ações</span>
+      {/* Cards Grid */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {[1,2,3,4,5,6].map((i) => <Skeleton key={i} className="h-56 bg-white/5 rounded-2xl" />)}
         </div>
+      ) : list.length === 0 ? (
+        <div className="py-20 text-center">
+          <Users className="h-12 w-12 text-white/15 mx-auto mb-3" />
+          <p className="text-white/30">{search ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado"}</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {list.map((p, idx) => {
+            // rotate through accent colors per card
+            const accents = [
+              { bg: "from-[#F56E0F]/20 to-[#C84F00]/10", border: "border-[#F56E0F]/25", dot: "#F56E0F", avatar: "from-[#F56E0F] to-[#C84F00]" },
+              { bg: "from-blue-500/20 to-blue-800/10", border: "border-blue-500/25", dot: "#3B82F6", avatar: "from-blue-500 to-blue-700" },
+              { bg: "from-purple-500/20 to-purple-900/10", border: "border-purple-500/25", dot: "#A855F7", avatar: "from-purple-500 to-purple-800" },
+              { bg: "from-emerald-500/20 to-emerald-900/10", border: "border-emerald-500/25", dot: "#10B981", avatar: "from-emerald-500 to-emerald-800" },
+              { bg: "from-pink-500/20 to-pink-900/10", border: "border-pink-500/25", dot: "#EC4899", avatar: "from-pink-500 to-pink-800" },
+              { bg: "from-amber-500/20 to-amber-900/10", border: "border-amber-500/25", dot: "#F59E0B", avatar: "from-amber-500 to-amber-700" },
+            ];
+            const ac = accents[idx % accents.length];
+            const initials = p.nome.split(" ").slice(0, 2).map((n: string) => n[0]).join("").toUpperCase();
 
-        {isLoading ? (
-          <div className="p-4 space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-16 bg-white/5" />)}
-          </div>
-        ) : list.length === 0 ? (
-          <div className="py-16 text-center">
-            <Users className="h-10 w-10 text-white/20 mx-auto mb-3" />
-            <p className="text-white/30">{search ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado"}</p>
-          </div>
-        ) : (
-          list.map((p) => (
-            <div
-              key={p.id}
-              data-testid={`row-paciente-${p.id}`}
-              className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center px-5 py-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group"
-            >
-              <div>
-                <p className="text-white font-medium">{p.nome}</p>
-                <p className="text-white/40 text-xs mt-0.5">
-                  {p.cpf ? `CPF: ${p.cpf}` : (p.email ?? p.telefone ?? "—")}
-                </p>
+            return (
+              <div
+                key={p.id}
+                data-testid={`row-paciente-${p.id}`}
+                className={`group relative rounded-2xl border overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 ${ac.border}`}
+                style={{
+                  background: `linear-gradient(145deg, #1E1E24 0%, #18181C 100%)`,
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)",
+                }}
+              >
+                {/* Color top bar */}
+                <div className={`h-1 w-full bg-gradient-to-r ${ac.avatar}`} />
+
+                <div className="p-5">
+                  {/* Header — avatar + name + mandato badge */}
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${ac.avatar} flex items-center justify-center shrink-0 text-white font-bold text-sm shadow-lg`}>
+                      {initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-semibold text-sm leading-tight truncate">{p.nome}</p>
+                      <p className="text-white/40 text-xs mt-0.5 truncate">
+                        {p.cpf ? `CPF: ${p.cpf}` : (p.email ?? p.telefone ?? "—")}
+                      </p>
+                    </div>
+                    <Badge className={p.mandato_ativo
+                      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20 text-[10px] shrink-0"
+                      : "bg-yellow-500/15 text-yellow-400 border-yellow-500/20 text-[10px] shrink-0"
+                    }>
+                      <FileCheck className="h-2.5 w-2.5 mr-1" />
+                      {p.mandato_ativo ? "Mandato Ativo" : "Pendente"}
+                    </Badge>
+                  </div>
+
+                  {/* Info grid */}
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {/* Convênio */}
+                    <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <p className="text-white/35 text-[10px] uppercase tracking-wider mb-0.5">Convenio</p>
+                      <p className="text-white/80 text-xs font-medium truncate">{p.convenio ?? "—"}</p>
+                      {p.numero_carteirinha && (
+                        <p className="text-white/30 text-[10px] truncate">{p.numero_carteirinha}</p>
+                      )}
+                    </div>
+
+                    {/* Diagnóstico + CID */}
+                    <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <p className="text-white/35 text-[10px] uppercase tracking-wider mb-0.5">Diagnostico</p>
+                      <p className="text-white/80 text-xs font-medium truncate">{p.diagnostico ?? "—"}</p>
+                      {p.cid && (
+                        <span className="inline-block mt-0.5 text-[10px] px-1.5 py-0.5 rounded-md font-mono"
+                          style={{ background: `${ac.dot}20`, color: ac.dot }}>
+                          {p.cid}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Telefone */}
+                    <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <p className="text-white/35 text-[10px] uppercase tracking-wider mb-0.5">Telefone</p>
+                      <p className="text-white/80 text-xs font-medium">{p.telefone ?? "—"}</p>
+                    </div>
+
+                    {/* Nascimento */}
+                    <div className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <p className="text-white/35 text-[10px] uppercase tracking-wider mb-0.5">Nascimento</p>
+                      <p className="text-white/80 text-xs font-medium">
+                        {p.data_nascimento
+                          ? new Date(p.data_nascimento + "T12:00:00").toLocaleDateString("pt-BR")
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Endereço */}
+                  {p.endereco && (
+                    <div className="rounded-xl px-3 py-2 mb-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <p className="text-white/35 text-[10px] uppercase tracking-wider mb-0.5">Endereco</p>
+                      <p className="text-white/60 text-xs leading-snug">{p.endereco}</p>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 pt-3 border-t border-white/5">
+                    <button
+                      onClick={() => void abrirHistorico(p)}
+                      className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-medium transition-colors"
+                      style={{ background: "rgba(165,255,214,0.08)", color: "#A5FFD6", border: "1px solid rgba(165,255,214,0.15)" }}
+                      title="Histórico"
+                    >
+                      <History className="h-3.5 w-3.5" /> Historico
+                    </button>
+                    <button
+                      onClick={() => openEdit(p)}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
+                      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                      title="Editar"
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-white/60" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteItem(p)}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/20"
+                      style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)" }}
+                      title="Excluir"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="w-40">
-                <p className="text-white/70 text-sm">{p.convenio ?? "—"}</p>
-                {p.numero_carteirinha && <p className="text-white/30 text-xs">{p.numero_carteirinha}</p>}
-              </div>
-              <div className="w-24 text-center">
-                <span className="text-white/60 text-sm">{p.cid ?? "—"}</span>
-              </div>
-              <div className="w-24 flex justify-center">
-                <Badge className={p.mandato_ativo
-                  ? "bg-green-500/15 text-green-400 border-green-500/20 text-xs"
-                  : "bg-yellow-500/15 text-yellow-400 border-yellow-500/20 text-xs"
-                }>
-                  <FileCheck className="h-3 w-3 mr-1" />
-                  {p.mandato_ativo ? "Ativo" : "Pendente"}
-                </Badge>
-              </div>
-              <div className="w-28 flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => void abrirHistorico(p)}
-                  className="h-7 w-7 rounded-lg bg-[#A5FFD6]/10 hover:bg-[#A5FFD6]/20 flex items-center justify-center transition-colors"
-                  title="Histórico de atendimento"
-                >
-                  <History className="h-3.5 w-3.5 text-[#A5FFD6]" />
-                </button>
-                <button
-                  onClick={() => openEdit(p)}
-                  className="h-7 w-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-                  title="Editar"
-                >
-                  <Pencil className="h-3.5 w-3.5 text-white/60" />
-                </button>
-                <button
-                  onClick={() => setDeleteItem(p)}
-                  className="h-7 w-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-colors"
-                  title="Excluir"
-                >
-                  <Trash2 className="h-3.5 w-3.5 text-red-400" />
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Hidden PDF input */}
       <input
