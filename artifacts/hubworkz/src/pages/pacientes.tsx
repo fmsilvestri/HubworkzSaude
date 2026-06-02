@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Users, Plus, FileCheck, Pencil, Trash2, FileText, ExternalLink, Upload, Loader2, History, Download, CheckCircle2, MessageSquare } from "lucide-react";
+import { Search, Users, Plus, FileCheck, Pencil, Trash2, FileText, ExternalLink, Upload, Loader2, History, Download, CheckCircle2, MessageSquare, ArrowUpAZ, ArrowDownAZ } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -394,7 +394,9 @@ export default function Pacientes() {
     }
   }
 
-  const list = (pacientes as Paciente[] ?? []);
+  const [sortAZ, setSortAZ] = useState(false);
+  const raw = (pacientes as Paciente[] ?? []);
+  const list = sortAZ ? [...raw].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")) : raw;
 
   return (
     <div className="space-y-6">
@@ -421,16 +423,27 @@ export default function Pacientes() {
         </Sheet>
       </div>
 
-      {/* Busca */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
-        <Input
-          data-testid="input-search-pacientes"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar paciente por nome..."
-          className="pl-10 bg-[#1B1B1E] border-white/10 text-white placeholder:text-white/30"
-        />
+      {/* Busca + Ordenação */}
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+          <Input
+            data-testid="input-search-pacientes"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar paciente por nome..."
+            className="pl-10 bg-[#1B1B1E] border-white/10 text-white placeholder:text-white/30"
+          />
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => setSortAZ((v) => !v)}
+          className={`gap-2 border-white/10 bg-[#1B1B1E] text-white hover:bg-white/10 shrink-0 ${sortAZ ? "border-[#F56E0F]/40 text-[#F56E0F]" : ""}`}
+          title={sortAZ ? "Ordenado A→Z (clique para reverter)" : "Ordenar A→Z"}
+        >
+          {sortAZ ? <ArrowUpAZ className="h-4 w-4" /> : <ArrowDownAZ className="h-4 w-4" />}
+          A→Z
+        </Button>
       </div>
 
       {/* Cards Grid */}
