@@ -464,10 +464,11 @@ export default function Cotacao() {
     const caixas = parseFloat((watchCaixas ?? "").replace(",", "."));
     const numCaixas = isNaN(caixas) || caixas <= 0 ? 1 : caixas;
     const totalUsd = (isNaN(usd1) ? 0 : usd1) * numCaixas + (isNaN(usd2) ? 0 : usd2);
+    // Total já inclui 20% de custo operacional
     if (totalUsd > 0 && !isNaN(taxa) && taxa > 0) {
-      form.setValue("total", String((totalUsd * taxa).toFixed(2)));
+      form.setValue("total", String((totalUsd * taxa * 1.20).toFixed(2)));
     } else if (totalUsd > 0 && (isNaN(taxa) || taxa === 0)) {
-      form.setValue("total", String(totalUsd.toFixed(2)));
+      form.setValue("total", String((totalUsd * 1.20).toFixed(2)));
     }
   }, [watchImportado, watchFrete, watchDolar, watchCaixas]);
 
@@ -504,10 +505,11 @@ export default function Cotacao() {
     const caixas = parseFloat((watchEditCaixas ?? "").replace(",", "."));
     const numCaixas = isNaN(caixas) || caixas <= 0 ? 1 : caixas;
     const totalUsd = (isNaN(usd1) ? 0 : usd1) * numCaixas + (isNaN(usd2) ? 0 : usd2);
+    // Total já inclui 20% de custo operacional
     if (totalUsd > 0 && !isNaN(taxa) && taxa > 0) {
-      editForm.setValue("total", String((totalUsd * taxa).toFixed(2)));
+      editForm.setValue("total", String((totalUsd * taxa * 1.20).toFixed(2)));
     } else if (totalUsd > 0 && (isNaN(taxa) || taxa === 0)) {
-      editForm.setValue("total", String(totalUsd.toFixed(2)));
+      editForm.setValue("total", String((totalUsd * 1.20).toFixed(2)));
     }
   }, [watchEditImportado, watchEditFrete, watchEditDolar, watchEditCaixas]);
 
@@ -1470,17 +1472,18 @@ export default function Cotacao() {
                       <FormMessage />
                     </FormItem>
                   )} />
-                  {/* 20% fixo sobre o Total Custo */}
+                  {/* 20% já incluso no Total — exibe a parcela */}
                   <div className="space-y-2">
                     <p className="text-white/70 text-sm font-medium">
                       Custo Op. 20% (R$)
-                      <span className="ml-2 text-[10px] text-[#F56E0F]/70 font-normal">fixo sobre total</span>
+                      <span className="ml-2 text-[10px] text-[#F56E0F]/70 font-normal">incluso no total</span>
                     </p>
                     <div className="flex h-10 w-full rounded-md border border-[#F56E0F]/25 bg-[#0F0F12] px-3 items-center">
                       <span className="text-[#F56E0F] font-semibold text-sm">
                         {(() => {
                           const t = parseFloat((watchTotal ?? "").replace(",", "."));
-                          return isNaN(t) ? "0,00" : (t * 0.2).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                          // parcela = total / 1.20 * 0.20 = total / 6
+                          return isNaN(t) ? "0,00" : (t / 6).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         })()}
                       </span>
                     </div>
@@ -1753,17 +1756,18 @@ export default function Cotacao() {
                       <FormControl><Input {...field} type="number" step="0.01" readOnly className="bg-[#0F0F12] border-white/10 text-[#A5FFD6] font-semibold cursor-default focus-visible:ring-0 focus-visible:ring-offset-0" /></FormControl><FormMessage />
                     </FormItem>
                   )} />
-                  {/* 20% fixo sobre o Total Custo */}
+                  {/* 20% já incluso no Total — exibe a parcela */}
                   <div className="space-y-2">
                     <p className="text-white/70 text-sm font-medium">
                       Custo Op. 20% (R$)
-                      <span className="ml-2 text-[10px] text-[#F56E0F]/70 font-normal">fixo sobre total</span>
+                      <span className="ml-2 text-[10px] text-[#F56E0F]/70 font-normal">incluso no total</span>
                     </p>
                     <div className="flex h-10 w-full rounded-md border border-[#F56E0F]/25 bg-[#0F0F12] px-3 items-center">
                       <span className="text-[#F56E0F] font-semibold text-sm">
                         {(() => {
                           const t = parseFloat((watchEditTotal ?? "").replace(",", "."));
-                          return isNaN(t) ? "0,00" : (t * 0.2).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                          // parcela = total / 1.20 * 0.20 = total / 6
+                          return isNaN(t) ? "0,00" : (t / 6).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         })()}
                       </span>
                     </div>
