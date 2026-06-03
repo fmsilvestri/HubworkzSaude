@@ -249,6 +249,19 @@ export default function Pacientes() {
     }
   }
 
+  function sanitizarPdf(texto: string): string {
+    return texto
+      // Remove emojis e símbolos Unicode fora do Latin-1 (jsPDF/Helvetica só suporta até U+00FF)
+      .replace(/[\u0100-\uFFFF]/g, "")
+      // Remove formatação WhatsApp: *negrito*, _italico_
+      .replace(/\*([^*]+)\*/g, "$1")
+      .replace(/_([^_]+)_/g, "$1")
+      // Normaliza espaços múltiplos e linhas em branco repetidas
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/[ \t]{2,}/g, " ")
+      .trim();
+  }
+
   function gerarPdfHistorico() {
     if (!histPaciente) return;
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -300,15 +313,18 @@ export default function Pacientes() {
     }
 
     // Tabela de histórico de comunicados
-    const rows = historico.map((h) => [
-      new Date(h.created_at).toLocaleString("pt-BR", {
-        day: "2-digit", month: "2-digit", year: "numeric",
-        hour: "2-digit", minute: "2-digit",
-      }),
-      h.tipo_label,
-      h.canal === "whatsapp" ? "WhatsApp" : h.canal === "copiado" ? "Copiado" : h.canal,
-      h.mensagem.length > 120 ? h.mensagem.slice(0, 117) + "..." : h.mensagem,
-    ]);
+    const rows = historico.map((h) => {
+      const msgLimpa = sanitizarPdf(h.mensagem);
+      return [
+        new Date(h.created_at).toLocaleString("pt-BR", {
+          day: "2-digit", month: "2-digit", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        }),
+        sanitizarPdf(h.tipo_label),
+        h.canal === "whatsapp" ? "WhatsApp" : h.canal === "copiado" ? "Copiado" : h.canal,
+        msgLimpa.length > 300 ? msgLimpa.slice(0, 297) + "..." : msgLimpa,
+      ];
+    });
 
     // Título seção comunicados
     doc.setFontSize(10);
@@ -354,9 +370,9 @@ export default function Pacientes() {
         day: "2-digit", month: "2-digit", year: "numeric",
         hour: "2-digit", minute: "2-digit",
       }),
-      d.medicamento_nome,
+      sanitizarPdf(d.medicamento_nome),
       d.data_retirada ? new Date(d.data_retirada + "T12:00:00").toLocaleDateString("pt-BR") : "—",
-      d.lote ?? "—",
+      d.lote ? sanitizarPdf(d.lote) : "—",
       d.validade ? new Date(d.validade + "T12:00:00").toLocaleDateString("pt-BR") : "—",
     ]);
 
