@@ -1471,11 +1471,11 @@ export default function Cotacao() {
                     </FormItem>
                   )} />
                   {/* 20% fixo sobre o Total Custo */}
-                  <FormItem>
-                    <FormLabel className="text-white/70">
+                  <div className="space-y-2">
+                    <p className="text-white/70 text-sm font-medium">
                       Custo Op. 20% (R$)
-                      <span className="ml-2 text-[10px] text-[#F56E0F]/70 font-normal normal-case tracking-normal">fixo sobre total</span>
-                    </FormLabel>
+                      <span className="ml-2 text-[10px] text-[#F56E0F]/70 font-normal">fixo sobre total</span>
+                    </p>
                     <div className="flex h-10 w-full rounded-md border border-[#F56E0F]/25 bg-[#0F0F12] px-3 items-center">
                       <span className="text-[#F56E0F] font-semibold text-sm">
                         {(() => {
@@ -1484,7 +1484,7 @@ export default function Cotacao() {
                         })()}
                       </span>
                     </div>
-                  </FormItem>
+                  </div>
                 </div>
               </div>
 
@@ -1754,11 +1754,11 @@ export default function Cotacao() {
                     </FormItem>
                   )} />
                   {/* 20% fixo sobre o Total Custo */}
-                  <FormItem>
-                    <FormLabel className="text-white/70">
+                  <div className="space-y-2">
+                    <p className="text-white/70 text-sm font-medium">
                       Custo Op. 20% (R$)
-                      <span className="ml-2 text-[10px] text-[#F56E0F]/70 font-normal normal-case tracking-normal">fixo sobre total</span>
-                    </FormLabel>
+                      <span className="ml-2 text-[10px] text-[#F56E0F]/70 font-normal">fixo sobre total</span>
+                    </p>
                     <div className="flex h-10 w-full rounded-md border border-[#F56E0F]/25 bg-[#0F0F12] px-3 items-center">
                       <span className="text-[#F56E0F] font-semibold text-sm">
                         {(() => {
@@ -1767,7 +1767,7 @@ export default function Cotacao() {
                         })()}
                       </span>
                     </div>
-                  </FormItem>
+                  </div>
                 </div>
               </div>
 
