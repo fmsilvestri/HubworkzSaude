@@ -223,19 +223,27 @@ export default function Pacientes() {
   const [uploadingMandato, setUploadingMandato] = useState(false);
   const [histPaciente, setHistPaciente] = useState<Paciente | null>(null);
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
+  const [histDispList, setHistDispList] = useState<DispensacaoItem[]>([]);
   const [loadingHist, setLoadingHist] = useState(false);
   const mandatoPdfRef = useRef<HTMLInputElement>(null);
 
   async function abrirHistorico(p: Paciente) {
     setHistPaciente(p);
     setHistorico([]);
+    setHistDispList([]);
     setLoadingHist(true);
     try {
-      const data = await fetch(`/api/historico-atendimentos?paciente_id=${p.id}`)
-        .then((r) => r.ok ? r.json() as Promise<HistoricoItem[]> : []);
-      setHistorico(Array.isArray(data) ? data : []);
+      const [histData, dispData] = await Promise.all([
+        fetch(`/api/historico-atendimentos?paciente_id=${p.id}`)
+          .then((r) => r.ok ? r.json() as Promise<HistoricoItem[]> : []),
+        fetch(`/api/dispensacoes?paciente_id=${p.id}`)
+          .then((r) => r.ok ? r.json() as Promise<DispensacaoItem[]> : []),
+      ]);
+      setHistorico(Array.isArray(histData) ? histData : []);
+      setHistDispList(Array.isArray(dispData) ? dispData : []);
     } catch {
       setHistorico([]);
+      setHistDispList([]);
     } finally {
       setLoadingHist(false);
     }
@@ -291,7 +299,7 @@ export default function Pacientes() {
       if (x > 150) { x = 14; y += 6; }
     }
 
-    // Tabela de histórico
+    // Tabela de histórico de comunicados
     const rows = historico.map((h) => [
       new Date(h.created_at).toLocaleString("pt-BR", {
         day: "2-digit", month: "2-digit", year: "numeric",
@@ -301,6 +309,12 @@ export default function Pacientes() {
       h.canal === "whatsapp" ? "WhatsApp" : h.canal === "copiado" ? "Copiado" : h.canal,
       h.mensagem.length > 120 ? h.mensagem.slice(0, 117) + "..." : h.mensagem,
     ]);
+
+    // Título seção comunicados
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(245, 110, 15);
+    doc.text("Historico de Comunicados", 14, 79);
 
     autoTable(doc, {
       startY: 82,
@@ -323,6 +337,51 @@ export default function Pacientes() {
         1: { cellWidth: 42 },
         2: { cellWidth: 22 },
         3: { cellWidth: "auto" },
+      },
+      margin: { left: 14, right: 14 },
+      styles: { overflow: "linebreak", lineColor: [220, 220, 220], lineWidth: 0.1 },
+    });
+
+    // Tabela de dispensações
+    const afterCom = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(245, 110, 15);
+    doc.text("Dispensacao de Medicamentos", 14, afterCom);
+
+    const dispRows = histDispList.map((d) => [
+      new Date(d.created_at).toLocaleString("pt-BR", {
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      }),
+      d.medicamento_nome,
+      d.data_retirada ? new Date(d.data_retirada + "T12:00:00").toLocaleDateString("pt-BR") : "—",
+      d.lote ?? "—",
+      d.validade ? new Date(d.validade + "T12:00:00").toLocaleDateString("pt-BR") : "—",
+    ]);
+
+    autoTable(doc, {
+      startY: afterCom + 3,
+      head: [["Registrado em", "Medicamento", "Data Retirada", "Lote", "Validade"]],
+      body: dispRows.length > 0 ? dispRows : [["—", "Nenhuma dispensacao registrada", "—", "—", "—"]],
+      headStyles: {
+        fillColor: [30, 80, 60],
+        textColor: [165, 255, 214],
+        fontStyle: "bold",
+        fontSize: 8,
+      },
+      bodyStyles: {
+        fontSize: 7.5,
+        textColor: [60, 60, 60],
+        fillColor: [255, 255, 255],
+      },
+      alternateRowStyles: { fillColor: [248, 248, 248] },
+      columnStyles: {
+        0: { cellWidth: 32 },
+        1: { cellWidth: "auto" },
+        2: { cellWidth: 28 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 24 },
       },
       margin: { left: 14, right: 14 },
       styles: { overflow: "linebreak", lineColor: [220, 220, 220], lineWidth: 0.1 },
@@ -996,60 +1055,125 @@ export default function Pacientes() {
             </div>
           )}
 
-          {/* Lista de histórico */}
-          <div className="flex-1 overflow-y-auto">
-            {loadingHist ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 bg-white/5 rounded-xl" />)}
+          {/* Conteúdo do histórico */}
+          <div className="flex-1 overflow-y-auto space-y-6">
+
+            {/* ── Seção: Dispensações de Medicamentos ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Pill className="h-4 w-4 text-[#F56E0F]" />
+                <p className="text-white/70 text-xs font-semibold uppercase tracking-wider">Dispensacao de Medicamentos</p>
+                {histDispList.length > 0 && (
+                  <span className="ml-auto text-[10px] text-white/30">{histDispList.length} registro{histDispList.length !== 1 ? "s" : ""}</span>
+                )}
               </div>
-            ) : historico.length === 0 ? (
-              <div className="py-20 text-center">
-                <MessageSquare className="h-10 w-10 text-white/10 mx-auto mb-3" />
-                <p className="text-white/25 text-sm">Nenhum comunicado registrado para este paciente</p>
-                <p className="text-white/15 text-xs mt-1">Os envios feitos na tela de Comunicacao aparecerao aqui</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {historico.map((h, idx) => (
-                  <div
-                    key={h.id}
-                    className="bg-[#0F0F12] rounded-xl border border-white/5 p-4 relative"
-                  >
-                    {/* Timeline dot */}
-                    {idx < historico.length - 1 && (
-                      <div className="absolute left-[19px] top-full h-3 w-0.5 bg-white/5" />
-                    )}
-                    <div className="flex items-start gap-3">
-                      <div className="h-6 w-6 rounded-full bg-[#A5FFD6]/15 border border-[#A5FFD6]/20 flex items-center justify-center shrink-0 mt-0.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-[#A5FFD6]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <p className="text-white/80 text-sm font-medium">{h.tipo_label}</p>
-                          <Badge className={h.canal === "whatsapp"
-                            ? "bg-green-500/15 text-green-400 border-green-500/20 text-[10px] px-1.5 py-0 border"
-                            : "bg-blue-500/15 text-blue-400 border-blue-500/20 text-[10px] px-1.5 py-0 border"
-                          }>
-                            {h.canal === "whatsapp" ? "WhatsApp" : "Copiado"}
-                          </Badge>
+              {loadingHist ? (
+                <div className="space-y-2">
+                  {[1, 2].map((i) => <Skeleton key={i} className="h-14 bg-white/5 rounded-xl" />)}
+                </div>
+              ) : histDispList.length === 0 ? (
+                <div className="py-6 text-center rounded-xl border border-white/5 bg-[#0F0F12]">
+                  <p className="text-white/20 text-xs">Nenhuma dispensacao registrada</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {histDispList.map((d) => (
+                    <div key={d.id} className="bg-[#0F0F12] rounded-xl border border-white/5 px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(245,110,15,0.10)", border: "1px solid rgba(245,110,15,0.18)" }}>
+                          <Pill className="h-3.5 w-3.5 text-[#F56E0F]" />
                         </div>
-                        <p className="text-white/25 text-[10px] mb-2">
-                          {new Date(h.created_at).toLocaleString("pt-BR", {
-                            weekday: "short", day: "2-digit", month: "short",
-                            year: "numeric", hour: "2-digit", minute: "2-digit",
-                          })}
-                        </p>
-                        <div className="bg-[#1B1B1E] rounded-lg border border-white/5 p-2.5">
-                          <pre className="text-white/40 text-[10px] whitespace-pre-wrap font-sans leading-relaxed max-h-24 overflow-hidden">
-                            {h.mensagem}
-                          </pre>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white/85 text-sm font-medium truncate">{d.medicamento_nome}</p>
+                          <p className="text-white/25 text-[10px]">
+                            Registrado em {new Date(d.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap justify-end gap-1.5 shrink-0">
+                          {d.data_retirada && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/15 whitespace-nowrap">
+                              Ret: {new Date(d.data_retirada + "T12:00:00").toLocaleDateString("pt-BR")}
+                            </span>
+                          )}
+                          {d.lote && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-white/45 border border-white/10 font-mono">
+                              {d.lote}
+                            </span>
+                          )}
+                          {d.validade && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/15 whitespace-nowrap">
+                              Val: {new Date(d.validade + "T12:00:00").toLocaleDateString("pt-BR")}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Divisor ── */}
+            <div className="border-t border-white/5" />
+
+            {/* ── Seção: Comunicados ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <MessageSquare className="h-4 w-4 text-[#A5FFD6]" />
+                <p className="text-white/70 text-xs font-semibold uppercase tracking-wider">Historico de Comunicados</p>
+                {historico.length > 0 && (
+                  <span className="ml-auto text-[10px] text-white/30">{historico.length} registro{historico.length !== 1 ? "s" : ""}</span>
+                )}
               </div>
-            )}
+              {loadingHist ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 bg-white/5 rounded-xl" />)}
+                </div>
+              ) : historico.length === 0 ? (
+                <div className="py-10 text-center rounded-xl border border-white/5 bg-[#0F0F12]">
+                  <p className="text-white/20 text-xs">Nenhum comunicado registrado</p>
+                  <p className="text-white/10 text-[10px] mt-1">Os envios feitos na tela de Comunicacao aparecerao aqui</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {historico.map((h, idx) => (
+                    <div key={h.id} className="bg-[#0F0F12] rounded-xl border border-white/5 p-4 relative">
+                      {idx < historico.length - 1 && (
+                        <div className="absolute left-[19px] top-full h-3 w-0.5 bg-white/5" />
+                      )}
+                      <div className="flex items-start gap-3">
+                        <div className="h-6 w-6 rounded-full bg-[#A5FFD6]/15 border border-[#A5FFD6]/20 flex items-center justify-center shrink-0 mt-0.5">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-[#A5FFD6]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <p className="text-white/80 text-sm font-medium">{h.tipo_label}</p>
+                            <Badge className={h.canal === "whatsapp"
+                              ? "bg-green-500/15 text-green-400 border-green-500/20 text-[10px] px-1.5 py-0 border"
+                              : "bg-blue-500/15 text-blue-400 border-blue-500/20 text-[10px] px-1.5 py-0 border"
+                            }>
+                              {h.canal === "whatsapp" ? "WhatsApp" : "Copiado"}
+                            </Badge>
+                          </div>
+                          <p className="text-white/25 text-[10px] mb-2">
+                            {new Date(h.created_at).toLocaleString("pt-BR", {
+                              weekday: "short", day: "2-digit", month: "short",
+                              year: "numeric", hour: "2-digit", minute: "2-digit",
+                            })}
+                          </p>
+                          <div className="bg-[#1B1B1E] rounded-lg border border-white/5 p-2.5">
+                            <pre className="text-white/40 text-[10px] whitespace-pre-wrap font-sans leading-relaxed max-h-24 overflow-hidden">
+                              {h.mensagem}
+                            </pre>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
         </SheetContent>
       </Sheet>
