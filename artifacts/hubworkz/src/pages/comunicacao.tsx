@@ -273,7 +273,7 @@ export default function Comunicacao() {
     if (!paciente || !templateId || !mensagem) return;
     const tpl = TEMPLATES.find((t) => t.id === templateId);
     try {
-      await fetch("/api/historico-atendimentos", {
+      const resp = await fetch("/api/historico-atendimentos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -284,12 +284,23 @@ export default function Comunicacao() {
           canal,
         }),
       });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({})) as { error?: string };
+        if (err.error?.includes("historico_atendimentos")) {
+          toast({
+            title: "Tabela de historico nao encontrada no Supabase",
+            description: "Execute o SQL de criacao da tabela historico_atendimentos no Supabase Studio para ativar esta funcionalidade.",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
       // Refresh history
       const updated = await fetch(`/api/historico-atendimentos?paciente_id=${pacienteId}`)
         .then((r) => r.ok ? r.json() as Promise<HistoricoItem[]> : []);
       setHistorico(Array.isArray(updated) ? updated : []);
     } catch {
-      // silently ignore — history is secondary to the main action
+      // network error — silently ignore
     }
   }
 
