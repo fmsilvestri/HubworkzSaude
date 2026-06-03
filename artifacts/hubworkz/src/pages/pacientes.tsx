@@ -511,6 +511,83 @@ export default function Pacientes() {
     !medSearch || m.nome.toLowerCase().includes(medSearch.toLowerCase())
   );
 
+  // ── Edição / exclusão de dispensação ─────────────────────────────────────────
+  const [editDispItem, setEditDispItem] = useState<DispensacaoItem | null>(null);
+  const [editDispForm, setEditDispForm] = useState({
+    medicamento_nome: "",
+    data_retirada: "",
+    lote: "",
+    validade: "",
+  });
+  const [editDispSearch, setEditDispSearch] = useState("");
+  const [savingDisp, setSavingDisp] = useState(false);
+  const [deleteDispItem, setDeleteDispItem] = useState<DispensacaoItem | null>(null);
+  const [deletingDispItem, setDeletingDispItem] = useState(false);
+
+  function openEditDisp(d: DispensacaoItem) {
+    setEditDispItem(d);
+    setEditDispForm({
+      medicamento_nome: d.medicamento_nome,
+      data_retirada: d.data_retirada ?? "",
+      lote: d.lote ?? "",
+      validade: d.validade ?? "",
+    });
+    setEditDispSearch("");
+  }
+
+  async function handleSaveDisp() {
+    if (!editDispItem || !editDispForm.medicamento_nome) return;
+    setSavingDisp(true);
+    try {
+      const resp = await fetch(`/api/dispensacoes/${editDispItem.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          medicamento_nome: editDispForm.medicamento_nome,
+          data_retirada: editDispForm.data_retirada || undefined,
+          lote: editDispForm.lote || undefined,
+          validade: editDispForm.validade || undefined,
+        }),
+      });
+      if (resp.ok) {
+        const updated = await resp.json() as DispensacaoItem;
+        setDispList((prev) => prev.map((d) => d.id === updated.id ? updated : d));
+        setEditDispItem(null);
+        toast({ title: "Dispensacao atualizada." });
+      } else {
+        const err = await resp.json() as { error?: string };
+        toast({ title: err.error ?? "Erro ao atualizar.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Erro ao atualizar dispensacao.", variant: "destructive" });
+    } finally {
+      setSavingDisp(false);
+    }
+  }
+
+  async function handleDeleteDisp() {
+    if (!deleteDispItem) return;
+    setDeletingDispItem(true);
+    try {
+      const resp = await fetch(`/api/dispensacoes/${deleteDispItem.id}`, { method: "DELETE" });
+      if (resp.ok) {
+        setDispList((prev) => prev.filter((d) => d.id !== deleteDispItem.id));
+        toast({ title: "Dispensacao excluída." });
+      } else {
+        toast({ title: "Erro ao excluir dispensacao.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Erro ao excluir dispensacao.", variant: "destructive" });
+    } finally {
+      setDeletingDispItem(false);
+      setDeleteDispItem(null);
+    }
+  }
+
+  const editDispMedFiltrados = medicamentosOpts.filter((m) =>
+    !editDispSearch || m.nome.toLowerCase().includes(editDispSearch.toLowerCase())
+  );
+
   // ── Documentos (imagens + PDFs) ──────────────────────────────────────────────
   const [docPaciente, setDocPaciente] = useState<Paciente | null>(null);
   const [docList, setDocList] = useState<DocumentoItem[]>([]);
@@ -1238,48 +1315,158 @@ export default function Pacientes() {
               </div>
             ) : (
               <div className="space-y-3">
-                {dispList.map((d) => (
-                  <div key={d.id} className="bg-[#0F0F12] rounded-xl border border-white/5 p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(245,110,15,0.10)", border: "1px solid rgba(245,110,15,0.20)" }}>
-                        <Pill className="h-4 w-4 text-[#F56E0F]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{d.medicamento_nome}</p>
-                        <p className="text-white/30 text-[10px] mb-2">
-                          {new Date(d.created_at).toLocaleString("pt-BR", {
-                            day: "2-digit", month: "short", year: "numeric",
-                            hour: "2-digit", minute: "2-digit",
-                          })}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {d.data_retirada && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/15">
-                              Retirada: {new Date(d.data_retirada + "T12:00:00").toLocaleDateString("pt-BR")}
-                            </span>
-                          )}
-                          {d.lote && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-white/50 border border-white/10 font-mono">
-                              Lote: {d.lote}
-                            </span>
-                          )}
-                          {d.validade && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/15">
-                              Val: {new Date(d.validade + "T12:00:00").toLocaleDateString("pt-BR")}
-                            </span>
-                          )}
+                {dispList.map((d) => {
+                  const isEditing = editDispItem?.id === d.id;
+                  return (
+                    <div key={d.id} className={`rounded-xl border p-4 transition-colors ${isEditing ? "border-[#F56E0F]/30 bg-[#1a1209]" : "border-white/5 bg-[#0F0F12]"}`}>
+                      {isEditing ? (
+                        /* ── Inline edit form ── */
+                        <div className="space-y-3">
+                          <p className="text-white/50 text-xs font-semibold uppercase tracking-wider">Editar Dispensacao</p>
+
+                          {/* Medicamento */}
+                          <div className="space-y-1">
+                            <label className="text-white/60 text-xs">Medicamento *</label>
+                            <div className="relative">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-white/30 pointer-events-none" />
+                              <Input
+                                value={editDispSearch || editDispForm.medicamento_nome}
+                                onChange={(e) => {
+                                  setEditDispSearch(e.target.value);
+                                  setEditDispForm((f) => ({ ...f, medicamento_nome: e.target.value }));
+                                }}
+                                className={`${FIELD} pl-8 h-8 text-xs`}
+                                placeholder="Buscar medicamento..."
+                              />
+                            </div>
+                            {editDispSearch && editDispMedFiltrados.length > 0 && (
+                              <div className="rounded-lg border border-white/10 bg-[#0F0F12] max-h-36 overflow-y-auto">
+                                {editDispMedFiltrados.slice(0, 8).map((m) => (
+                                  <button key={m.id} type="button"
+                                    onClick={() => { setEditDispForm((f) => ({ ...f, medicamento_nome: m.nome })); setEditDispSearch(""); }}
+                                    className="w-full text-left px-3 py-2 hover:bg-white/5 text-xs text-white border-b border-white/5 last:border-0 truncate">
+                                    {m.nome}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Data + Lote + Validade */}
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="text-white/50 text-[10px]">Data Retirada</label>
+                              <Input type="date" value={editDispForm.data_retirada}
+                                onChange={(e) => setEditDispForm((f) => ({ ...f, data_retirada: e.target.value }))}
+                                className={`${FIELD} h-8 text-xs mt-0.5`} />
+                            </div>
+                            <div>
+                              <label className="text-white/50 text-[10px]">Lote</label>
+                              <Input value={editDispForm.lote}
+                                onChange={(e) => setEditDispForm((f) => ({ ...f, lote: e.target.value }))}
+                                className={`${FIELD} h-8 text-xs mt-0.5`} placeholder="Ex: L001" />
+                            </div>
+                            <div>
+                              <label className="text-white/50 text-[10px]">Validade</label>
+                              <Input type="date" value={editDispForm.validade}
+                                onChange={(e) => setEditDispForm((f) => ({ ...f, validade: e.target.value }))}
+                                className={`${FIELD} h-8 text-xs mt-0.5`} />
+                            </div>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex gap-2 pt-1">
+                            <Button size="sm" onClick={() => void handleSaveDisp()} disabled={savingDisp || !editDispForm.medicamento_nome}
+                              className="flex-1 h-7 text-xs bg-[#F56E0F] hover:bg-[#F56E0F]/80 text-white gap-1.5">
+                              {savingDisp ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                              {savingDisp ? "Salvando..." : "Salvar"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditDispItem(null)}
+                              className="h-7 text-xs border-white/10 bg-transparent text-white/60 hover:bg-white/5 hover:text-white">
+                              Cancelar
+                            </Button>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        /* ── Read-only card ── */
+                        <div className="flex items-start gap-3">
+                          <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(245,110,15,0.10)", border: "1px solid rgba(245,110,15,0.20)" }}>
+                            <Pill className="h-4 w-4 text-[#F56E0F]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-sm font-medium truncate">{d.medicamento_nome}</p>
+                            <p className="text-white/30 text-[10px] mb-2">
+                              {new Date(d.created_at).toLocaleString("pt-BR", {
+                                day: "2-digit", month: "short", year: "numeric",
+                                hour: "2-digit", minute: "2-digit",
+                              })}
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {d.data_retirada && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/15">
+                                  Retirada: {new Date(d.data_retirada + "T12:00:00").toLocaleDateString("pt-BR")}
+                                </span>
+                              )}
+                              {d.lote && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-white/50 border border-white/10 font-mono">
+                                  Lote: {d.lote}
+                                </span>
+                              )}
+                              {d.validade && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/15">
+                                  Val: {new Date(d.validade + "T12:00:00").toLocaleDateString("pt-BR")}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Edit / Delete */}
+                          <div className="flex gap-1 shrink-0 ml-1">
+                            <button onClick={() => openEditDisp(d)}
+                              className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+                              title="Editar">
+                              <Pencil className="h-3.5 w-3.5 text-white/40" />
+                            </button>
+                            <button onClick={() => setDeleteDispItem(d)}
+                              className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-red-500/20 transition-colors"
+                              title="Excluir">
+                              <Trash2 className="h-3.5 w-3.5 text-red-400/60" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         </SheetContent>
       </Sheet>
 
-      {/* Confirmação de exclusão */}
+      {/* Confirmação de exclusão de dispensação */}
+      <AlertDialog open={!!deleteDispItem} onOpenChange={(o) => { if (!o) setDeleteDispItem(null); }}>
+        <AlertDialogContent className="bg-[#1B1B1E] border border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Excluir dispensacao?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/50">
+              O registro de <span className="text-white font-medium">{deleteDispItem?.medicamento_nome}</span> será removido permanentemente. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void handleDeleteDisp()}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={deletingDispItem}
+            >
+              {deletingDispItem ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!deleteItem} onOpenChange={(o) => { if (!o) setDeleteItem(null); }}>
         <AlertDialogContent className="bg-[#1B1B1E] border border-white/10 text-white">
           <AlertDialogHeader>
