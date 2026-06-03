@@ -313,57 +313,81 @@ export default function Pacientes() {
     }
 
     // Tabela de histórico de comunicados
+    // 3 colunas: Data/Tipo+Canal / Mensagem (mais espaço para a mensagem)
     const rows = historico.map((h) => {
       const msgLimpa = sanitizarPdf(h.mensagem);
+      const canalLabel = h.canal === "whatsapp" ? "WhatsApp" : "Copiado";
+      const tipoComCanal = `${sanitizarPdf(h.tipo_label)}\n[${canalLabel}]`;
+      // Limita a 5 linhas (~350 chars) para manter o PDF compacto
+      const msgFinal = msgLimpa.length > 350 ? msgLimpa.slice(0, 347) + "..." : msgLimpa;
       return [
         new Date(h.created_at).toLocaleString("pt-BR", {
           day: "2-digit", month: "2-digit", year: "numeric",
           hour: "2-digit", minute: "2-digit",
         }),
-        sanitizarPdf(h.tipo_label),
-        h.canal === "whatsapp" ? "WhatsApp" : h.canal === "copiado" ? "Copiado" : h.canal,
-        msgLimpa.length > 300 ? msgLimpa.slice(0, 297) + "..." : msgLimpa,
+        tipoComCanal,
+        msgFinal,
       ];
     });
 
-    // Título seção comunicados
-    doc.setFontSize(10);
+    // Título seção comunicados com linha decorativa
+    const yComTitle = 79;
+    doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(245, 110, 15);
-    doc.text("Historico de Comunicados", 14, 79);
+    doc.text("Historico de Comunicados", 14, yComTitle);
+    doc.setDrawColor(245, 110, 15);
+    doc.setLineWidth(0.4);
+    doc.line(14, yComTitle + 2, largura - 14, yComTitle + 2);
 
     autoTable(doc, {
-      startY: 82,
-      head: [["Data/Hora", "Tipo de Comunicado", "Canal", "Mensagem"]],
-      body: rows.length > 0 ? rows : [["—", "Nenhum comunicado registrado", "—", "—"]],
+      startY: yComTitle + 6,
+      head: [["Data / Hora", "Tipo e Canal", "Mensagem"]],
+      body: rows.length > 0 ? rows : [["—", "—", "Nenhum comunicado registrado"]],
       headStyles: {
         fillColor: [245, 110, 15],
         textColor: [255, 255, 255],
         fontStyle: "bold",
-        fontSize: 8,
+        fontSize: 8.5,
+        cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
       },
       bodyStyles: {
-        fontSize: 7.5,
-        textColor: [60, 60, 60],
+        fontSize: 8,
+        textColor: [40, 40, 40],
         fillColor: [255, 255, 255],
+        cellPadding: { top: 4, bottom: 4, left: 4, right: 4 },
+        valign: "top",
       },
-      alternateRowStyles: { fillColor: [248, 248, 248] },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
       columnStyles: {
-        0: { cellWidth: 32 },
-        1: { cellWidth: 42 },
-        2: { cellWidth: 22 },
-        3: { cellWidth: "auto" },
+        0: { cellWidth: 30, fontStyle: "normal", textColor: [80, 80, 80] },
+        1: { cellWidth: 40 },
+        2: { cellWidth: "auto", lineColor: [230, 230, 230] },
       },
       margin: { left: 14, right: 14 },
-      styles: { overflow: "linebreak", lineColor: [220, 220, 220], lineWidth: 0.1 },
+      styles: { overflow: "linebreak", lineColor: [225, 225, 225], lineWidth: 0.15 },
+      // Estilo especial para a coluna [canal] dentro do tipo
+      didParseCell: (data) => {
+        if (data.section === "body" && data.column.index === 1) {
+          data.cell.styles.fontSize = 8;
+        }
+        if (data.section === "body" && data.column.index === 2) {
+          data.cell.styles.fontSize = 8.5;
+          data.cell.styles.textColor = [30, 30, 30];
+        }
+      },
     });
 
     // Tabela de dispensações
-    const afterCom = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
-    doc.setFontSize(10);
+    const afterCom = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
+
+    doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(245, 110, 15);
+    doc.setTextColor(30, 120, 80);
     doc.text("Dispensacao de Medicamentos", 14, afterCom);
+    doc.setDrawColor(30, 120, 80);
+    doc.setLineWidth(0.4);
+    doc.line(14, afterCom + 2, largura - 14, afterCom + 2);
 
     const dispRows = histDispList.map((d) => [
       new Date(d.created_at).toLocaleString("pt-BR", {
@@ -377,30 +401,33 @@ export default function Pacientes() {
     ]);
 
     autoTable(doc, {
-      startY: afterCom + 3,
+      startY: afterCom + 6,
       head: [["Registrado em", "Medicamento", "Data Retirada", "Lote", "Validade"]],
       body: dispRows.length > 0 ? dispRows : [["—", "Nenhuma dispensacao registrada", "—", "—", "—"]],
       headStyles: {
-        fillColor: [30, 80, 60],
-        textColor: [165, 255, 214],
+        fillColor: [30, 120, 80],
+        textColor: [220, 255, 235],
         fontStyle: "bold",
-        fontSize: 8,
+        fontSize: 8.5,
+        cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
       },
       bodyStyles: {
-        fontSize: 7.5,
-        textColor: [60, 60, 60],
+        fontSize: 8.5,
+        textColor: [40, 40, 40],
         fillColor: [255, 255, 255],
+        cellPadding: { top: 4, bottom: 4, left: 4, right: 4 },
+        valign: "middle",
       },
-      alternateRowStyles: { fillColor: [248, 248, 248] },
+      alternateRowStyles: { fillColor: [248, 252, 250] },
       columnStyles: {
-        0: { cellWidth: 32 },
-        1: { cellWidth: "auto" },
-        2: { cellWidth: 28 },
-        3: { cellWidth: 22 },
-        4: { cellWidth: 24 },
+        0: { cellWidth: 32, textColor: [80, 80, 80] },
+        1: { cellWidth: "auto", fontStyle: "bold" },
+        2: { cellWidth: 28, halign: "center" },
+        3: { cellWidth: 22, halign: "center" },
+        4: { cellWidth: 26, halign: "center" },
       },
       margin: { left: 14, right: 14 },
-      styles: { overflow: "linebreak", lineColor: [220, 220, 220], lineWidth: 0.1 },
+      styles: { overflow: "linebreak", lineColor: [210, 235, 220], lineWidth: 0.15 },
     });
 
     // Footer
