@@ -32,9 +32,9 @@ const schema = z.object({
   medicamento_nome: z.string().min(1, "Selecione ou informe o medicamento"),
   medicamento_id: z.string().optional(),
   cid: z.string().optional(),
-  valor_unitario: z.string().min(1, "Informe o valor unitário"),
-  valor_caixa: z.string().min(1, "Informe o valor da caixa (60 cp)"),
-  prazo_entrega: z.string().min(1, "Informe o prazo de entrega"),
+  valor_unitario: z.string().optional(),
+  valor_caixa: z.string().optional(),
+  prazo_entrega: z.string().optional(),
   observacoes: z.string().optional(),
 });
 
@@ -220,24 +220,25 @@ function gerarPDF(values: FormValues) {
     y += 8;
   }
 
-  // Caixa de dados do orçamento
+  // Caixa de dados do orçamento — só inclui linhas com valor preenchido
+  const bullet = "\u2022";
+  const linhasCandidatas: { label: string; valor: string }[] = [
+    { label: "Medicamento", valor: values.medicamento_nome },
+    ...(values.valor_unitario ? [{ label: "Valor Unitário", valor: values.valor_unitario }] : []),
+    ...(values.valor_caixa ? [{ label: "Valor 1 caixa com 60 cp", valor: values.valor_caixa }] : []),
+    ...(values.prazo_entrega ? [{ label: "Prazo de entrega", valor: values.prazo_entrega }] : []),
+  ];
+
+  const boxHeight = 14 + linhasCandidatas.length * 9;
   doc.setFillColor(250, 250, 250);
   doc.setDrawColor(230, 230, 230);
   doc.setLineWidth(0.3);
-  doc.roundedRect(margin, y, usable, 48, 2, 2, "FD");
+  doc.roundedRect(margin, y, usable, boxHeight, 2, 2, "FD");
 
   const innerLeft = margin + 6;
   let iy = y + 10;
 
-  const bullet = "\u2022";
-  const linhas: { label: string; valor: string }[] = [
-    { label: "Medicamento", valor: values.medicamento_nome },
-    { label: "Valor Unitário", valor: values.valor_unitario },
-    { label: "Valor 1 caixa com 60 cp", valor: values.valor_caixa },
-    { label: "Prazo de entrega", valor: values.prazo_entrega },
-  ];
-
-  for (const linha of linhas) {
+  for (const linha of linhasCandidatas) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(...cinzaMedio);
@@ -254,7 +255,7 @@ function gerarPDF(values: FormValues) {
     iy += 9;
   }
 
-  y += 52;
+  y += boxHeight + 4;
 
   // Observações adicionais (se preenchidas)
   if (values.observacoes) {
@@ -597,18 +598,24 @@ export default function Orcamentos() {
                   <strong>Medicamento:</strong>{" "}
                   {form.watch("medicamento_nome") || "[medicamento]"}
                 </li>
-                <li>
-                  <strong>Valor Unitário:</strong>{" "}
-                  {form.watch("valor_unitario") || "[valor]"}
-                </li>
-                <li>
-                  <strong>Valor 1 caixa com 60 cp:</strong>{" "}
-                  {form.watch("valor_caixa") || "[valor caixa]"}
-                </li>
-                <li>
-                  <strong>Prazo de entrega:</strong>{" "}
-                  {form.watch("prazo_entrega") || "[prazo]"}
-                </li>
+                {form.watch("valor_unitario") && (
+                  <li>
+                    <strong>Valor Unitário:</strong>{" "}
+                    {form.watch("valor_unitario")}
+                  </li>
+                )}
+                {form.watch("valor_caixa") && (
+                  <li>
+                    <strong>Valor 1 caixa com 60 cp:</strong>{" "}
+                    {form.watch("valor_caixa")}
+                  </li>
+                )}
+                {form.watch("prazo_entrega") && (
+                  <li>
+                    <strong>Prazo de entrega:</strong>{" "}
+                    {form.watch("prazo_entrega")}
+                  </li>
+                )}
               </ul>
               <p className="text-white/50 text-xs italic">
                 Orçamento realizado conforme prescrição enviada pelo(a) paciente,
