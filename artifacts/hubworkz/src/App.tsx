@@ -29,6 +29,7 @@ import Comunicacao from "@/pages/comunicacao";
 import EloSaude from "@/pages/elo-saude";
 import Restrito from "@/pages/restrito";
 import PacientePortal from "@/pages/paciente-portal";
+import Orcamentos from "@/pages/orcamentos";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,6 +101,7 @@ function Router() {
       <Route path="/di-ia">{() => <ProtectedRoute component={DiIA} />}</Route>
       <Route path="/comunicacao">{() => <ProtectedRoute component={Comunicacao} />}</Route>
       <Route path="/elo-saude">{() => <ProtectedRoute component={EloSaude} />}</Route>
+      <Route path="/orcamentos">{() => <ProtectedRoute component={Orcamentos} />}</Route>
       <Route path="/configuracoes">{() => <ProtectedRoute component={Configuracoes} />}</Route>
 
       {/* Restricted access roles */}

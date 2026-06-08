@@ -25,6 +25,7 @@ import {
   Moon,
   MessageSquare,
   PackageSearch,
+  ReceiptText,
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -154,6 +155,13 @@ const NAV_ITEMS: NavItem[] = [
     icon: PackageSearch,
     gradient: "linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)",
     glow: "rgba(168,85,247,0.45)",
+  },
+  {
+    href: "/orcamentos",
+    label: "Envio Orcamentos",
+    icon: ReceiptText,
+    gradient: "linear-gradient(135deg, #F56E0F 0%, #7c2d12 100%)",
+    glow: "rgba(245,110,15,0.45)",
   },
   {
     href: "/configuracoes",
