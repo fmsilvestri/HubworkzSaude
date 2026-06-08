@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
-import { FileText, Download, ChevronDown, Check } from "lucide-react";
+import { FileText, Download, ChevronDown, Check, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const FIELD = "bg-[#0F0F12] border-white/10 text-white placeholder:text-white/30";
@@ -326,6 +326,57 @@ function gerarPDF(values: FormValues) {
   doc.save(`orcamento_${nomePaciente}_${hoje.toISOString().slice(0, 10)}.pdf`);
 }
 
+// ── WhatsApp text formatter ────────────────────────────────────────────────────
+function abrirWhatsApp(values: FormValues) {
+  const hoje = new Date();
+  const dataFormatada = hoje.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  const linhas: string[] = [];
+  linhas.push("*Orçamento Liminar Judicial*");
+  linhas.push("_Noova Oncologia — Florianópolis_");
+  linhas.push("");
+  linhas.push("Prezados,");
+  linhas.push("");
+  linhas.push(
+    `Conforme solicitado segue orçamento para o(a) *${values.paciente_nome}*, referente ao medicamento:`
+  );
+  linhas.push("");
+  if (values.cid) linhas.push(`CID: ${values.cid}`);
+  linhas.push(`• *Medicamento:* ${values.medicamento_nome}`);
+  if (values.valor_unitario)
+    linhas.push(`• *Valor Unitário:* ${values.valor_unitario}`);
+  if (values.valor_caixa)
+    linhas.push(`• *Valor 1 caixa com 60 cp:* ${values.valor_caixa}`);
+  if (values.prazo_entrega)
+    linhas.push(`• *Prazo de entrega:* ${values.prazo_entrega}`);
+  if (values.observacoes) {
+    linhas.push("");
+    linhas.push(`_Obs: ${values.observacoes}_`);
+  }
+  linhas.push("");
+  linhas.push(
+    "Orçamento realizado conforme prescrição enviada pelo(a) paciente. " +
+      "Para execução/aplicação será necessário consulta e avaliação do nosso corpo clínico. " +
+      "Caso haja alteração no protocolo será necessário novo orçamento."
+  );
+  linhas.push("");
+  linhas.push("Desde já agradecemos a atenção e nos colocamos à disposição.");
+  linhas.push("");
+  linhas.push(`Atenciosamente,`);
+  linhas.push(`*Noova Oncologia — Florianópolis, ${dataFormatada}.*`);
+
+  const texto = linhas.join("\n");
+  window.open(
+    `https://wa.me/?text=${encodeURIComponent(texto)}`,
+    "_blank",
+    "noopener,noreferrer"
+  );
+}
+
 // ── Página principal ───────────────────────────────────────────────────────────
 export default function Orcamentos() {
   const { toast } = useToast();
@@ -624,8 +675,16 @@ export default function Orcamentos() {
               </p>
             </div>
 
-            {/* Botão */}
-            <div className="flex justify-end">
+            {/* Botões de ação */}
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                onClick={form.handleSubmit(abrirWhatsApp)}
+                className="bg-[#25D366] hover:bg-[#1da851] text-white font-semibold px-6 gap-2"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Enviar via WhatsApp
+              </Button>
               <Button
                 type="submit"
                 className="bg-[#F56E0F] hover:bg-[#d4590c] text-white font-semibold px-6 gap-2"
