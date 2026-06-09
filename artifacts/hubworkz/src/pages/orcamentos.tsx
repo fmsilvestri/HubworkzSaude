@@ -143,62 +143,93 @@ function SearchCombobox({
   );
 }
 
+// ── Logo loader ────────────────────────────────────────────────────────────────
+async function loadBase64(url: string): Promise<string> {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 // ── PDF generator ──────────────────────────────────────────────────────────────
-function gerarPDF(values: FormValues) {
+async function gerarPDF(values: FormValues) {
+  // Cor roxa do logotipo Noova Oncologia
+  const roxo: [number, number, number] = [107, 45, 139];
+  const cinzaEscuro: [number, number, number] = [30, 30, 30];
+  const cinzaMedio: [number, number, number] = [80, 80, 80];
+
+  // Carregar logotipo antes de abrir o PDF
+  let logoBase64: string | null = null;
+  try {
+    logoBase64 = await loadBase64("/noova-logo.png");
+  } catch {
+    // segue sem logo se falhar
+  }
+
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = 210;
   const margin = 25;
   const usable = W - margin * 2;
 
-  // Cores
-  const laranja: [number, number, number] = [109, 40, 217];
-  const cinzaEscuro: [number, number, number] = [30, 30, 30];
-  const cinzaMedio: [number, number, number] = [80, 80, 80];
+  // ── Cabeçalho: faixa branca com logo + data ──────────────────────────────
+  // Fundo branco já é padrão, apenas posicionamos os elementos
+  const headerH = 32;
 
-  // Cabeçalho com fundo roxo
-  doc.setFillColor(...laranja);
-  doc.rect(0, 0, W, 28, "F");
+  if (logoBase64) {
+    // Logo ocupa ~55mm de largura, proporção original ≈ 3:1
+    doc.addImage(logoBase64, "PNG", margin, 4, 55, 18);
+  } else {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(...roxo);
+    doc.text("NOOVA ONCOLOGIA", margin, 15);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...cinzaMedio);
+    doc.text("Florianópolis, SC", margin, 20);
+  }
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.setTextColor(255, 255, 255);
-  doc.text("NOOVA ONCOLOGIA", margin, 13);
-
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text("Florianópolis, SC", margin, 19);
-
-  // Número do orçamento + data no canto direito
+  // Data no canto direito
   const hoje = new Date();
   const dataFormatada = hoje.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(255, 255, 255, 0.9);
-  doc.text(`Data: ${dataFormatada}`, W - margin, 13, { align: "right" });
+  doc.setTextColor(...cinzaMedio);
+  doc.text(`Data: ${dataFormatada}`, W - margin, 14, { align: "right" });
+  doc.text("Florianópolis, SC", W - margin, 20, { align: "right" });
 
-  // Linha separadora
-  doc.setDrawColor(...laranja);
-  doc.setLineWidth(0.5);
-  doc.line(margin, 32, W - margin, 32);
+  // Faixa roxa abaixo do cabeçalho
+  doc.setFillColor(...roxo);
+  doc.rect(0, headerH, W, 5, "F");
+
+  // Linha fina roxa separadora
+  doc.setDrawColor(...roxo);
+  doc.setLineWidth(0.3);
+  doc.line(margin, headerH + 9, W - margin, headerH + 9);
 
   // Título do documento
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(...cinzaEscuro);
-  doc.text("Orçamento", W / 2, 42, { align: "center" });
+  doc.text("Orçamento", W / 2, headerH + 18, { align: "center" });
 
   // Subtítulo
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...cinzaMedio);
-  doc.text("Documento gerado pelo sistema HubWorkz Saúde", W / 2, 48, {
+  doc.text("Documento gerado pelo sistema HubWorkz Saúde", W / 2, headerH + 24, {
     align: "center",
   });
 
-  let y = 58;
+  let y = headerH + 34;
 
   // Saudação
   doc.setFont("helvetica", "normal");
@@ -259,13 +290,13 @@ function gerarPDF(values: FormValues) {
 
   // Observações adicionais (se preenchidas)
   if (values.observacoes) {
-    doc.setFillColor(252, 248, 243);
-    doc.setDrawColor(...laranja);
+    doc.setFillColor(247, 244, 250);
+    doc.setDrawColor(...roxo);
     doc.setLineWidth(0.4);
     doc.roundedRect(margin, y, usable, 20, 2, 2, "FD");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...laranja);
+    doc.setTextColor(...roxo);
     doc.text("Observações:", innerLeft, y + 7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...cinzaEscuro);
@@ -304,11 +335,11 @@ function gerarPDF(values: FormValues) {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.setTextColor(...laranja);
+  doc.setTextColor(...roxo);
   doc.text(`Noova Oncologia — Florianópolis, ${dataFormatada}.`, margin, y);
 
   // Linha de rodapé
-  doc.setDrawColor(...laranja);
+  doc.setDrawColor(...roxo);
   doc.setLineWidth(0.4);
   doc.line(margin, 280, W - margin, 280);
 
@@ -408,8 +439,8 @@ export default function Orcamentos() {
     sub: m.principio_ativo ?? m.apresentacao ?? undefined,
   }));
 
-  function onSubmit(values: FormValues) {
-    gerarPDF(values);
+  async function onSubmit(values: FormValues) {
+    await gerarPDF(values);
     toast({
       title: "PDF gerado",
       description: `Orçamento para ${values.paciente_nome} baixado com sucesso.`,
