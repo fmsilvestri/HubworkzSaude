@@ -193,18 +193,13 @@ async function gerarPDF(values: FormValues) {
     doc.text("Florianópolis, SC", margin, 20);
   }
 
-  // Data no canto direito
+  // Data usada apenas na assinatura (rodapé do documento)
   const hoje = new Date();
   const dataFormatada = hoje.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(...cinzaMedio);
-  doc.text(`Data: ${dataFormatada}`, W - margin, 14, { align: "right" });
-  doc.text("Florianópolis, SC", W - margin, 20, { align: "right" });
 
   // Faixa roxa abaixo do cabeçalho
   doc.setFillColor(...roxo);
