@@ -188,7 +188,7 @@ function gerarPDF(values: FormValues) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(...cinzaEscuro);
-  doc.text("Orçamento Liminar Judicial", W / 2, 42, { align: "center" });
+  doc.text("Orçamento", W / 2, 42, { align: "center" });
 
   // Subtítulo
   doc.setFont("helvetica", "normal");
@@ -225,7 +225,7 @@ function gerarPDF(values: FormValues) {
   const linhasCandidatas: { label: string; valor: string }[] = [
     { label: "Medicamento", valor: values.medicamento_nome },
     ...(values.valor_unitario ? [{ label: "Valor Unitário", valor: values.valor_unitario }] : []),
-    ...(values.valor_caixa ? [{ label: "Valor 1 caixa com 60 cp", valor: values.valor_caixa }] : []),
+    ...(values.valor_caixa ? [{ label: "Valor 1 caixa", valor: values.valor_caixa }] : []),
     ...(values.prazo_entrega ? [{ label: "Prazo de entrega", valor: values.prazo_entrega }] : []),
   ];
 
@@ -336,7 +336,7 @@ function abrirWhatsApp(values: FormValues) {
   });
 
   const linhas: string[] = [];
-  linhas.push("*Orçamento Liminar Judicial*");
+  linhas.push("*Orçamento*");
   linhas.push("_Noova Oncologia — Florianópolis_");
   linhas.push("");
   linhas.push("Prezados,");
@@ -350,7 +350,7 @@ function abrirWhatsApp(values: FormValues) {
   if (values.valor_unitario)
     linhas.push(`• *Valor Unitário:* ${values.valor_unitario}`);
   if (values.valor_caixa)
-    linhas.push(`• *Valor 1 caixa com 60 cp:* ${values.valor_caixa}`);
+    linhas.push(`• *Valor 1 caixa:* ${values.valor_caixa}`);
   if (values.prazo_entrega)
     linhas.push(`• *Prazo de entrega:* ${values.prazo_entrega}`);
   if (values.observacoes) {
@@ -559,7 +559,7 @@ export default function Orcamentos() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-white/70 text-sm">
-                        Valor Caixa (60 cp)
+                        Valor Caixa
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -629,7 +629,7 @@ export default function Orcamentos() {
                 Previa do documento
               </p>
               <p className="mb-2 text-white/80 font-medium">
-                Orçamento Liminar Judicial
+                Orçamento
               </p>
               <p className="mb-3">Prezados,</p>
               <p className="mb-3">
@@ -657,7 +657,7 @@ export default function Orcamentos() {
                 )}
                 {form.watch("valor_caixa") && (
                   <li>
-                    <strong>Valor 1 caixa com 60 cp:</strong>{" "}
+                    <strong>Valor 1 caixa:</strong>{" "}
                     {form.watch("valor_caixa")}
                   </li>
                 )}
