@@ -539,6 +539,37 @@ export default function Pacientes() {
   const raw = (pacientes as Paciente[] ?? []);
   const list = sortAZ ? [...raw].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")) : raw;
 
+  // ── Alerta: última dispensação por paciente ───────────────────────────────────
+  const [ultimaDisp, setUltimaDisp] = useState<Map<string, Date>>(new Map());
+
+  useEffect(() => {
+    fetch("/api/dispensacoes")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: { paciente_id?: string; data_retirada?: string | null; created_at?: string }[]) => {
+        const mapa = new Map<string, Date>();
+        for (const d of data) {
+          if (!d.paciente_id) continue;
+          const dataRef = d.data_retirada
+            ? new Date(d.data_retirada + "T12:00:00")
+            : d.created_at
+            ? new Date(d.created_at)
+            : null;
+          if (!dataRef) continue;
+          const atual = mapa.get(d.paciente_id);
+          if (!atual || dataRef > atual) mapa.set(d.paciente_id, dataRef);
+        }
+        setUltimaDisp(mapa);
+      })
+      .catch(() => {});
+  }, []);
+
+  function alerteDispensacao(pacienteId: string): boolean {
+    const ultima = ultimaDisp.get(pacienteId);
+    if (!ultima) return false;
+    const diffDias = (Date.now() - ultima.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDias > 20;
+  }
+
   // ── Dispensação de medicamentos ──────────────────────────────────────────────
   const [dispPaciente, setDispPaciente] = useState<Paciente | null>(null);
   const [dispList, setDispList] = useState<DispensacaoItem[]>([]);
@@ -865,7 +896,18 @@ export default function Pacientes() {
                       {initials}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-semibold text-sm leading-tight truncate">{p.nome}</p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-white font-semibold text-sm leading-tight truncate">{p.nome}</p>
+                        {alerteDispensacao(p.id) && (
+                          <span
+                            title="Sem dispensacao registrada nos ultimos 20 dias"
+                            className="inline-flex items-center gap-1 rounded-full bg-red-500/20 border border-red-500/40 px-1.5 py-0.5 text-[9px] font-semibold text-red-400 shrink-0 animate-pulse"
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                            +20 dias
+                          </span>
+                        )}
+                      </div>
                       <p className="text-white/40 text-xs mt-0.5 truncate">
                         {p.cpf ? `CPF: ${p.cpf}` : (p.email ?? p.telefone ?? "—")}
                       </p>
