@@ -151,11 +151,11 @@ function gerarPDF(values: FormValues) {
   const usable = W - margin * 2;
 
   // Cores
-  const laranja: [number, number, number] = [245, 110, 15];
+  const laranja: [number, number, number] = [109, 40, 217];
   const cinzaEscuro: [number, number, number] = [30, 30, 30];
   const cinzaMedio: [number, number, number] = [80, 80, 80];
 
-  // Cabeçalho com fundo laranja
+  // Cabeçalho com fundo roxo
   doc.setFillColor(...laranja);
   doc.rect(0, 0, W, 28, "F");
 
